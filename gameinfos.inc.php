@@ -19,7 +19,7 @@ $gameinfos = array(
 'designer' => 'Raymond Chandler III',       
 
 // Game artist (or game artists, separated by commas)
-'artist' => 'Emily R. Dearring,Andreas Resch',         
+'artist' => 'Emily R. Dearring, Andreas Resch',         
 
 // Year of FIRST publication of this game. Can be negative.
 'year' => 2019,                 
