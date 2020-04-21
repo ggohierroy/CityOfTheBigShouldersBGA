@@ -41,10 +41,25 @@
 
         $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "player_area" );
         
-        foreach ( $players as $player_id => $info ) {
-          $this->page->insert_block("player_area", array ("PLAYER_ID" => $player_id,
-                  "PLAYER_NAME" => $players [$player_id] ['player_name'],
-                  "PLAYER_COLOR" => $players [$player_id] ['player_color']));
+        // make current player panel first
+        global $g_user;
+        $current_player_id = $g_user->get_id ();
+        if (isset($players [$current_player_id])) { // may be not set if spectator
+            $current_player = $players [$current_player_id];
+            $this->page->insert_block ( "player_area", array (
+                    "PLAYER_NAME" => $current_player ['player_name'],
+                    "PLAYER_COLOR" => $current_player ['player_color'],
+                    "PLAYER_ID" => $current_player ['player_id']
+            ) );
+        }
+
+        foreach ( $players as $player_id => $player ) {
+            if ($player_id != $current_player_id)
+                $this->page->insert_block ( "player_area", array (
+                        "PLAYER_NAME" => $player ['player_name'],
+                        "PLAYER_COLOR" => $player ['player_color'],
+                        "PLAYER_ID" => $player ['player_id'] 
+                ) );
         }
 
         /*
