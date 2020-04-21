@@ -25,9 +25,28 @@
     Please REMOVE this comment before publishing your game on BGA
 -->
 
+<div id=main_board_wrapper>
+    <div id=main_board>main board</div>
+    <div id=public_goals>public goals</div>
+    <div id=bank>bank</div>
+    <div id=companies>available companies</div>
+</div>
 
-This is your game interface. You can edit this HTML in your ".tpl" file.
+<div id="myhand_wrap" class="whiteblock">
+    <h3>{MY_HAND}</h3>
+    <div id="myhand">
+    </div>
+</div>
 
+<div id=player_area_wrapper>
+    <!-- BEGIN player_area -->
+    <div id="player_{PLAYER_ID}">
+        {PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}
+        <div id="personal_area">personal area</div>
+        <div id="company_area">owned companies area</div>
+    </div>
+    <!-- END player_area -->
+</div>
 
 <script type="text/javascript">
 

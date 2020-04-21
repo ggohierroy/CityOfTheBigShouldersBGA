@@ -39,6 +39,13 @@
 
         /*********** Place your code below:  ************/
 
+        $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "player_area" );
+        
+        foreach ( $players as $player_id => $info ) {
+          $this->page->insert_block("player_area", array ("PLAYER_ID" => $player_id,
+                  "PLAYER_NAME" => $players [$player_id] ['player_name'],
+                  "PLAYER_COLOR" => $players [$player_id] ['player_color']));
+        }
 
         /*
         
