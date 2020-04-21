@@ -38,7 +38,7 @@
         $players_nbr = count( $players );
 
         /*********** Place your code below:  ************/
-
+        
         $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "player_area" );
         
         // make current player panel first

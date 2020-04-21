@@ -64,12 +64,55 @@ $machinestates = array(
     // Note: ID=2 => your first state
 
     2 => array(
-    		"name" => "playerTurn",
-    		"description" => clienttranslate('${actplayer} must play a card or pass'),
-    		"descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
+    		"name" => "playerStartFirstCompany",
+    		"description" => clienttranslate('${actplayer} must choose a company to start'),
+    		"descriptionmyturn" => clienttranslate('${you} must choose a company to start'),
     		"type" => "activeplayer",
-    		"possibleactions" => array( "playCard", "pass" ),
-    		"transitions" => array( "playCard" => 2, "pass" => 2 )
+    		"possibleactions" => array( "startCompany" ),
+    		"transitions" => array( "nextPlayer" => 3 )
+    ),
+
+    3 => array(
+        "name" => "gameStartFirstCompany",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameStartFirstCompany",
+        "transitions" => array( "playerStartFirstCompany" => 2, "pass" => 2 )
+    ),
+
+    4 => array(
+        "name" => "playerStockPhase",
+        "description" => clienttranslate('${actplayer} must choose to sell/buy stock, start a company, or pass'),
+        "descriptionmyturn" => clienttranslate('${you} must choose to sell/buy stock, start a company, or pass'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "stSellStock", "stBuyStock", "startCompany", "stPass" ),
+        "transitions" => array( "nextPlayer" => 5 )
+    ),
+
+    5 => array(
+        "name" => "gameStockPhase",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameStockPhase",
+        "transitions" => array( "playerStockPhase" => 5, "buildingPhase" => 7, "playerPriceProtection" => 6 )
+    ),
+
+    6 => array(
+        "name" => "playerPriceProtection",
+        "description" => clienttranslate('${actplayer} must choose to use the company\'s Price Protection asset tile or skip'),
+        "descriptionmyturn" => clienttranslate('${you} must choose to use the company\'s Price Protection asset tile or skip'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "st", "stBuyStock", "stStartCompany", "stPass" ),
+        "transitions" => array( "nextPlayer" => 5 )
+    ),
+
+    7 => array(
+        "name" => "playerStockPhase",
+        "description" => clienttranslate('${actplayer} must choose to sell/buy stock, start a company, or pass'),
+        "descriptionmyturn" => clienttranslate('${you} must choose to sell/buy stock, start a company, or pass'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "stSellStock", "stBuyStock", "stStartCompany", "stPass" ),
+        "transitions" => array( "nextPlayer" => 5 )
     ),
     
 /*

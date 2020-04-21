@@ -25,28 +25,26 @@
     Please REMOVE this comment before publishing your game on BGA
 -->
 
+<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>
+
 <div id=main_board_wrapper>
     <div id=main_board>main board</div>
     <div id=public_goals>public goals</div>
     <div id=bank>bank</div>
-    <div id=companies>available companies</div>
-</div>
-
-<div id="myhand_wrap" class="whiteblock">
-    <h3>{MY_HAND}</h3>
-    <div id="myhand">
-    </div>
 </div>
 
 <div id=player_area_wrapper>
     <!-- BEGIN player_area -->
     <div id="player_{PLAYER_ID}">
         {PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}
+        <div id="building_area">my buildings</div>
         <div id="personal_area">personal area</div>
         <div id="company_area">owned companies area</div>
     </div>
     <!-- END player_area -->
 </div>
+
+<div id=companies>available companies</div>
 
 <script type="text/javascript">
 

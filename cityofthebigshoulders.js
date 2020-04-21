@@ -47,6 +47,8 @@ function (dojo, declare) {
         setup: function( gamedatas )
         {
             console.log( "Starting game setup" );
+
+            dojo.query( '.start_company' ).connect( 'onclick', this, 'onStartCompany' );
             
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -206,6 +208,23 @@ function (dojo, declare) {
         },        
         
         */
+
+        onStartCompany: function (evt){
+            console.log('onStartCompany');
+            
+            // Preventing default browser reaction
+            dojo.stopEvent(evt);
+
+            if(!this.checkAction('startCompany'))
+            {
+                return;
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
+                companyId:42,
+                initialShareValueStep:4 //can be 4,5,6,7 for $35,$40,$50,$60
+            }, this, function( result ) {} );
+        },
 
         
         ///////////////////////////////////////////////////

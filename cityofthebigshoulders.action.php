@@ -63,6 +63,21 @@
     
     */
 
+    public function startCompany()
+    {
+      self::setAjaxMode();
+
+      // Retrieve arguments
+      // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+      $companyId = self::getArg( "companyId", AT_posint, true );
+      $initialShareValueStep = self::getArg( "initialShareValueStep", AT_posint, true );
+
+      // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
+      $this->game->startCompany( $companyId, $initialShareValueStep );
+
+      self::ajaxResponse( );
+    }
+
   }
   
 

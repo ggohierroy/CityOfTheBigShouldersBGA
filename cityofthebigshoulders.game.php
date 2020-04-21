@@ -234,6 +234,12 @@ class CityOfTheBigShoulders extends Table
     }    
     */
 
+    function startCompany($companyId, $initialShareValueStep)
+    {
+        self::dump('startCompany');
+        //$this->gamestate->nextState( 'gameStartFirstCompany' );
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
 ////////////
