@@ -48,7 +48,7 @@ function (dojo, declare) {
         {
             console.log( "Starting game setup" );
 
-            dojo.query( '.start_company' ).connect( 'onclick', this, 'onStartCompany' );
+            dojo.query( '#start_company' ).connect( 'onclick', this, 'onStartCompany' );
             
             // Setting up player boards
             for( var player_id in gamedatas.players )
