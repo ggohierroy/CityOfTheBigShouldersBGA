@@ -33,12 +33,17 @@ $this->card_types = array(
 */
 
 $this->companies = [
-  "name" => "Brunswick-Balke-Collender Co.",
-  "type" => "dry_goods",
-  "initial_appeal" => 1,
-  "factories" => [
-    
-  ]
+    "brunswick" => [
+      "name" => "Brunswick-Balke-Collender Co.",
+      "short_name" => "brunswick",
+      "type" => "dry_goods",
+      "initial_appeal" => 1,
+      "factories" => [
+      ]
+    ],
+    "bananas" => [
+
+    ],
 ];
 
 
