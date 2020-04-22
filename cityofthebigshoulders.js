@@ -47,8 +47,6 @@ function (dojo, declare) {
         setup: function( gamedatas )
         {
             console.log( "Starting game setup" );
-
-            dojo.query( '#start_company' ).connect( 'onclick', this, 'onStartCompany' );
             
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -58,8 +56,21 @@ function (dojo, declare) {
                 // TODO: Setting up players boards if needed
             }
             
+            for(var i in gamedatas.owned_companies){
+                var ownedCompany = gamedatas.owned_companies[i];
+
+                var company = gamedatas.all_companies[ownedCompany.short_name];
+                company.inPlay = true;
+                company.owner_id = ownedCompany.owner_id;
+            }
+
             // TODO: Set up your game interface here, according to "gamedatas"
-            
+            for(var property in gamedatas.all_companies){
+                var company = gamedatas.all_companies[property];
+                this.placeCompany(company);
+            }
+
+            dojo.query('.company').connect('onclick', this, 'onStartCompany');
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -160,6 +171,12 @@ function (dojo, declare) {
         
         */
 
+        placeCompany: function(company){
+            dojo.place( this.format_block( 'jstpl_company', {
+                short_name: company.short_name
+            } ) , company.inPlay ? 'company_area_' + company.owner_id : 'companies' );
+        },
+
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -210,6 +227,7 @@ function (dojo, declare) {
         */
 
         onStartCompany: function (evt){
+            debugger;
             console.log('onStartCompany');
             
             // Preventing default browser reaction
@@ -220,8 +238,10 @@ function (dojo, declare) {
                 return;
             }
 
+            var short_name = evt.currentTarget.id;
+
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
-                company_short_name:'brunswick',
+                company_short_name: short_name,
                 initialShareValueStep:4 //can be 4,5,6,7 for $35,$40,$50,$60
             }, this, function( result ) {} );
         },

@@ -119,6 +119,10 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        $sql = "SELECT id id, owner_id owner_id, short_name short_name FROM company";
+        $result['owned_companies'] = self::getCollectionFromDb( $sql );
+
+        $result['all_companies'] = $this->companies;
   
         return $result;
     }
@@ -154,7 +158,7 @@ class CityOfTheBigShoulders extends Table
         return self::getObjectFromDB(
             "SELECT id id, owner_id owner_id, share_value_step share_value_step 
             FROM company 
-            WHERE company_short_name='$company_short_name'"
+            WHERE short_name='$company_short_name'"
         );
     }
 
@@ -294,7 +298,7 @@ class CityOfTheBigShoulders extends Table
             throw new BgaUserException( self::_("You don't have enough money to start this company") );
         
         // create company in database
-        $sql = "INSERT INTO company (company_short_name,owner_id,share_value_step) 
+        $sql = "INSERT INTO company (short_name,owner_id,share_value_step) 
             VALUES ('$company_short_name',$player_id,$initial_share_value_step)";
         self::DbQuery( $sql );
 

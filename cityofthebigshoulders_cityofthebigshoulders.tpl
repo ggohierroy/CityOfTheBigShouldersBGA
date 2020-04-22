@@ -25,7 +25,7 @@
     Please REMOVE this comment before publishing your game on BGA
 -->
 
-<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>
+<!--<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>-->
 
 <div id=main_board_wrapper>
     <div id=main_board>main board</div>
@@ -35,16 +35,22 @@
 
 <div id=player_area_wrapper>
     <!-- BEGIN player_area -->
-    <div id="player_{PLAYER_ID}">
-        {PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}
-        <div id="building_area">my buildings</div>
-        <div id="personal_area">personal area</div>
-        <div id="company_area">owned companies area</div>
+    <div id="player_{PLAYER_ID}" class="player">
+        <h1>{PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}</h1>
+        <div id="building_area_{PLAYER_ID}">my buildings</div>
+        <div id="personal_area_{PLAYER_ID}">personal area</div>
+        <div id="company_area_wrapper">
+            <h2>owned companies area</h2>
+            <div id="company_area_{PLAYER_ID}"></div>
+        </div>
     </div>
     <!-- END player_area -->
 </div>
 
-<div id=companies>available companies</div>
+<div id=companies_wrapper>
+    <h1>available companies</h1>
+    <div id="companies"></div>
+</div>
 
 <script type="text/javascript">
 
@@ -55,6 +61,8 @@
 var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_ID}"></div>';
 
 */
+
+var jstpl_company='<div class="company" id="${short_name}">${short_name}</div>';
 
 </script>  
 
