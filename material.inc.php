@@ -35,7 +35,6 @@ $this->card_types = array(
 $this->companies = [
     "brunswick" => [
       "name" => "Brunswick-Balke-Collender Co.",
-      "short_name" => "brunswick",
       "type" => "dry_goods",
       "initial_appeal" => 1,
       "factories" => [
