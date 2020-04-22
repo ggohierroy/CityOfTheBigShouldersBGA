@@ -33,3 +33,13 @@
 -- Example 2: add a custom field to the standard "player" table
 -- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
 
+ALTER TABLE `player` ADD `treasury` SMALLINT UNSIGNED NOT NULL DEFAULT '175';
+ALTER TABLE `player` ADD `number_partners` SMALLINT UNSIGNED NOT NULL DEFAULT '2';
+
+CREATE TABLE IF NOT EXISTS `company` (
+    `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `company_name` VARCHAR(16) NOT NULL,
+    `owner_id` INT(10) UNSIGNED NOT NULL,
+    `share_value_step` TINYINT(3) UNSIGNED,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

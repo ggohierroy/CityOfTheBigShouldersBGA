@@ -69,11 +69,11 @@
 
       // Retrieve arguments
       // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
-      $company_id = self::getArg( "companyId", AT_posint, true );
+      $company_name = self::getArg( "company_name", AT_posint, true );
       $initial_share_value_step = self::getArg( "initialShareValueStep", AT_posint, true );
 
       // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
-      $this->game->startCompany( $company_id, $initial_share_value_step );
+      $this->game->startCompany( $company_name, $initial_share_value_step );
 
       self::ajaxResponse( );
     }

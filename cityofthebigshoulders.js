@@ -221,7 +221,7 @@ function (dojo, declare) {
             }
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
-                companyId:42,
+                company_name:'Brunswick-Balke-Collender Co.',
                 initialShareValueStep:4 //can be 4,5,6,7 for $35,$40,$50,$60
             }, this, function( result ) {} );
         },

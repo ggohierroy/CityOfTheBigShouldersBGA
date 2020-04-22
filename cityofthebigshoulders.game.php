@@ -22,6 +22,8 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class CityOfTheBigShoulders extends Table
 {
+    const STEP_TO_VALUE = [0=>10, 1=>15, 2=>20, 3=>25, 4=>35, 5=>40, 6=>50, 7=>60, 8=>80, 9=>100, 10=>120, 11=>140, 12=>160, 13=>190, 14=>220, 15=>250, 16=>280, 17=>320, 18=>360, 19=>400, 20=>450];
+
 	function __construct( )
 	{
         // Your global variables labels:
@@ -147,7 +149,32 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function getCompanyByName($company_name)
+    {
+        return self::getObjectFromDB(
+            "SELECT id id, owner_id owner_id, share_value_step share_value_step 
+            FROM company 
+            WHERE company_name='$company_name'"
+        );
+    }
 
+    function getPlayer($player_id)
+    {
+        return self::getObjectFromDB(
+            "SELECT id id, treasury tresury
+            FROM player 
+            WHERE id='$player_id'"
+        );
+    }
+
+    function getShareValue($value_step)
+    {
+        $value = STEP_TO_VALUE[$value_step];
+        if($value == null)
+            throw new BgaVisibleSystemException("value should be between 0-20, but not {$value_step}");
+        
+        return $value;
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -234,13 +261,52 @@ class CityOfTheBigShoulders extends Table
     }    
     */
 
-    function startCompany($company_id, $initial_share_value_step)
+    function startCompany($company_name, $initial_share_value_step)
     {
-        self::dump('company_id', $company_id);
+        self::dump('company_id', $company_name);
         self::dump('initial_share_value_step', $initial_share_value_step);
         self::trace('startCompany');
         
+        // Check that this player is active and that this action is possible at this moment
+        self::checkAction( 'startCompany' );
+
+        $company = self::getCompanyByName($company_name);
+
+        // check if company is in DB = owned by a player
+        if($company != null)
+            throw new BgaVisibleSystemException("This company is already owned");
+
+        // check if company can be created (i.e., meterial)
+        if($this->companies[$company_name] == null)
+            throw new BgaVisibleSystemException("This company does not exist");
         
+        // check if share value is possible
+        if($initial_share_value_step < 4 || $initial_share_value_step > 7)
+            throw new BgaVisibleSystemException("initial share value step must be 4, 5, 6, 7, but not {$initial_share_value_step}");
+        
+        $player_id = self::getActivePlayerId();
+
+        $player = self::getPlayer($player_id);
+        
+        $share_value = self::getShareValue($initial_share_value_step);
+
+        if($player->treasury < $share_value*3)
+            throw new BgaUserException( self::_("You don't have enough money to start this company") );
+        
+        
+        // create company in database
+        $sql = "INSERT INTO company (company_name,owner_id,share_value_step) 
+            VALUES ($company_name,$player_id,$initial_share_value_step)";
+
+        DbQuery( $sql );
+
+        // update player's treasury
+        $newTreasury = $player->treasury - $share_value*3;
+        $sql = "UPDATE player 
+            SET treasury='$newTreasury',
+            WHERE id='$player->id'";
+
+        // update stocks to give director's share to player
 
         //$this->gamestate->nextState( 'gameStartFirstCompany' );
     }
