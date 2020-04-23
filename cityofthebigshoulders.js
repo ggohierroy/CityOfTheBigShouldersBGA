@@ -67,7 +67,7 @@ function (dojo, declare) {
             // TODO: Set up your game interface here, according to "gamedatas"
             for(var property in gamedatas.all_companies){
                 var company = gamedatas.all_companies[property];
-                this.placeCompany(company);
+                this.placeCompany(company.short_name, company.owner_id, company.inPlay);
             }
 
             dojo.query('.company').connect('onclick', this, 'onStartCompany');
@@ -171,10 +171,10 @@ function (dojo, declare) {
         
         */
 
-        placeCompany: function(company){
+        placeCompany: function(short_name, owner_id, inPlay){
             dojo.place( this.format_block( 'jstpl_company', {
-                short_name: company.short_name
-            } ) , company.inPlay ? 'company_area_' + company.owner_id : 'companies' );
+                short_name: short_name
+            } ) , inPlay ? 'company_area_' + owner_id : 'companies' );
         },
 
 
@@ -227,7 +227,6 @@ function (dojo, declare) {
         */
 
         onStartCompany: function (evt){
-            debugger;
             console.log('onStartCompany');
             
             // Preventing default browser reaction
@@ -274,6 +273,9 @@ function (dojo, declare) {
             // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
             // 
+
+            dojo.subscribe( 'startCompany', this, "notif_startCompany" );
+            this.notifqueue.setSynchronous( 'startCompany', 500 );
         },  
         
         // TODO: from this point and below, you can write your game notifications handling methods
@@ -292,5 +294,14 @@ function (dojo, declare) {
         },    
         
         */
+
+        notif_startCompany: function( notif )
+        {
+            // remove company in available companies
+            dojo.destroy(notif.args.short_name);
+
+            // place company in player area
+            this.placeCompany( notif.args.short_name, notif.args.owner_id, true );
+        },
    });             
 });

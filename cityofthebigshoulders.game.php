@@ -281,7 +281,8 @@ class CityOfTheBigShoulders extends Table
             throw new BgaVisibleSystemException("This company is already owned");
 
         // check if company can be created (i.e., meterial)
-        if($this->companies[$company_short_name] == null)
+        $companyMaterial = $this->companies[$company_short_name];
+        if($companyMaterial == null)
             throw new BgaVisibleSystemException("This company does not exist");
         
         // check if share value is possible
@@ -311,7 +312,25 @@ class CityOfTheBigShoulders extends Table
 
         // update stocks to give director's share to player
 
-        //$this->gamestate->nextState( 'gameStartFirstCompany' );
+        // notify players that company started
+        self::notifyAllPlayers( "startCompany", clienttranslate( '${player_name} has started company ${company_name}' ), array(
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),
+            'company_name' => $companyMaterial['name'],
+            'short_name' => $companyMaterial['short_name'],
+            'owner_id' => $player_id
+        ) );
+
+        $this->gamestate->nextState( 'gameStartFirstCompany' );
+    }
+
+    function gameStartFirstCompany()
+    {
+        // Activate next player
+        $player_id = self::activeNextPlayer();
+        
+        self::giveExtraTime( $player_id );
+        $this->gamestate->nextState( 'nextPlayer' );
     }
 
 //////////////////////////////////////////////////////////////////////////////

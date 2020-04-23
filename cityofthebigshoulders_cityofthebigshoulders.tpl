@@ -30,18 +30,17 @@
 <div id=main_board_wrapper>
     <div id=main_board>main board</div>
     <div id=public_goals>public goals</div>
-    <div id=bank>bank</div>
 </div>
 
 <div id=player_area_wrapper>
     <!-- BEGIN player_area -->
-    <div id="player_{PLAYER_ID}" class="player">
+    <div id="player_{PLAYER_ID}" class="clearfix">
         <h1>{PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}</h1>
         <div id="building_area_{PLAYER_ID}">my buildings</div>
         <div id="personal_area_{PLAYER_ID}">personal area</div>
         <div id="company_area_wrapper">
             <h2>owned companies area</h2>
-            <div id="company_area_{PLAYER_ID}"></div>
+            <div id="company_area_{PLAYER_ID}" class="clearfix"></div>
         </div>
     </div>
     <!-- END player_area -->

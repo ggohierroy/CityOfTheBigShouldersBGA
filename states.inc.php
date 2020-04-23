@@ -69,15 +69,15 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('${you} must choose a company to start'),
     		"type" => "activeplayer",
     		"possibleactions" => array( "startCompany" ),
-    		"transitions" => array( "nextPlayer" => 3 )
+    		"transitions" => array( "gameStartFirstCompany" => 3 )
     ),
 
     3 => array(
         "name" => "gameStartFirstCompany",
         "description" => "",
         "type" => "game",
-        "action" => "stGameStartFirstCompany",
-        "transitions" => array( "playerStartFirstCompany" => 2, "pass" => 2 )
+        "action" => "gameStartFirstCompany",
+        "transitions" => array( "nextPlayer" => 2, "playerStockPhase" => 4 )
     ),
 
     4 => array(
