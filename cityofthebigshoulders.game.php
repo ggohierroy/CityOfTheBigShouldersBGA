@@ -95,7 +95,7 @@ class CityOfTheBigShoulders extends Table
 
         // TODO: setup the initial game situation here
         $this->initializeBoardTokens();
-        $this->initializeDecks(count($players));
+        $this->initializeDecks($players);
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -157,8 +157,10 @@ class CityOfTheBigShoulders extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
-    function initializeDecks($player_count)
+    function initializeDecks($players)
     {
+        $player_count = count($players);
+
         // create demand deck
         $pips1 = [];
         $pips2 = [];
@@ -290,7 +292,59 @@ class CityOfTheBigShoulders extends Table
         }
 
         // capital assets
+        $asset_locations = ['40','50','60','70','80'];
         
+        for($i = 0; $i < 5; $i++)
+        {
+            $asset = array_shift($asset_deck);
+            $location = $asset_locations[$i];
+
+            $cards[] = "('$asset','$location','0')";
+        }
+
+        $number_of_items = count($asset_deck);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $asset = array_pop($asset_deck);
+
+            $cards[] = "('$asset','asset_deck','$i')";
+        }
+
+        // buidlings
+        for($i = 0; $i < 3; $i++)
+        {
+            foreach($players as $player_id => $player)
+            {
+                $building = array_shift($era1);
+                $location = 'player_'.$player_id;
+
+                $cards[] = "('$building','$location','0')";
+            }
+        }
+
+        $number_of_items = count($era1);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $building = array_pop($era1);
+
+            $cards[] = "('$building','era_1','$i')";
+        }
+
+        $number_of_items = count($era2);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $building = array_pop($era2);
+
+            $cards[] = "('$building','era_2','$i')";
+        }
+
+        $number_of_items = count($era3);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $building = array_pop($era3);
+
+            $cards[] = "('$building','era_3','$i')";
+        }
 
         $sql .= implode( $cards, ',' );
         self::DbQuery( $sql );
