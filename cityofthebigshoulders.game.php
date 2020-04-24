@@ -35,9 +35,10 @@ class CityOfTheBigShoulders extends Table
         parent::__construct();
         
         self::initGameStateLabels( array( 
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
+            //"round_marker" => 10,
+            //"phase_marker" => 11,
+            //"workers_in_market" => 12,
+            //"priority_deal_player_id" => 13
             //    "my_first_game_variant" => 100,
             //    "my_second_game_variant" => 101,
             //      ...
@@ -90,7 +91,8 @@ class CityOfTheBigShoulders extends Table
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         // TODO: setup the initial game situation here
-       
+        $this->initializeBoardTokens();
+        $this->initializeDecks(count($players));
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -152,6 +154,60 @@ class CityOfTheBigShoulders extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
+    function initializeDecks($player_count)
+    {
+        // create demand deck
+        $pips1 = [];
+        $pips2 = [];
+        $pips3 = [];
+        $pips4 = [];
+
+        foreach($this->demand as $demand_name => $demand)
+        {
+            // do not include some demand tiles for higher player counts
+            if($player_count < $demand['min_players'])
+                continue;
+
+            switch($demand['pips'])
+            {
+                case 1:
+                    array_push($pips1, [$demand_name, $demand['demand']]);
+                    break;
+                case 2:
+                    array_push($pips2, [$demand_name, $demand['demand']]);
+                    break;
+                case 3:
+                    array_push($pips3, [$demand_name, $demand['demand']]);
+                    break;
+                case 4:
+                    array_push($pips4, [$demand_name, $demand['demand']]);
+                    break;
+                default:
+                    throw new BgaVisibleSystemException("number of pips should be between 1-4");
+            }
+        }
+
+        // shuffle and merge 4 demand decks
+        shuffle($pips1);
+        shuffle($pips2);
+        shuffle($pips3);
+        shuffle($pips4);
+
+        $demand_deck = array_merge($pips1, $pips2, $pips3, $pips4);
+
+        //
+    }
+
+    function initializeBoardTokens()
+    {
+        $sql = "INSERT INTO board_token (token_name, token_value) 
+            VALUES
+            ('round_marker',0),
+            ('phase_marker',0),
+            ('wokers_in_market',4),
+            ('deal_player_id',NULL)";
+        self::DbQuery( $sql );
+    }
 
     function getCompanyByShortName($company_short_name)
     {
