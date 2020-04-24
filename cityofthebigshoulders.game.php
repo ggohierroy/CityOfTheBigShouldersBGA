@@ -42,7 +42,10 @@ class CityOfTheBigShoulders extends Table
             //    "my_first_game_variant" => 100,
             //    "my_second_game_variant" => 101,
             //      ...
-        ) );        
+        ) ); 
+        
+        $this->cards = self::getNew( "module.common.deck" );
+        $this->cards->init( "card" );
 	}
 	
     protected function getGameName( )
@@ -171,16 +174,16 @@ class CityOfTheBigShoulders extends Table
             switch($demand['pips'])
             {
                 case 1:
-                    array_push($pips1, [$demand_name, $demand['demand']]);
+                    array_push($pips1, $demand_name);
                     break;
                 case 2:
-                    array_push($pips2, [$demand_name, $demand['demand']]);
+                    array_push($pips2, $demand_name);
                     break;
                 case 3:
-                    array_push($pips3, [$demand_name, $demand['demand']]);
+                    array_push($pips3, $demand_name);
                     break;
                 case 4:
-                    array_push($pips4, [$demand_name, $demand['demand']]);
+                    array_push($pips4, $demand_name);
                     break;
                 default:
                     throw new BgaVisibleSystemException("number of pips should be between 1-4");
@@ -195,7 +198,102 @@ class CityOfTheBigShoulders extends Table
 
         $demand_deck = array_merge($pips1, $pips2, $pips3, $pips4);
 
-        //
+        // create capital asset deck
+        $starting = [];
+        $other = [];
+        foreach($this->capital_asset as $asset_name => $asset)
+        {
+            if($asset['starting'])
+            {
+                if($asset_name == 'brilliant_marketing')
+                    continue;
+                
+                array_push($starting, $asset_name);
+            }
+            else
+            {
+                array_push($other, $asset_name);
+            }
+        }
+
+        shuffle($starting);
+        shuffle($other);
+
+        $asset_deck = array_merge($starting, ['brilliant_marketing'], $other);
+
+        // create building decks
+        $era1 = [];
+        $era2 = [];
+        $era3 = [];
+
+        foreach($this->building as $building_name => $building)
+        {
+            // do not include some demand tiles for higher player counts
+            if($player_count < $building['min_players'])
+                continue;
+
+            switch($building['pips'])
+            {
+                case 1:
+                    array_push($era1, $building_name);
+                    break;
+                case 2:
+                    array_push($era2, $building_name);
+                    break;
+                case 3:
+                    array_push($era3, $building_name);
+                    break;
+                default:
+                    throw new BgaVisibleSystemException("number of pips should be between 1-3");
+            }
+        }
+
+        shuffle($era1);
+        shuffle($era2);
+        shuffle($era3);
+
+        // create resource bag
+        $resource_bag = [];
+        for ($i = 1; $i <= 18; $i++) { array_push($resource_bag, 'livestock'); };
+        for ($i = 1; $i <= 16; $i++) { array_push($resource_bag, 'steel'); };
+        for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'coal'); };
+        for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'wood'); };
+
+        shuffle($resource_bag);
+
+        // insert items in database
+        $sql = "INSERT INTO card (card_type,card_location,card_location_arg) VALUES ";
+        $cards = [];
+
+        // demand
+        $demand_types = ['food_and_dairy','dry_goods','meat_packing','shoes'];
+        $bonus_types = ['50','20','0'];
+        for($i = 0; $i < 3; $i++)
+        {
+            for($j = 0; $j < 4; $j++)
+            {
+                $demand = array_shift($demand_deck);
+                $demand_type = $demand_types[$j % 4];
+                $bonus_type = $bonus_types[$i % 3];
+                $location = $demand_type.'_'.$bonus_type;
+
+                $cards[] = "('$demand','$location','0')";
+            }
+        }
+
+        $number_of_items = count($demand_deck);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $demand = array_pop($demand_deck);
+
+            $cards[] = "('$demand','demand_deck','$i')";
+        }
+
+        // capital assets
+        
+
+        $sql .= implode( $cards, ',' );
+        self::DbQuery( $sql );
     }
 
     function initializeBoardTokens()
