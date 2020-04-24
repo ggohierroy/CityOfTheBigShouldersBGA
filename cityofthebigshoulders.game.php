@@ -161,7 +161,7 @@ class CityOfTheBigShoulders extends Table
     {
         $player_count = count($players);
 
-        // create demand deck
+        // create 4 demand decks depending on number of pips
         $pips1 = [];
         $pips2 = [];
         $pips3 = [];
@@ -192,21 +192,23 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
-        // shuffle and merge 4 demand decks
+        // shuffle the four demands decks
         shuffle($pips1);
         shuffle($pips2);
         shuffle($pips3);
         shuffle($pips4);
 
+        // stack them on top of each other
         $demand_deck = array_merge($pips1, $pips2, $pips3, $pips4);
 
-        // create capital asset deck
+        // create capital asset deck by seperating by starting and other tiles
         $starting = [];
         $other = [];
         foreach($this->capital_asset as $asset_name => $asset)
         {
             if($asset['starting'])
             {
+                // skip brilliant marketing since it should be on the $80 spot
                 if($asset_name == 'brilliant_marketing')
                     continue;
                 
@@ -218,12 +220,14 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        // shuffle starting and other tiles
         shuffle($starting);
         shuffle($other);
 
+        // create asset deck by making sure starting tiles are on top, then brilliant marketing, then other tiles
         $asset_deck = array_merge($starting, ['brilliant_marketing'], $other);
 
-        // create building decks
+        // create building decks depnding on era (number of pips)
         $era1 = [];
         $era2 = [];
         $era3 = [];
@@ -250,24 +254,26 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        // shuffle each era deck
         shuffle($era1);
         shuffle($era2);
         shuffle($era3);
 
-        // create resource bag
+        // create resource bag (include 2 less since they will be put in haymarket square)
         $resource_bag = [];
         for ($i = 1; $i <= 18; $i++) { array_push($resource_bag, 'livestock'); };
         for ($i = 1; $i <= 16; $i++) { array_push($resource_bag, 'steel'); };
         for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'coal'); };
         for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'wood'); };
 
+        // shuffle the resource bag
         shuffle($resource_bag);
 
-        // insert items in database
+        // create query to insert items in database
         $sql = "INSERT INTO card (card_type,card_location,card_location_arg) VALUES ";
         $cards = [];
 
-        // demand
+        // insert demand on each of the 12 spots on the board
         $demand_types = ['food_and_dairy','dry_goods','meat_packing','shoes'];
         $bonus_types = ['50','20','0'];
         for($i = 0; $i < 3; $i++)
@@ -283,6 +289,7 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        // insert rest of demand in the demand deck
         $number_of_items = count($demand_deck);
         for($i = 0; $i < $number_of_items; $i++)
         {
@@ -291,7 +298,7 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "('$demand','demand_deck','$i')";
         }
 
-        // capital assets
+        // insert capital assets on the asset tile market
         $asset_locations = ['40','50','60','70','80'];
         
         for($i = 0; $i < 5; $i++)
@@ -302,6 +309,7 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "('$asset','$location','0')";
         }
 
+        // insert rest of assets in asset deck
         $number_of_items = count($asset_deck);
         for($i = 0; $i < $number_of_items; $i++)
         {
@@ -310,7 +318,7 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "('$asset','asset_deck','$i')";
         }
 
-        // buidlings
+        // give 3 buildings to each player
         for($i = 0; $i < 3; $i++)
         {
             foreach($players as $player_id => $player)
@@ -322,6 +330,7 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        // this is useless since all era 1 buildings should have been dealt
         $number_of_items = count($era1);
         for($i = 0; $i < $number_of_items; $i++)
         {
@@ -330,6 +339,7 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "('$building','era_1','$i')";
         }
 
+        // insert era 2 buildings in its own deck
         $number_of_items = count($era2);
         for($i = 0; $i < $number_of_items; $i++)
         {
@@ -338,12 +348,44 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "('$building','era_2','$i')";
         }
 
+        // insert era 3 buildings in its own deck
         $number_of_items = count($era3);
         for($i = 0; $i < $number_of_items; $i++)
         {
             $building = array_pop($era3);
 
             $cards[] = "('$building','era_3','$i')";
+        }
+
+        // insert 2 resources of each type in haymarket
+        $resource_types = ['livestock','steel','coal','wood'];
+        for($i = 0; $i < 4; $i++)
+        {
+            $resource = $resource_types[$i];
+            $cards[] = "('$resource','haymarket','0')";
+            $cards[] = "('$resource','haymarket','0')";
+        }
+
+        // insert 3 resources in each spot of the supply chain
+        $supply_chain_locations = ['x','30','20','10'];
+        for($i = 0; $i < 4; $i++)
+        {
+            $location = $supply_chain_locations[$i];
+            $resource = array_shift($resource_bag);
+            $cards[] = "('$resource','$location','0')";
+            $resource = array_shift($resource_bag);
+            $cards[] = "('$resource','$location','0')";
+            $resource = array_shift($resource_bag);
+            $cards[] = "('$resource','$location','0')";
+        }
+
+        // insert rest of resources in the resource bag
+        $number_of_items = count($resource_bag);
+        for($i = 0; $i < $number_of_items; $i++)
+        {
+            $resource = array_pop($resource_bag);
+
+            $cards[] = "('$resource','resource_bag','$i')";
         }
 
         $sql .= implode( $cards, ',' );
