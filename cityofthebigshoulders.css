@@ -67,7 +67,16 @@
     }
 */
 
+#main_board {
+    background-image: url(img/board_small.png);
+    width: 980px;
+    height: 530px;
+}
 
+.center {
+    margin-right: auto;
+    margin-left: auto;
+}
 
 .company {
     width: 80px;

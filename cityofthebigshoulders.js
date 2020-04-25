@@ -18,7 +18,8 @@
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
-    "ebg/counter"
+    "ebg/counter",
+    "ebg/stock"
 ],
 function (dojo, declare) {
     return declare("bgagame.cityofthebigshoulders", ebg.core.gamegui, {
@@ -52,9 +53,16 @@ function (dojo, declare) {
             for( var player_id in gamedatas.players )
             {
                 var player = gamedatas.players[player_id];
-                         
+                
+                // create player stocks
+                var playerStock = this.createCompaniesStock(gamedatas.all_companies, player_id);
+                this['company_area_'+player_id] = playerStock;
                 // TODO: Setting up players boards if needed
             }
+
+            // create available companies stock
+            var availableCompanies = this.createCompaniesStock(gamedatas.all_companies);
+            this.availableCompanies = availableCompanies;
             
             for(var i in gamedatas.owned_companies){
                 var ownedCompany = gamedatas.owned_companies[i];
@@ -172,11 +180,56 @@ function (dojo, declare) {
         */
 
         placeCompany: function(short_name, owner_id, inPlay){
-            dojo.place( this.format_block( 'jstpl_company', {
-                short_name: short_name
-            } ) , inPlay ? 'company_area_' + owner_id : 'companies' );
+            var hash = this.hashString(short_name);
+            if(inPlay){
+                this['company_area'+owner_id].addToStock(hash);
+            } else {
+                this.availableCompanies.addToStock(hash);
+            }
         },
 
+        cremesauvage: function(){
+
+        },
+
+        createCompaniesStock: function(allCompanies, playerId){
+            var newStock = new ebg.stock();
+            var id;
+            if(playerId != null){
+                id = 'company_area_'+playerId;
+            } else {
+                id = 'available_companies';
+            }
+
+            newStock.create( this, $(id), 350, 229);
+
+            // Specify that there are 6 companies per row
+            newStock.image_items_per_row = 6;
+            newStock.centerItems = true;
+            newStock.setSelectionMode(1);
+            
+            var i = 0;
+            for(var property in allCompanies){
+                var company = allCompanies[property];
+                var hash = this.hashString(company.short_name);
+
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/all_companies_small.png', i );
+
+                i++;
+            }
+
+            return newStock;
+        },
+
+        hashString: function(value){
+            var hash = 0, i, chr;
+            for (i = 0; i < value.length; i++) {
+                chr   = value.charCodeAt(i);
+                hash  = ((hash << 5) - hash) + chr;
+                hash |= 0; // Convert to 32bit integer
+            }
+            return (hash >>> 0);
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action

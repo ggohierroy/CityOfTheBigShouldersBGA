@@ -27,9 +27,9 @@
 
 <!--<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>-->
 
-<div id=main_board_wrapper>
-    <div id=main_board>main board</div>
-    <div id=public_goals>public goals</div>
+<div id="main_board_wrapper">
+    <div id="main_board" class="center"></div>
+    <div id="public_goals">public goals</div>
 </div>
 
 <div id=player_area_wrapper>
@@ -46,10 +46,12 @@
     <!-- END player_area -->
 </div>
 
-<div id=companies_wrapper>
+<div id="companies_wrapper" class="clearfix">
     <h1>available companies</h1>
-    <div id="companies"></div>
+    <div id="companies" class="clearfix"></div>
 </div>
+
+<div id="available_companies"></div>
 
 <script type="text/javascript">
 
