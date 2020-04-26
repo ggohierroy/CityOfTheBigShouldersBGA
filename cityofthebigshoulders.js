@@ -30,6 +30,7 @@ function (dojo, declare) {
             // Example:
             // this.myGlobalValue = 0;
 
+            this.companyNameToImagePosition = { 'anglo':0, 'brunswick':1,'cracker': 2, 'doggett': 3, 'elgin': 4, 'fairbank': 5, 'henderson': 6, 'libby': 7, 'spalding': 8, 'swift': 9 };
         },
         
         /*
@@ -55,14 +56,14 @@ function (dojo, declare) {
                 var player = gamedatas.players[player_id];
                 
                 // create player stocks
-                var playerStock = this.createCompaniesStock(gamedatas.all_companies, player_id);
-                this['company_area_'+player_id] = playerStock;
+                this.createCompaniesStock(gamedatas.all_companies, player_id);
+                
                 // TODO: Setting up players boards if needed
             }
 
             // create available companies stock
-            var availableCompanies = this.createCompaniesStock(gamedatas.all_companies);
-            this.availableCompanies = availableCompanies;
+            this.createCompaniesStock(gamedatas.all_companies);
+            dojo.connect( this.availableCompanies, 'onChangeSelection', this, 'onCompanySelected' );
             
             for(var i in gamedatas.owned_companies){
                 var ownedCompany = gamedatas.owned_companies[i];
@@ -77,8 +78,6 @@ function (dojo, declare) {
                 var company = gamedatas.all_companies[property];
                 this.placeCompany(company.short_name, company.owner_id, company.inPlay);
             }
-
-            dojo.query('.company').connect('onclick', this, 'onStartCompany');
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -99,6 +98,15 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'playerStartFirstCompany':
+                    if(this.isCurrentPlayerActive())
+                    {
+                        this.availableCompanies.setSelectionMode(1);
+                    }
+                    break;
+                case 'client_playerTurnSelectStartingShareValue':
+                    this.availableCompanies.setSelectionMode(1);
+                    break;
             
             /* Example:
             
@@ -125,6 +133,9 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'client_playerTurnSelectStartingShareValue':
+                    //this.availableCompanies.setSelectionMode(0);
+                    break;
             
             /* Example:
             
@@ -153,7 +164,7 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
-/*               
+/*              
                  Example:
  
                  case 'myGameState':
@@ -165,6 +176,12 @@ function (dojo, declare) {
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
                     break;
 */
+                    case 'client_playerTurnSelectStartingShareValue':
+                        this.addActionButton( 'initial_share_35', '$35', 'onStartCompany');
+                        this.addActionButton( 'initial_share_40', '$40', 'onStartCompany');
+                        this.addActionButton( 'initial_share_50', '$50', 'onStartCompany');
+                        this.addActionButton( 'initial_share_60', '$60', 'onStartCompany');
+                        break;
                 }
             }
         },        
@@ -182,38 +199,39 @@ function (dojo, declare) {
         placeCompany: function(short_name, owner_id, inPlay){
             var hash = this.hashString(short_name);
             if(inPlay){
-                this['company_area'+owner_id].addToStock(hash);
+                this['companyArea'+owner_id].addToStockWithId(hash, short_name);
             } else {
-                this.availableCompanies.addToStock(hash);
+                this.availableCompanies.addToStockWithId(hash, short_name);
             }
-        },
-
-        cremesauvage: function(){
-
         },
 
         createCompaniesStock: function(allCompanies, playerId){
             var newStock = new ebg.stock();
             var id;
+            var propertyName;
             if(playerId != null){
+                propertyName = 'companyArea'+playerId;
                 id = 'company_area_'+playerId;
             } else {
+                propertyName = 'availableCompanies';
                 id = 'available_companies';
+                newStock.centerItems = true;
             }
 
             newStock.create( this, $(id), 350, 229);
+            this[propertyName] = newStock;
 
             // Specify that there are 6 companies per row
             newStock.image_items_per_row = 6;
-            newStock.centerItems = true;
-            newStock.setSelectionMode(1);
+            newStock.setSelectionMode(0);
             
             var i = 0;
             for(var property in allCompanies){
                 var company = allCompanies[property];
                 var hash = this.hashString(company.short_name);
 
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/all_companies_small.png', i );
+                var imagePosition = this.companyNameToImagePosition[company.short_name];
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/all_companies_small.png', imagePosition );
 
                 i++;
             }
@@ -279,23 +297,67 @@ function (dojo, declare) {
         
         */
 
-        onStartCompany: function (evt){
+        onCancel : function(event) {
+            dojo.stopEvent(event);
+            if (this.on_client_state) {
+                this.restoreServerGameState();
+            } else {
+                this.ajaxAction('selectCancel', {});
+            }
+        },
+
+        onCompanySelected: function(control_name, item_id){
+            if(!this.checkAction('startCompany'))
+            {
+                return;
+            }
+
+            var items = this.availableCompanies.getSelectedItems();
+            if(items.length == 1){
+                var companyShortName = items[0].id;
+                var companyName = this.gamedatas.all_companies[companyShortName].name;
+                this.setClientState("client_playerTurnSelectStartingShareValue", {
+                    descriptionmyturn : dojo.string.substitute(_('You must select an initial share price for ${companyName}'),{
+                        companyName: companyName
+                    })
+                });
+            }
+        },
+
+        onStartCompany: function (event){
             console.log('onStartCompany');
-            
+
             // Preventing default browser reaction
-            dojo.stopEvent(evt);
+            dojo.stopEvent(event);
 
             if(!this.checkAction('startCompany'))
             {
                 return;
             }
 
-            var short_name = evt.currentTarget.id;
+            var initialShareValueStep = 4;
+            var buttonName = event.target.id;
+            switch(buttonName){
+                case 'initial_share_40':
+                    initialShareValueStep = 5;
+                    break;
+                case 'initial_share_50':
+                    initialShareValueStep = 6;
+                    break;
+                case 'initial_share_60':
+                    initialShareValueStep = 7;
+                    break;
+            }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
-                company_short_name: short_name,
-                initialShareValueStep:4 //can be 4,5,6,7 for $35,$40,$50,$60
-            }, this, function( result ) {} );
+            var items = this.availableCompanies.getSelectedItems();
+            if(items.length == 1){
+                var companyShortName = items[0].id;
+
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
+                    company_short_name: companyShortName,
+                    initialShareValueStep: initialShareValueStep //can be 4,5,6,7 for $35,$40,$50,$60
+                }, this, function( result ) {} );
+            }
         },
 
         
@@ -350,11 +412,12 @@ function (dojo, declare) {
 
         notif_startCompany: function( notif )
         {
-            // remove company in available companies
-            dojo.destroy(notif.args.short_name);
+            var shortName = notif.args.short_name;
+            var playerId = notif.args.owner_id;
+            var hash = this.hashString(shortName);
 
-            // place company in player area
-            this.placeCompany( notif.args.short_name, notif.args.owner_id, true );
+            this['companyArea'+playerId].addToStockWithId(hash, shortName, 'available_companies');
+            this.availableCompanies.removeFromStockById(shortName);
         },
    });             
 });
