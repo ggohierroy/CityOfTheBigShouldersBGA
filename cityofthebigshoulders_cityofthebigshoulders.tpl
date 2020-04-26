@@ -63,7 +63,9 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 
 */
 
-var jstpl_company='<div class="company" id="${short_name}">${short_name}</div>';
+var jstpl_player_board = '\<div class="cp_board">\
+    <div class="board_item"><div id="money_icon_${id}" class="token money"></div><span id="money_${id}">0</span></div>\
+</div>';
 
 </script>  
 

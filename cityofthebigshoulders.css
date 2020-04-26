@@ -78,15 +78,6 @@
     margin-left: auto;
 }
 
-.company {
-    width: 80px;
-    height: 80px;
-    background-color: white;
-    float: left;
-    border-style: solid;
-    margin: 1px;
-}
-
 .clearfix:after {
     content: " "; /* Older browser do not support empty content */
     visibility: hidden;
@@ -94,3 +85,22 @@
     height: 0;
     clear: both;
  }
+
+ .token {
+    width: 30px;
+    height: 30px;
+    background-image: url( 'img/tokens.png' );
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.board_item {
+	width: 50px;
+	height: auto;
+	display: inline-block;
+	margin-bottom: 2px;
+	white-space: nowrap;
+	position: relative;
+}
+
+.money {  background-position: 0px 0px; }

@@ -120,14 +120,23 @@ class CityOfTheBigShoulders extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
+        $sql = "SELECT player_id AS id, player_score AS score, treasury AS treasury, number_partners AS number_partners FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id id, owner_id owner_id, short_name short_name FROM company";
+        $sql = "SELECT id AS id, owner_id AS owner_id, short_name AS short_name FROM company";
         $result['owned_companies'] = self::getCollectionFromDb( $sql );
 
         $result['all_companies'] = $this->companies;
+
+        foreach($result['players'] as $player_id => $player)
+        {
+            $money_id = "money_{$player_id}";
+            $partner_id = "parter_{$player_id}";
+
+            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => $player['treasury'] );
+            //$result ['counters'] [$partner_id] = array ('counter_name' => $partner_id, 'counter_value' => $player['number_partners'] );
+        }
   
         return $result;
     }
@@ -563,12 +572,14 @@ class CityOfTheBigShoulders extends Table
         // update stocks to give director's share to player
 
         // notify players that company started
+        $money_id = "money_{$player_id}";
         self::notifyAllPlayers( "startCompany", clienttranslate( '${player_name} has started company ${company_name}' ), array(
             'player_id' => $player_id,
             'player_name' => self::getActivePlayerName(),
             'company_name' => $companyMaterial['name'],
             'short_name' => $companyMaterial['short_name'],
-            'owner_id' => $player_id
+            'owner_id' => $player_id,
+            'counters' => [$money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury)]
         ) );
 
         $this->gamestate->nextState( 'gameStartFirstCompany' );

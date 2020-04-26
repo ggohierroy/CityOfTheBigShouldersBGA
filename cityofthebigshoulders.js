@@ -59,7 +59,11 @@ function (dojo, declare) {
                 this.createCompaniesStock(gamedatas.all_companies, player_id);
                 
                 // TODO: Setting up players boards if needed
+                var player_board_div = $('player_board_'+player_id);
+                dojo.place( this.format_block('jstpl_player_board', player ), player_board_div );
             }
+
+            this.updateCounters(gamedatas.counters);
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
@@ -418,6 +422,9 @@ function (dojo, declare) {
 
             this['companyArea'+playerId].addToStockWithId(hash, shortName, 'available_companies');
             this.availableCompanies.removeFromStockById(shortName);
+
+            debugger;
+            this.updateCounters(notif.args.counters);
         },
    });             
 });
