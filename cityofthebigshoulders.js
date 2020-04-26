@@ -106,10 +106,15 @@ function (dojo, declare) {
                     if(this.isCurrentPlayerActive())
                     {
                         this.availableCompanies.setSelectionMode(1);
+                    } else {
+                        this.availableCompanies.setSelectionMode(0);
                     }
                     break;
                 case 'client_playerTurnSelectStartingShareValue':
                     this.availableCompanies.setSelectionMode(1);
+                    break;
+                case 'gameStartFirstCompany':
+                    this.availableCompanies.setSelectionMode(0);
                     break;
             
             /* Example:
