@@ -231,12 +231,12 @@ function (dojo, declare) {
             }
         },
 
-        placeStock: function(stock){
+        placeStock: function(stock, from){
             var stockType = stock.card_type;
-            var hashStockType = this.hashString(stockType);
-
+            
             if(stock.owner_type == 'player'){
-                this[stock.card_location].addToStockWithId(hashStockType, stockType);
+                var hashStockType = this.hashString(stockType);
+                this[stock.card_location].addToStockWithId(hashStockType, stockType, from);
             } else if (stock.owner_type == 'company') {
                 var typeInfo = stockType.split('_');
                 dojo.place( this.format_block( 'jstpl_stock', {
@@ -244,7 +244,6 @@ function (dojo, declare) {
                     stock_type: typeInfo[1]
                 } ) , stock.card_location );
             }
-            
         },
 
         setupCompany: function(company_div, company_type_id, item_id){
@@ -258,10 +257,10 @@ function (dojo, declare) {
             } ), company_div.id );
         },
 
-        placeCompany: function(short_name, owner_id, inPlay){
+        placeCompany: function(short_name, owner_id, inPlay, from){
             var hash = this.hashString(short_name);
             if(inPlay){
-                this['companyArea'+owner_id].addToStockWithId(hash, short_name);
+                this['companyArea'+owner_id].addToStockWithId(hash, short_name, from);
             } else {
                 this.available_companies.addToStockWithId(hash, short_name);
             }
@@ -500,15 +499,21 @@ function (dojo, declare) {
         {
             var shortName = notif.args.short_name;
             var playerId = notif.args.owner_id;
-            var hash = this.hashString(shortName);
-            var hashDirector = this.hashString(shortName+"_director");
 
-            this['companyArea'+playerId].addToStockWithId(hash, shortName, 'available_companies');
+            this.placeCompany(shortName, playerId, true, 'available_companies');
             this.available_companies.removeFromStockById(shortName);
 
-            dojo.addClass("company_stock_holder_" + shortName, shortName + " preferred")
+            this.placeStock({
+                card_type: shortName + "_director",
+                card_location: "personal_area_" + playerId,
+                owner_type: 'player'
+            }, 'available_companies')
 
-            this['personal_area_'+playerId].addToStockWithId(hashDirector, shortName+"_director", 'available_companies');
+            this.placeStock({
+                card_type: shortName + "_preferred",
+                card_location: "company_stock_holder_" + shortName,
+                owner_type: 'company'
+            });
 
             this.updateCounters(notif.args.counters);
         },
