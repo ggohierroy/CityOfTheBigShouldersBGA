@@ -533,7 +533,7 @@ function (dojo, declare) {
             var initialShareValueStep = notif.args.initial_share_value_step;
 
             this.placeCompany({
-                    short_name: shorName,
+                    short_name: shortName,
                     owner_id: playerId,
                     share_value_step: initialShareValueStep
                 }, 'available_companies');

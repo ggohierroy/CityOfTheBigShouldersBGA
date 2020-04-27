@@ -124,7 +124,7 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id AS id, treasury AS treasury, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
+        $sql = "SELECT id AS id, treasury AS treasury, appeal AS appeal, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
         $result['owned_companies'] = self::getCollectionFromDb( $sql );
 
         $result['all_companies'] = $this->companies;
@@ -184,6 +184,72 @@ class CityOfTheBigShoulders extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
+
+    function getPreviousAndNextCompany($initial_appeal){
+        $sql = "SELECT id as id, short_name AS short_name, appeal AS appeal, next_company_id AS next_company_id FROM company";
+        $companies = self::getCollectionFromDB( $sql );
+        $previous_company_id = null;
+        $next_company_id = null;
+
+        // nothing yet
+        if(count($companies) > 0)
+        {
+            // find last company in the chain (last in turn order and lowest appeal)
+            $last_company_id = null;
+            foreach($companies as $company_id => $company)
+            {
+                if($company['next_company_id'] == null)
+                {
+                    $last_company_id = $company_id;
+                    break;
+                }
+            }
+
+            if($last_company_id == null)
+                throw new BgaVisibleSystemException("No company found in last order");
+
+            // go up the chain and find where this company should be
+            // assume this company is last
+            $next_company_id = null;
+            $previous_company_id = $last_company_id;
+            $continue = true;
+
+            // continue as long as previous company has smaller appeal
+            while($companies[$previous_company_id]['appeal'] < $initial_appeal)
+            {
+                // find previous company
+                $next_company_id = $previous_company_id;
+                $previous_company_id = null;
+                foreach($companies as $company_id => $company)
+                {
+                    if($company['next_company_id'] == $next_company_id)
+                    {
+                        $previous_company_id = $company_id;
+                        break;
+                    }
+                }
+
+                // when no previous company, it means the company that we place will be first in turn order
+                if($previous_company_id == null)
+                    break;
+            }
+        }
+
+        return ['previous_company_id' => $previous_company_id, 'next_company_id' => $next_company_id];
+    }
+
+    function updatePreviousCompany($company_id, $previous_company_id)
+    {
+        if($previous_company_id == null)
+            return;
+        
+        $sql = "UPDATE company 
+            SET next_company_id='$company_id'
+            WHERE id='$previous_company_id'";
+        
+        self::DbQuery( $sql );
+    }
+
     function initializeDecks($players)
     {
         $player_count = count($players);
@@ -574,13 +640,22 @@ class CityOfTheBigShoulders extends Table
 
         if($player['treasury'] < $share_value*3)
             throw new BgaUserException( self::_("You don't have enough money to start this company") );
+
+        // get companies order and appeal to set company turn order
+        $initial_appeal = $companyMaterial['initial_appeal'];
+        $query_result = self::getPreviousAndNextCompany($initial_appeal);
+        $next_company_id = $query_result['next_company_id'];
+        $next_company_id = $next_company_id == null ? 'NULL' : $next_company_id;
         
         // create company in database
         $company_treasury = $share_value*3;
-        $sql = "INSERT INTO company (short_name,treasury,owner_id,share_value_step) 
-            VALUES ('$company_short_name',$company_treasury,$player_id,$initial_share_value_step)";
+        $sql = "INSERT INTO company (appeal, next_company_id, short_name,treasury,owner_id,share_value_step) 
+            VALUES ($initial_appeal, $next_company_id,'$company_short_name',$company_treasury,$player_id,$initial_share_value_step)";
         self::DbQuery( $sql );
         $company_id = self::DbGetLastId();
+
+        // update previous company in the turn order
+        self::updatePreviousCompany($company_id, $query_result['previous_company_id']);
 
         // update player's treasury
         $newTreasury = $player['treasury'] - $share_value*3;
