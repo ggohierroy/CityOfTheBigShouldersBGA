@@ -38,6 +38,15 @@
         $players_nbr = count( $players );
 
         /*********** Place your code below:  ************/
+
+        $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "share_track" );
+
+        for($i = 0; $i < 21; $i++){
+            $this->page->insert_block ( "share_track", array (
+                "ZONE_ID" => $i,
+                "TOP" => 33+22*$i,
+            ) );
+        }
         
         $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "player_area" );
         

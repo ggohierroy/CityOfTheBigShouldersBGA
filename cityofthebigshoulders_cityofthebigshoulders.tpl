@@ -28,7 +28,13 @@
 <!--<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>-->
 
 <div id="main_board_wrapper">
-    <div id="main_board" class="center"></div>
+    <div id="main_board" class="center">
+        <div id="share_track">
+            <!-- BEGIN share_track -->
+            <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px;"></div>
+            <!-- END share_track -->
+        </div>
+    </div>
     <div id="public_goals">public goals</div>
 </div>
 
@@ -67,7 +73,8 @@ var jstpl_player_board = '\<div class="cp_board">\
     <div class="board_item"><div id="money_icon_${id}" class="token money"></div><span id="money_${id}">0</span></div>\
 </div>';
 
-var jstpl_company_content = '<div id="company_stock_holder_${short_name}" class="company_stock_holder"></div>';
+var jstpl_company_content = '<div id="company_stock_holder_${short_name}" class="company_stock_holder"></div>\
+    <div class="board_item company_money"><div id="money_icon_${short_name}" class="token money"></div><span id="money_${short_name}">0</span></div>';
 
 var jstpl_stock = '<div class="stock ${short_name} ${stock_type}"></div>';
 

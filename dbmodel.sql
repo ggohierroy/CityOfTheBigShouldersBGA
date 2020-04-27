@@ -38,6 +38,7 @@ ALTER TABLE `player` ADD `number_partners` SMALLINT UNSIGNED NOT NULL DEFAULT '2
 
 CREATE TABLE IF NOT EXISTS `company` (
     `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `treasury` SMALLINT UNSIGNED NOT NULL DEFAULT '0',
     `short_name` VARCHAR(16) NOT NULL,
     `owner_id` INT(10) UNSIGNED NOT NULL,
     `share_value_step` TINYINT(3) UNSIGNED,

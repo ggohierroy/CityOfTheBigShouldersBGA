@@ -124,7 +124,7 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id AS id, owner_id AS owner_id, short_name AS short_name FROM company";
+        $sql = "SELECT id AS id, treasury AS treasury, owner_id AS owner_id, short_name AS short_name FROM company";
         $result['owned_companies'] = self::getCollectionFromDb( $sql );
 
         $result['all_companies'] = $this->companies;
@@ -133,12 +133,26 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg FROM card";
         $result['items'] = self::getCollectionFromDb( $sql );
 
+        // add a counter for each company (because all counters must exist on setup)
+        foreach($this->companies as $short_name => $company){
+            $short_name = $company['short_name'];
+            $money_id = "money_${short_name}";
+            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => 0 );
+        }
+
+        // update counter for owned companies
+        foreach($result['owned_companies'] as $id => $company){
+            $short_name = $company['short_name'];
+            $money_id = "money_${short_name}";
+            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => $company['treasury'] );
+        }
+
         foreach($result['players'] as $player_id => $player)
         {
-            $money_id = "money_{$player_id}";
-            $partner_id = "parter_{$player_id}";
+            $money_id = "money_${player_id}";
+            $partner_id = "parter_${player_id}";
 
-            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => $player['treasury'] );
+            $result ['counters'] [$money_id] = array ('counter_name' => "money_${player_id}", 'counter_value' => $player['treasury'] );
             //$result ['counters'] [$partner_id] = array ('counter_name' => $partner_id, 'counter_value' => $player['number_partners'] );
         }
   
@@ -562,8 +576,9 @@ class CityOfTheBigShoulders extends Table
             throw new BgaUserException( self::_("You don't have enough money to start this company") );
         
         // create company in database
-        $sql = "INSERT INTO company (short_name,owner_id,share_value_step) 
-            VALUES ('$company_short_name',$player_id,$initial_share_value_step)";
+        $company_treasury = $share_value*3;
+        $sql = "INSERT INTO company (short_name,treasury,owner_id,share_value_step) 
+            VALUES ('$company_short_name',$company_treasury,$player_id,$initial_share_value_step)";
         self::DbQuery( $sql );
         $company_id = self::DbGetLastId();
 
@@ -595,14 +610,17 @@ class CityOfTheBigShoulders extends Table
         self::DbQuery( $sql );
 
         // notify players that company started
-        $money_id = "money_{$player_id}";
+        $money_id = "money_${player_id}";
+        $company_money_id = "money_${company_short_name}";
         self::notifyAllPlayers( "startCompany", clienttranslate( '${player_name} has started company ${company_name}' ), array(
             'player_id' => $player_id,
             'player_name' => self::getActivePlayerName(),
             'company_name' => $companyMaterial['name'],
             'short_name' => $companyMaterial['short_name'],
             'owner_id' => $player_id,
-            'counters' => [$money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury)],
+            'counters' => [
+                $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),
+                $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
             'stocks' => $initial_stocks
         ) );
 

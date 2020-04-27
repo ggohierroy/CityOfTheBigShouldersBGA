@@ -19,7 +19,8 @@ define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-    "ebg/stock"
+    "ebg/stock",
+    "ebg/zone"
 ],
 function (dojo, declare) {
     return declare("bgagame.cityofthebigshoulders", ebg.core.gamegui, {
@@ -66,12 +67,11 @@ function (dojo, declare) {
                 dojo.place( this.format_block('jstpl_player_board', player ), player_board_div );
             }
 
-            this.updateCounters(gamedatas.counters);
-
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
             
+            // place companies in the game
             for(var i in gamedatas.owned_companies){
                 var ownedCompany = gamedatas.owned_companies[i];
 
@@ -80,14 +80,19 @@ function (dojo, declare) {
                 company.owner_id = ownedCompany.owner_id;
             }
 
-            // TODO: Set up your game interface here, according to "gamedatas"
             for(var property in gamedatas.all_companies){
                 var company = gamedatas.all_companies[property];
                 this.placeCompany(company.short_name, company.owner_id, company.inPlay);
             }
 
+            // create share value zones
+            this.createShareValueZones();
+
             // add items to board
             this.placeItemsOnBoard(gamedatas);
+
+            // update counters
+            this.updateCounters(gamedatas.counters);
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -211,6 +216,15 @@ function (dojo, declare) {
         
         */
 
+        createShareValueZones: function(){
+            for(var i = 0; i < 21; i++){
+                var zone = new ebg.zone();
+                zone.create( this, 'share_zone_'+i, 22, 22 );
+                zone.setPattern('diagonal');
+                this['share_zone_'+i] = zone;
+            }
+        },
+
         placeItemsOnBoard: function(gamedatas){
 
             for(var property in gamedatas.items){
@@ -273,12 +287,13 @@ function (dojo, declare) {
             if(playerId != null){
                 propertyName = 'companyArea'+playerId;
                 id = 'company_area_'+playerId;
-                newStock.onItemCreate = dojo.hitch( this, 'setupCompany' ); 
             } else {
                 propertyName = 'available_companies';
                 id = 'available_companies';
                 newStock.centerItems = true;
             }
+
+            newStock.onItemCreate = dojo.hitch( this, 'setupCompany' ); 
 
             newStock.create( this, $(id), 350, 229);
             this[propertyName] = newStock;

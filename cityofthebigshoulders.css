@@ -95,6 +95,22 @@
 	position: relative;
 }
 
+#share_track{
+    position: relative;
+}
+
+.share_zone{
+    width: 22px;
+    height: 22px;
+    left: 880px;
+    position: absolute;
+}
+
+.company_money{
+    top: 85px;
+    left: 70px
+}
+
  .token {
     width: 30px;
     height: 30px;
