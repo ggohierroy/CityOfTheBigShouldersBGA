@@ -55,8 +55,11 @@ function (dojo, declare) {
             {
                 var player = gamedatas.players[player_id];
                 
-                // create player stocks
+                // create player company stocks
                 this.createCompaniesStock(gamedatas.all_companies, player_id);
+
+                // create personal share stocks
+                this.createShareStock(gamedatas.all_companies, player_id);
                 
                 // TODO: Setting up players boards if needed
                 var player_board_div = $('player_board_'+player_id);
@@ -67,7 +70,7 @@ function (dojo, declare) {
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
-            dojo.connect( this.availableCompanies, 'onChangeSelection', this, 'onCompanySelected' );
+            dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
             
             for(var i in gamedatas.owned_companies){
                 var ownedCompany = gamedatas.owned_companies[i];
@@ -82,6 +85,9 @@ function (dojo, declare) {
                 var company = gamedatas.all_companies[property];
                 this.placeCompany(company.short_name, company.owner_id, company.inPlay);
             }
+
+            // add items to board
+            this.placeItemsOnBoard(gamedatas);
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -105,16 +111,16 @@ function (dojo, declare) {
                 case 'playerStartFirstCompany':
                     if(this.isCurrentPlayerActive())
                     {
-                        this.availableCompanies.setSelectionMode(1);
+                        this.available_companies.setSelectionMode(1);
                     } else {
-                        this.availableCompanies.setSelectionMode(0);
+                        this.available_companies.setSelectionMode(0);
                     }
                     break;
                 case 'client_playerTurnSelectStartingShareValue':
-                    this.availableCompanies.setSelectionMode(1);
+                    this.available_companies.setSelectionMode(1);
                     break;
                 case 'gameStartFirstCompany':
-                    this.availableCompanies.setSelectionMode(0);
+                    this.available_companies.setSelectionMode(0);
                     break;
             
             /* Example:
@@ -143,7 +149,7 @@ function (dojo, declare) {
             switch( stateName )
             {
                 case 'client_playerTurnSelectStartingShareValue':
-                    //this.availableCompanies.setSelectionMode(0);
+                    //this.available_companies.setSelectionMode(0);
                     break;
             
             /* Example:
@@ -205,12 +211,59 @@ function (dojo, declare) {
         
         */
 
+        placeItemsOnBoard: function(gamedatas){
+
+            for(var property in gamedatas.items){
+                var item = gamedatas.items[property];
+
+                if(item.card_location == 'limbo')
+                    continue;
+                
+                var primaryType = item.primary_type;
+                switch(primaryType){
+                    case 'stock':
+                        this.placeStock(item)
+                        break;
+                }
+
+            //dojo.addClass("company_stock_holder_" + shortName, shortName + " preferred")
+
+            }
+        },
+
+        placeStock: function(stock){
+            var stockType = stock.card_type;
+            var hashStockType = this.hashString(stockType);
+
+            if(stock.owner_type == 'player'){
+                this[stock.card_location].addToStockWithId(hashStockType, stockType);
+            } else if (stock.owner_type == 'company') {
+                var typeInfo = stockType.split('_');
+                dojo.place( this.format_block( 'jstpl_stock', {
+                    short_name: typeInfo[0],
+                    stock_type: typeInfo[1]
+                } ) , stock.card_location );
+            }
+            
+        },
+
+        setupCompany: function(company_div, company_type_id, item_id){
+            // Add some custom HTML content INSIDE the Stock item:
+            // company_div_id looks like this : company_area_2319930_item_libby or available_companies_item_libby
+
+            var array = item_id.split('_');
+            var companyShortName = array[array.length - 1];
+            dojo.place( this.format_block( 'jstpl_company_content', {
+                short_name: companyShortName
+            } ), company_div.id );
+        },
+
         placeCompany: function(short_name, owner_id, inPlay){
             var hash = this.hashString(short_name);
             if(inPlay){
                 this['companyArea'+owner_id].addToStockWithId(hash, short_name);
             } else {
-                this.availableCompanies.addToStockWithId(hash, short_name);
+                this.available_companies.addToStockWithId(hash, short_name);
             }
         },
 
@@ -221,8 +274,9 @@ function (dojo, declare) {
             if(playerId != null){
                 propertyName = 'companyArea'+playerId;
                 id = 'company_area_'+playerId;
+                newStock.onItemCreate = dojo.hitch( this, 'setupCompany' ); 
             } else {
-                propertyName = 'availableCompanies';
+                propertyName = 'available_companies';
                 id = 'available_companies';
                 newStock.centerItems = true;
             }
@@ -244,8 +298,31 @@ function (dojo, declare) {
 
                 i++;
             }
+        },
 
-            return newStock;
+        createShareStock: function(allCompanies, playerId){
+            var newStock = new ebg.stock();
+            propertyName = 'personal_area_'+playerId;
+            id = 'personal_area_'+playerId;
+            newStock.create( this, $(id), 109, 73);
+            this[propertyName] = newStock;
+            newStock.image_items_per_row = 3;
+            newStock.setSelectionMode(0);
+
+            var i = 0;
+            for(var property in allCompanies){
+                var company = allCompanies[property];
+                var hashDirector = this.hashString(company.short_name+"_director");
+                var hashPreferred = this.hashString(company.short_name+"_preferred");
+                var hashCommon = this.hashString(company.short_name+"_common");
+
+                var imagePosition = this.companyNameToImagePosition[company.short_name];
+                newStock.addItemType( hashDirector, i, g_gamethemeurl+'img/stocks_small.png', 3*imagePosition );
+                newStock.addItemType( hashPreferred, i, g_gamethemeurl+'img/stocks_small.png', 3*imagePosition+1 );
+                newStock.addItemType( hashCommon, i, g_gamethemeurl+'img/stocks_small.png', 3*imagePosition+2 );
+
+                i++;
+            }
         },
 
         hashString: function(value){
@@ -321,7 +398,7 @@ function (dojo, declare) {
                 return;
             }
 
-            var items = this.availableCompanies.getSelectedItems();
+            var items = this.available_companies.getSelectedItems();
             if(items.length == 1){
                 var companyShortName = items[0].id;
                 var companyName = this.gamedatas.all_companies[companyShortName].name;
@@ -358,7 +435,7 @@ function (dojo, declare) {
                     break;
             }
 
-            var items = this.availableCompanies.getSelectedItems();
+            var items = this.available_companies.getSelectedItems();
             if(items.length == 1){
                 var companyShortName = items[0].id;
 
@@ -424,11 +501,15 @@ function (dojo, declare) {
             var shortName = notif.args.short_name;
             var playerId = notif.args.owner_id;
             var hash = this.hashString(shortName);
+            var hashDirector = this.hashString(shortName+"_director");
 
             this['companyArea'+playerId].addToStockWithId(hash, shortName, 'available_companies');
-            this.availableCompanies.removeFromStockById(shortName);
+            this.available_companies.removeFromStockById(shortName);
 
-            debugger;
+            dojo.addClass("company_stock_holder_" + shortName, shortName + " preferred")
+
+            this['personal_area_'+playerId].addToStockWithId(hashDirector, shortName+"_director", 'available_companies');
+
             this.updateCounters(notif.args.counters);
         },
    });             

@@ -104,3 +104,31 @@
 }
 
 .money {  background-position: 0px 0px; }
+
+.company_stock_holder {
+    width: 109px;
+    height: 73px;
+    position: relative;
+    left: 241px;
+    top: 156px;
+}
+
+.stock {
+    width: 109px;
+    height: 73px;
+    background-image: url('img/stocks_small.png');
+}
+
+.anglo {  background-position-y: 0px; }
+.brunswick {  background-position-y: -73px; }
+.cracker {  background-position-y: -146px; }
+.doggett {  background-position-y: -219px; }
+.elgin {  background-position-y: -292px; }
+.fairbank {  background-position-y: -365px; }
+.henderson {  background-position-y: -438px; }
+.libby {  background-position-y: -511px; }
+.spalding {  background-position-y: -584px; }
+.swift {  background-position-y: -657px; }
+
+.preferred { background-position-x: -109px; }
+.common { background-position-x: -218px; }

@@ -129,6 +129,10 @@ class CityOfTheBigShoulders extends Table
 
         $result['all_companies'] = $this->companies;
 
+        // gather all items in card table
+        $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg FROM card";
+        $result['items'] = self::getCollectionFromDb( $sql );
+
         foreach($result['players'] as $player_id => $player)
         {
             $money_id = "money_{$player_id}";
@@ -279,7 +283,7 @@ class CityOfTheBigShoulders extends Table
         shuffle($resource_bag);
 
         // create query to insert items in database
-        $sql = "INSERT INTO card (card_type,card_location,card_location_arg) VALUES ";
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type,card_location,card_location_arg) VALUES ";
         $cards = [];
 
         // insert demand on each of the 12 spots on the board
@@ -294,7 +298,7 @@ class CityOfTheBigShoulders extends Table
                 $bonus_type = $bonus_types[$i % 3];
                 $location = $demand_type.'_'.$bonus_type;
 
-                $cards[] = "('$demand','$location','0')";
+                $cards[] = "(NULL,'demand','$demand','$location','0')";
             }
         }
 
@@ -304,7 +308,7 @@ class CityOfTheBigShoulders extends Table
         {
             $demand = array_pop($demand_deck);
 
-            $cards[] = "('$demand','demand_deck','$i')";
+            $cards[] = "(NULL,'demand','$demand','demand_deck','$i')";
         }
 
         // insert capital assets on the asset tile market
@@ -315,7 +319,7 @@ class CityOfTheBigShoulders extends Table
             $asset = array_shift($asset_deck);
             $location = $asset_locations[$i];
 
-            $cards[] = "('$asset','$location','0')";
+            $cards[] = "(NULL,'asset','$asset','$location','0')";
         }
 
         // insert rest of assets in asset deck
@@ -324,7 +328,7 @@ class CityOfTheBigShoulders extends Table
         {
             $asset = array_pop($asset_deck);
 
-            $cards[] = "('$asset','asset_deck','$i')";
+            $cards[] = "(NULL,'asset','$asset','asset_deck','$i')";
         }
 
         // give 3 buildings to each player
@@ -335,7 +339,7 @@ class CityOfTheBigShoulders extends Table
                 $building = array_shift($era1);
                 $location = 'player_'.$player_id;
 
-                $cards[] = "('$building','$location','0')";
+                $cards[] = "('player','building','$building','$location','0')";
             }
         }
 
@@ -345,7 +349,7 @@ class CityOfTheBigShoulders extends Table
         {
             $building = array_pop($era1);
 
-            $cards[] = "('$building','era_1','$i')";
+            $cards[] = "(NULL,'building','$building','era_1','$i')";
         }
 
         // insert era 2 buildings in its own deck
@@ -354,7 +358,7 @@ class CityOfTheBigShoulders extends Table
         {
             $building = array_pop($era2);
 
-            $cards[] = "('$building','era_2','$i')";
+            $cards[] = "(NULL,'building','$building','era_2','$i')";
         }
 
         // insert era 3 buildings in its own deck
@@ -363,7 +367,7 @@ class CityOfTheBigShoulders extends Table
         {
             $building = array_pop($era3);
 
-            $cards[] = "('$building','era_3','$i')";
+            $cards[] = "(NULL,'building','$building','era_3','$i')";
         }
 
         // insert 2 resources of each type in haymarket
@@ -371,8 +375,8 @@ class CityOfTheBigShoulders extends Table
         for($i = 0; $i < 4; $i++)
         {
             $resource = $resource_types[$i];
-            $cards[] = "('$resource','haymarket','0')";
-            $cards[] = "('$resource','haymarket','0')";
+            $cards[] = "(NULL,'resource','$resource','haymarket','0')";
+            $cards[] = "(NULL,'resource','$resource','haymarket','0')";
         }
 
         // insert 3 resources in each spot of the supply chain
@@ -381,11 +385,11 @@ class CityOfTheBigShoulders extends Table
         {
             $location = $supply_chain_locations[$i];
             $resource = array_shift($resource_bag);
-            $cards[] = "('$resource','$location','0')";
+            $cards[] = "(NULL,'resource','$resource','$location','0')";
             $resource = array_shift($resource_bag);
-            $cards[] = "('$resource','$location','0')";
+            $cards[] = "(NULL,'resource','$resource','$location','0')";
             $resource = array_shift($resource_bag);
-            $cards[] = "('$resource','$location','0')";
+            $cards[] = "(NULL,'resource','$resource','$location','0')";
         }
 
         // insert rest of resources in the resource bag
@@ -394,7 +398,7 @@ class CityOfTheBigShoulders extends Table
         {
             $resource = array_pop($resource_bag);
 
-            $cards[] = "('$resource','resource_bag','$i')";
+            $cards[] = "(NULL,'resource','$resource','resource_bag','$i')";
         }
 
         $sql .= implode( $cards, ',' );
@@ -561,6 +565,7 @@ class CityOfTheBigShoulders extends Table
         $sql = "INSERT INTO company (short_name,owner_id,share_value_step) 
             VALUES ('$company_short_name',$player_id,$initial_share_value_step)";
         self::DbQuery( $sql );
+        $company_id = self::DbGetLastId();
 
         // update player's treasury
         $newTreasury = $player['treasury'] - $share_value*3;
@@ -569,7 +574,25 @@ class CityOfTheBigShoulders extends Table
             WHERE player_id='$player_id'";
         self::DbQuery( $sql );
 
-        // update stocks to give director's share to player
+        // create stocks and give director's share to player
+        $initial_stocks = [
+            ['owner_type' => 'player', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_director', 'card_type_arg' => $company_id, 'card_location' => 'personal_area_'.$player_id, 'card_location_arg' => $player_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_preferred', 'card_type_arg' => $company_id, 'card_location' => 'company_stock_holder_'.$company_short_name, 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+        ];
+
+        $values = [];
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES";
+        foreach( $initial_stocks as $stock )
+        {
+            $values[] = "('".$stock['owner_type']."','".$stock['primary_type']."','".$stock['card_type']."','".$stock['card_type_arg']."','".$stock['card_location']."','".$stock['card_location_arg']."')";
+        }
+        $sql .= implode( $values, ',' );
+        self::DbQuery( $sql );
 
         // notify players that company started
         $money_id = "money_{$player_id}";
@@ -579,7 +602,8 @@ class CityOfTheBigShoulders extends Table
             'company_name' => $companyMaterial['name'],
             'short_name' => $companyMaterial['short_name'],
             'owner_id' => $player_id,
-            'counters' => [$money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury)]
+            'counters' => [$money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury)],
+            'stocks' => $initial_stocks
         ) );
 
         $this->gamestate->nextState( 'gameStartFirstCompany' );

@@ -67,6 +67,12 @@ var jstpl_player_board = '\<div class="cp_board">\
     <div class="board_item"><div id="money_icon_${id}" class="token money"></div><span id="money_${id}">0</span></div>\
 </div>';
 
+var jstpl_company_content = '<div id="company_stock_holder_${short_name}" class="company_stock_holder"></div>';
+
+var jstpl_stock = '<div class="stock ${short_name} ${stock_type}"></div>';
+
+var jstpl_stock_interior = '<div class="stock_percent"></div>';
+
 </script>  
 
 {OVERALL_GAME_FOOTER}
