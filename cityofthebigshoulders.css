@@ -148,3 +148,20 @@
 
 .preferred { background-position-x: -109px; }
 .common { background-position-x: -218px; }
+
+.company_token {
+    width: 20px;
+    height: 20px;
+    background-image: url('img/company_tokens_small.png');
+}
+
+.anglo_token {  background-position: 0px 0px; }
+.brunswick_token {  background-position: 0px -20px; }
+.cracker_token {  background-position: 0px -60px; }
+.doggett_token {  background-position: -20px -80px; }
+.elgin_token {  background-position: -20px 0px; }
+.fairbank_token {  background-position: 0px -80px; }
+.henderson_token {  background-position: -20px -20px; }
+.libby_token {  background-position: 0px -40px; }
+.spalding_token {  background-position: -20px -40px; }
+.swift_token {  background-position: -20px -60px; }

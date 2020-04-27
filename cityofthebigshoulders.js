@@ -67,26 +67,30 @@ function (dojo, declare) {
                 dojo.place( this.format_block('jstpl_player_board', player ), player_board_div );
             }
 
+            // create share value zones
+            this.createShareValueZones();
+
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
             
-            // place companies in the game
+            // place owned in the game
             for(var i in gamedatas.owned_companies){
                 var ownedCompany = gamedatas.owned_companies[i];
+                var availableCompany = gamedatas.all_companies[ownedCompany.short_name];
+                availableCompany.inPlay = true;
 
-                var company = gamedatas.all_companies[ownedCompany.short_name];
-                company.inPlay = true;
-                company.owner_id = ownedCompany.owner_id;
+                this.placeCompany(ownedCompany);
             }
 
+            // place available companies
             for(var property in gamedatas.all_companies){
                 var company = gamedatas.all_companies[property];
-                this.placeCompany(company.short_name, company.owner_id, company.inPlay);
-            }
+                if(company.inPlay)
+                    continue;
 
-            // create share value zones
-            this.createShareValueZones();
+                this.placeAvailableCompany(company.short_name);
+            }
 
             // add items to board
             this.placeItemsOnBoard(gamedatas);
@@ -216,6 +220,16 @@ function (dojo, declare) {
         
         */
 
+        placeShareValue: function(share_value_step, short_name, playerId){
+            debugger;
+            dojo.place( this.format_block( 'jstpl_company_token', {
+                short_name: short_name
+            } ) , 'main_board' );
+
+            this.placeOnObject( 'share_token_'+short_name, 'overall_player_board_'+playerId );
+            this['share_zone_'+share_value_step].placeInZone('share_token_'+short_name);
+        },
+
         createShareValueZones: function(){
             for(var i = 0; i < 21; i++){
                 var zone = new ebg.zone();
@@ -271,13 +285,15 @@ function (dojo, declare) {
             } ), company_div.id );
         },
 
-        placeCompany: function(short_name, owner_id, inPlay, from){
-            var hash = this.hashString(short_name);
-            if(inPlay){
-                this['companyArea'+owner_id].addToStockWithId(hash, short_name, from);
-            } else {
-                this.available_companies.addToStockWithId(hash, short_name);
-            }
+        placeCompany: function(company, from){
+            var hash = this.hashString(company.short_name);
+            this['companyArea'+company.owner_id].addToStockWithId(hash, company.short_name, from);
+            this.placeShareValue(company.share_value_step, company.short_name, company.owner_id);
+        },
+
+        placeAvailableCompany: function(shortName){
+            var hash = this.hashString(shortName);
+            this.available_companies.addToStockWithId(hash, shortName);
         },
 
         createCompaniesStock: function(allCompanies, playerId){
@@ -514,8 +530,13 @@ function (dojo, declare) {
         {
             var shortName = notif.args.short_name;
             var playerId = notif.args.owner_id;
+            var initialShareValueStep = notif.args.initial_share_value_step;
 
-            this.placeCompany(shortName, playerId, true, 'available_companies');
+            this.placeCompany({
+                    short_name: shorName,
+                    owner_id: playerId,
+                    share_value_step: initialShareValueStep
+                }, 'available_companies');
             this.available_companies.removeFromStockById(shortName);
 
             this.placeStock({
@@ -529,6 +550,8 @@ function (dojo, declare) {
                 card_location: "company_stock_holder_" + shortName,
                 owner_type: 'company'
             });
+
+            //this.placeShareValue(initialShareValueStep, shortName, playerId);
 
             this.updateCounters(notif.args.counters);
         },

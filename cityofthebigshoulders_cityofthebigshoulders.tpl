@@ -31,7 +31,7 @@
     <div id="main_board" class="center">
         <div id="share_track">
             <!-- BEGIN share_track -->
-            <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px;"></div>
+            <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
             <!-- END share_track -->
         </div>
     </div>
@@ -79,6 +79,8 @@ var jstpl_company_content = '<div id="company_stock_holder_${short_name}" class=
 var jstpl_stock = '<div class="stock ${short_name} ${stock_type}"></div>';
 
 var jstpl_stock_interior = '<div class="stock_percent"></div>';
+
+var jstpl_company_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
 
 </script>  
 

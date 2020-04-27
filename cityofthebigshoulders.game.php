@@ -124,7 +124,7 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id AS id, treasury AS treasury, owner_id AS owner_id, short_name AS short_name FROM company";
+        $sql = "SELECT id AS id, treasury AS treasury, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
         $result['owned_companies'] = self::getCollectionFromDb( $sql );
 
         $result['all_companies'] = $this->companies;
@@ -617,6 +617,7 @@ class CityOfTheBigShoulders extends Table
             'player_name' => self::getActivePlayerName(),
             'company_name' => $companyMaterial['name'],
             'short_name' => $companyMaterial['short_name'],
+            'initial_share_value_step' => $initial_share_value_step,
             'owner_id' => $player_id,
             'counters' => [
                 $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),

@@ -45,6 +45,7 @@
             $this->page->insert_block ( "share_track", array (
                 "ZONE_ID" => $i,
                 "TOP" => 33+22*$i,
+                "Z_INDEX" => 20-$i
             ) );
         }
         
