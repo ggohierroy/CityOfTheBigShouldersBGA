@@ -740,7 +740,13 @@ class CityOfTheBigShoulders extends Table
         }
 
         // create automation tokens
-        
+        foreach($companyMaterial['factories'] as $factory_number => $factory)
+        {
+            for($i = 0; $i < $factory['automation']; $i++)
+            {
+                $values[] = "('company','automation','automation',0,'".$company_short_name."_automation_".$factory_number."_".$i."','".$company_id."')";
+            }
+        }
 
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
