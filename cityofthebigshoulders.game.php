@@ -738,6 +738,10 @@ class CityOfTheBigShoulders extends Table
         {
             $values[] = "('".$stock['owner_type']."','".$stock['primary_type']."','".$stock['card_type']."','".$stock['card_type_arg']."','".$stock['card_location']."','".$stock['card_location_arg']."')";
         }
+
+        // create automation tokens
+        
+
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
 

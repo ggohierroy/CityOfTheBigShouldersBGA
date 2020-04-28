@@ -38,7 +38,21 @@ $this->companies = [
     "short_name" => "brunswick",
     "type" => "dry_goods",
     "initial_appeal" => 1,
+    "has_asset" => true,
+    "salesperson" => [0 => 80, 1 => 90, 2=> 100, 3 => 110],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['wood', 'wood', 'steel'],
+        'goods'=> 1,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 3,
+        'resources'=> ['wood', 'wood', 'wood', 'coal'],
+        'goods'=> 1,
+        'automation'=> 3,
+      ]
     ]
   ],
   "spalding" => [
@@ -46,63 +60,195 @@ $this->companies = [
     "short_name" => "spalding",
     "type" => "dry_goods",
     "initial_appeal" => 1,
+    "has_asset" => true,
+    "salesperson" => [0 => 20, 1 => 30],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'livestock'],
+        'goods'=> 2,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['steel', 'livestock'],
+        'goods'=> 3,
+        'automation'=> 2,
+      ]
     ]
   ],"swift" => [
     "name" => "Swift and Company",
     "short_name" => "swift",
     "type" => "meat_packing",
     "initial_appeal" => 3,
+    "has_asset" => true,
+    "salesperson" => [0 => 50, 1 => 60, 2=> 70],
     "factories" => [
+      1 => [
+        'workers'=> 2,
+        'resources'=> ['steel', 'livestock'],
+        'goods'=> 2,
+        'automation'=> 2,
+      ],
+      2 => [
+        'workers'=> 3,
+        'resources'=> ['steel', 'steel', 'livestock'],
+        'goods'=> 1,
+        'automation'=> 3,
+      ]
     ]
   ],"fairbank" => [
     "name" => "N.K. Fairbank & Co.",
     "short_name" => "fairbank",
     "type" => "dry_goods",
     "initial_appeal" => 3,
+    "has_asset" => false,
+    "salesperson" => [0 => 40, 1 => 50, 2=> 60],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'coal'],
+        'goods'=> 2,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'coal', 'livestock'],
+        'goods'=> 1,
+        'automation'=> 1,
+      ]
     ]
   ],"henderson" => [
     "name" => "C. M. Henderson & Co.",
     "short_name" => "henderson",
     "type" => "shoes",
     "initial_appeal" => 1,
+    "has_asset" => false,
+    "salesperson" => [0 => 20, 1 => 30, 2=> 40],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'livestock'],
+        'goods'=> 3,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['coal', 'steel'],
+        'goods'=> 2,
+        'automation'=> 2,
+      ],
+      3 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'livestock'],
+        'goods'=> 2,
+        'automation'=> 1,
+      ]
     ]
   ],"libby" => [
     "name" => "Libby, McNeill, & Libby",
     "short_name" => "libby",
     "type" => "food_and_dairy",
     "initial_appeal" => 1,
+    "has_asset" => true,
+    "salesperson" => [0 => 20, 1 => 30, 2=> 40],
     "factories" => [
+      1 => [
+        'workers'=> 2,
+        'resources'=> ['steel', 'livestock'],
+        'goods'=> 3,
+        'automation'=> 2,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['steel', 'livestock', 'livestock'],
+        'goods'=> 3,
+        'automation'=> 2,
+      ]
     ]
   ],"anglo" => [
     "name" => "Anglo-American Provision Co.",
     "short_name" => "anglo",
     "type" => "meat_packing",
     "initial_appeal" => 2,
+    "has_asset" => true,
+    "salesperson" => [0 => 30, 1 => 40, 2=> 50],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['coal', 'livestock'],
+        'goods'=> 2,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['coal', 'coal', 'livestock', 'wood'],
+        'goods'=> 3,
+        'automation'=> 2,
+      ]
     ]
   ],"cracker" => [
     "name" => "The Cracker Jack Co.",
     "short_name" => "cracker",
     "type" => "food_and_dairy",
     "initial_appeal" => 1,
+    "has_asset" => false,
+    "salesperson" => [0 => 30, 1 => 40, 2=> 100, 3 => 50],
     "factories" => [
+      1 => [
+        'workers'=> 1,
+        'resources'=> ['wood'],
+        'goods'=> 2,
+        'automation'=> 1,
+      ],
+      2 => [
+        'workers'=> 3,
+        'resources'=> ['coal', 'steel'],
+        'goods'=> 2,
+        'automation'=> 3,
+      ]
     ]
   ],"doggett" => [
     "name" => "Doggett, Basset & Hills Co.",
     "short_name" => "doggett",
     "type" => "shoes",
     "initial_appeal" => 1,
+    "has_asset" => false,
+    "salesperson" => [0 => 50, 1 => 60, 2=> 70],
     "factories" => [
+      1 => [
+        'workers'=> 2,
+        'resources'=> ['coal', 'livestock'],
+        'goods'=> 2,
+        'automation'=> 2,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['steel', 'livestock', 'wood', 'wood'],
+        'goods'=> 1,
+        'automation'=> 2,
+      ]
     ]
   ],"elgin" => [
     "name" => "Elgin National Watch Co.",
     "short_name" => "elgin",
     "type" => "dry_goods",
     "initial_appeal" => 2,
+    "has_asset" => false,
+    "salesperson" => [0 => 50, 1 => 60, 2=> 70],
     "factories" => [
+      1 => [
+        'workers'=> 2,
+        'resources'=> ['coal', 'steel'],
+        'goods'=> 2,
+        'automation'=> 2,
+      ],
+      2 => [
+        'workers'=> 2,
+        'resources'=> ['coal', 'steel', 'steel'],
+        'goods'=> 1,
+        'automation'=> 2,
+      ]
     ]
   ],
 ];
