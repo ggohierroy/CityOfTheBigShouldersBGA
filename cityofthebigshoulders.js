@@ -69,6 +69,7 @@ function (dojo, declare) {
 
             // create share value zones
             this.createShareValueZones();
+            this.createAppealZones();
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
@@ -82,6 +83,8 @@ function (dojo, declare) {
 
                 this.placeCompany(ownedCompany);
             }
+
+            this.placeAppealTokens(gamedatas.company_order);
 
             // place available companies
             for(var property in gamedatas.all_companies){
@@ -220,9 +223,44 @@ function (dojo, declare) {
         
         */
 
+        placeAppealTokens: function(company_order){
+            var count = company_order.length;
+            for(var i in company_order){
+                var company = company_order[i];
+                this.placeAppealToken(company, count - company.order);
+            }
+        },
+
+        placeAppealToken: function(company, weight){
+            dojo.place( this.format_block( 'jstpl_appeal_token', {
+                short_name: company.short_name
+            } ) , 'main_board' );
+
+            this.placeOnObject( 'appeal_token_'+company.short_name, 'overall_player_board_'+company.owner_id );
+            this['appeal_zone_'+company.appeal].placeInZone('appeal_token_'+company.short_name, weight);
+
+            if(weight){
+                dojo.setStyle('appeal_token_'+company.short_name, 'z-index', weight);
+            }
+        },
+
+        updateAppealTokens: function(appeal, company_order){
+            var count = company_order.length;
+
+            this['appeal_zone_'+appeal].removeAll();
+            
+            for(var i in company_order){
+                var company = company_order[i];
+                if(company.appeal != appeal)
+                    continue;
+                var weight = count - company.order;
+                this['appeal_zone_'+company.appeal].placeInZone('appeal_token_'+company.short_name, weight);
+                dojo.setStyle('appeal_token_'+company.short_name, 'z-index', weight);
+            }
+        },
+
         placeShareValue: function(share_value_step, short_name, playerId){
-            debugger;
-            dojo.place( this.format_block( 'jstpl_company_token', {
+            dojo.place( this.format_block( 'jstpl_share_token', {
                 short_name: short_name
             } ) , 'main_board' );
 
@@ -236,6 +274,15 @@ function (dojo, declare) {
                 zone.create( this, 'share_zone_'+i, 22, 22 );
                 zone.setPattern('diagonal');
                 this['share_zone_'+i] = zone;
+            }
+        },
+
+        createAppealZones: function(){
+            for(var i = 0; i < 17; i++){
+                var zone = new ebg.zone();
+                zone.create( this, 'appeal_zone_'+i, 28, 28 );
+                zone.setPattern('diagonal');
+                this['appeal_zone_'+i] = zone;
             }
         },
 
@@ -529,6 +576,7 @@ function (dojo, declare) {
         notif_startCompany: function( notif )
         {
             var shortName = notif.args.short_name;
+            var appeal = notif.args.appeal;
             var playerId = notif.args.owner_id;
             var initialShareValueStep = notif.args.initial_share_value_step;
 
@@ -551,7 +599,13 @@ function (dojo, declare) {
                 owner_type: 'company'
             });
 
-            //this.placeShareValue(initialShareValueStep, shortName, playerId);
+            this.placeAppealToken({
+                short_name: shortName,
+                appeal: appeal,
+                owner_id: playerId
+            });
+
+            this.updateAppealTokens(appeal, notif.args.order);
 
             this.updateCounters(notif.args.counters);
         },

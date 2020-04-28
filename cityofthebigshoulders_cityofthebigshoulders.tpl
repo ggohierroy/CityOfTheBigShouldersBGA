@@ -34,6 +34,11 @@
             <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
             <!-- END share_track -->
         </div>
+        <div id="appeal_track">
+            <!-- BEGIN appeal_track -->
+            <div id="appeal_zone_{ZONE_ID}" class="appeal_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
+            <!-- END appeal_track -->
+        </div>
     </div>
     <div id="public_goals">public goals</div>
 </div>
@@ -80,8 +85,8 @@ var jstpl_stock = '<div class="stock ${short_name} ${stock_type}"></div>';
 
 var jstpl_stock_interior = '<div class="stock_percent"></div>';
 
-var jstpl_company_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
-
+var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
+var jstpl_appeal_token = '<div id="appeal_token_${short_name}" class="company_token ${short_name}_token"></div>';
 </script>  
 
 {OVERALL_GAME_FOOTER}

@@ -124,8 +124,10 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id AS id, treasury AS treasury, appeal AS appeal, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
-        $result['owned_companies'] = self::getCollectionFromDb( $sql );
+        $sql = "SELECT id AS id, treasury AS treasury, appeal AS appeal, next_company_id AS next_company_id, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
+        $owned_companies = self::getCollectionFromDb( $sql );
+        $result['owned_companies'] = $owned_companies;
+        $result['company_order'] = self::getCurrentCompanyOrder($owned_companies);
 
         $result['all_companies'] = $this->companies;
 
@@ -141,7 +143,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // update counter for owned companies
-        foreach($result['owned_companies'] as $id => $company){
+        foreach($owned_companies as $id => $company){
             $short_name = $company['short_name'];
             $money_id = "money_${short_name}";
             $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => $company['treasury'] );
@@ -185,57 +187,112 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
-    function getPreviousAndNextCompany($initial_appeal){
-        $sql = "SELECT id as id, short_name AS short_name, appeal AS appeal, next_company_id AS next_company_id FROM company";
-        $companies = self::getCollectionFromDB( $sql );
-        $previous_company_id = null;
-        $next_company_id = null;
-
-        // nothing yet
-        if(count($companies) > 0)
+    function getCurrentCompanyOrder($companies = null)
+    {
+        if($companies == null)
         {
-            // find last company in the chain (last in turn order and lowest appeal)
-            $last_company_id = null;
-            foreach($companies as $company_id => $company)
+            $sql = "SELECT id AS id, appeal AS appeal, owner_id AS owner_id, next_company_id AS next_company_id, short_name AS short_name FROM company";
+            $companies = self::getCollectionFromDb( $sql );
+        }
+
+        $order = [];
+
+        if(count($companies) == 0)
+            return $order;
+        
+        // find last company in the chain (last in turn order and lowest appeal)
+        $last_company = null;
+        foreach($companies as $company)
+        {
+            if($company['next_company_id'] == null)
             {
-                if($company['next_company_id'] == null)
-                {
-                    $last_company_id = $company_id;
-                    break;
-                }
-            }
-
-            if($last_company_id == null)
-                throw new BgaVisibleSystemException("No company found in last order");
-
-            // go up the chain and find where this company should be
-            // assume this company is last
-            $next_company_id = null;
-            $previous_company_id = $last_company_id;
-            $continue = true;
-
-            // continue as long as previous company has smaller appeal
-            while($companies[$previous_company_id]['appeal'] < $initial_appeal)
-            {
-                // find previous company
-                $next_company_id = $previous_company_id;
-                $previous_company_id = null;
-                foreach($companies as $company_id => $company)
-                {
-                    if($company['next_company_id'] == $next_company_id)
-                    {
-                        $previous_company_id = $company_id;
-                        break;
-                    }
-                }
-
-                // when no previous company, it means the company that we place will be first in turn order
-                if($previous_company_id == null)
-                    break;
+                $last_company = $company;
+                break;
             }
         }
 
-        return ['previous_company_id' => $previous_company_id, 'next_company_id' => $next_company_id];
+        if($last_company == null)
+            throw new BgaVisibleSystemException("No company found in last order");
+
+        // go up the chain
+        $previous_company = $last_company;
+
+        // order will be processed from last to first
+        $i = count($companies);
+
+        // go through the whole chain up to first in order
+        while($previous_company != null)
+        {
+            // add previous company to the order
+            array_unshift($order, ['id' => $previous_company['id'], 'owner_id' => $previous_company['owner_id'], 'order' => $i, 'short_name' => $previous_company['short_name'], 'appeal' => $previous_company['appeal']]);
+
+            // find previous company
+            $current_company = $previous_company;
+            $previous_company = null;
+            foreach($companies as $company)
+            {
+                if($company['next_company_id'] == $current_company['id'])
+                {
+                    $previous_company = $company;
+                    break;
+                }
+            }
+
+            $i--;
+        }
+
+        if($i != 0)
+            throw new BgaVisibleSystemException("Didn't process all companies in the turn order");
+        
+        return $order;
+    }
+
+    function getPreviousAndNextCompany($initial_appeal, $company_short_name, $player_id)
+    {
+        $current_order = self::getCurrentCompanyOrder();
+        $previous_company_id = null;
+        $next_company_id = null;
+        $new_order = [];
+
+        if(count($current_order) > 0)
+        {
+            $inserted = false;
+            $i = 0;
+            foreach($current_order as $ordered_company)
+            {
+                $appeal = $ordered_company['appeal'];
+                if(!$inserted && $appeal < $initial_appeal)
+                {
+                    $inserted = true;
+                    $next_company_id = $ordered_company['id'];
+                    if($i > 0)
+                    {
+                        // if there's at least one company earlier in turn order
+                        $previous_company_id = $current_order[$i-1]['id'];
+                    }
+                    $new_order[] = ['order' => $i + 1, 'owner_id' => $player_id, 'short_name' => $company_short_name, 'appeal' => $initial_appeal];
+                    $i++;
+                }
+
+                $ordered_company['order'] = $i + 1;
+                $new_order[] = $ordered_company;
+                $i++;
+            }
+
+            if(!$inserted)
+            {
+                // this means the new company is last in turn order
+                $new_order[] = ['order' => $i + 1, 'owner_id' => $player_id, 'short_name' => $company_short_name, 'appeal' => $initial_appeal];
+                $previous_company_id = $current_order[$i-1]['id'];
+            }
+        }
+        else
+        {
+            // there are no companies yet, this is the only one in order
+            $new_order[] = ['order' => 1, 'owner_id' => $player_id, 'short_name' => $company_short_name, 'appeal' => $initial_appeal];
+        }
+
+        return ['previous_company_id' => $previous_company_id, 'next_company_id' => $next_company_id, 'order' => $new_order];
     }
 
     function updatePreviousCompany($company_id, $previous_company_id)
@@ -643,7 +700,7 @@ class CityOfTheBigShoulders extends Table
 
         // get companies order and appeal to set company turn order
         $initial_appeal = $companyMaterial['initial_appeal'];
-        $query_result = self::getPreviousAndNextCompany($initial_appeal);
+        $query_result = self::getPreviousAndNextCompany($initial_appeal, $company_short_name, $player_id);
         $next_company_id = $query_result['next_company_id'];
         $next_company_id = $next_company_id == null ? 'NULL' : $next_company_id;
         
@@ -694,6 +751,8 @@ class CityOfTheBigShoulders extends Table
             'short_name' => $companyMaterial['short_name'],
             'initial_share_value_step' => $initial_share_value_step,
             'owner_id' => $player_id,
+            'appeal' => $initial_appeal,
+            'order' => $query_result['order'],
             'counters' => [
                 $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),
                 $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],

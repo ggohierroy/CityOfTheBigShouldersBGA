@@ -106,6 +106,17 @@
     position: absolute;
 }
 
+#appeal_track{
+    position: relative;
+}
+
+.appeal_zone{
+    width: 28px;
+    height: 28px;
+    left: 30px;
+    position: absolute;
+}
+
 .company_money{
     top: 85px;
     left: 70px

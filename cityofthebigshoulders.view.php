@@ -44,8 +44,18 @@
         for($i = 0; $i < 21; $i++){
             $this->page->insert_block ( "share_track", array (
                 "ZONE_ID" => $i,
-                "TOP" => 33+22*$i,
+                "TOP" => 33+22.1*$i,
                 "Z_INDEX" => 20-$i
+            ) );
+        }
+
+        $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "appeal_track" );
+
+        for($i = 0; $i < 17; $i++){
+            $this->page->insert_block ( "appeal_track", array (
+                "ZONE_ID" => $i,
+                "TOP" => 33+27.5*$i,
+                "Z_INDEX" => 16-$i
             ) );
         }
         
