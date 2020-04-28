@@ -740,11 +740,13 @@ class CityOfTheBigShoulders extends Table
         }
 
         // create automation tokens
+        $automation_tokens = [];
         foreach($companyMaterial['factories'] as $factory_number => $factory)
         {
             for($i = 0; $i < $factory['automation']; $i++)
             {
-                $values[] = "('company','automation','automation',0,'".$company_short_name."_automation_".$factory_number."_".$i."','".$company_id."')";
+                $automation_tokens[] = ['owner_type' => 'company', 'primary_type' => 'automation', 'card_type' => $company_short_name.'_automation_'.$factory_number.'_'.$i, 'card_type_arg' => 0, 'card_location' => $company_short_name.'_automation_holder_'.$factory_number.'_'.$i, 'card_location_arg' => $company_id];
+                $values[] = "('company','automation','".$company_short_name."_automation_".$factory_number."_".$i."',0,'".$company_short_name."_automation_holder_".$factory_number."_".$i."','".$company_id."')";
             }
         }
 
@@ -761,6 +763,7 @@ class CityOfTheBigShoulders extends Table
             'short_name' => $companyMaterial['short_name'],
             'initial_share_value_step' => $initial_share_value_step,
             'owner_id' => $player_id,
+            'automation_tokens' => $automation_tokens,
             'appeal' => $initial_appeal,
             'order' => $query_result['order'],
             'counters' => [

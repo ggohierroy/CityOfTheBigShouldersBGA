@@ -176,3 +176,17 @@
 .libby_token {  background-position: 0px -40px; }
 .spalding_token {  background-position: -20px -40px; }
 .swift_token {  background-position: -20px -60px; }
+
+.automation_holder {
+    width: 13px;
+    height: 22px;
+    position: absolute;
+    top: 128px;
+}
+
+.automation_token {
+    background-image: url('img/tokens.png');
+    background-position: -57px -29px;
+    width: 13px;
+    height: 22px;
+}

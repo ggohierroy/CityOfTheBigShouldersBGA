@@ -44,10 +44,10 @@
 </div>
 
 <div id=player_area_wrapper>
+    <div id="building_area">my buildings</div>
     <!-- BEGIN player_area -->
     <div id="player_{PLAYER_ID}" class="clearfix">
         <h1>{PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}</h1>
-        <div id="building_area_{PLAYER_ID}">my buildings</div>
         <div id="personal_area_{PLAYER_ID}">personal area</div>
         <div id="company_area_wrapper">
             <h2>owned companies area</h2>
@@ -87,6 +87,9 @@ var jstpl_stock_interior = '<div class="stock_percent"></div>';
 
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
 var jstpl_appeal_token = '<div id="appeal_token_${short_name}" class="company_token ${short_name}_token"></div>';
+
+var automation_holder = '<div id="${short_name}_automation_holder_${factory}_${number}" class="automation_holder" style="left:${left}px;"</div>'
+var jstpl_automation_token = '<div id="${card_type}" class="automation_token"></div>'
 </script>  
 
 {OVERALL_GAME_FOOTER}

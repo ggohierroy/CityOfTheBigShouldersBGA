@@ -299,6 +299,9 @@ function (dojo, declare) {
                     case 'stock':
                         this.placeStock(item)
                         break;
+                    case 'automation':
+                        this.placeAutomationToken(item)
+                        break;
                 }
 
             //dojo.addClass("company_stock_holder_" + shortName, shortName + " preferred")
@@ -330,12 +333,48 @@ function (dojo, declare) {
             dojo.place( this.format_block( 'jstpl_company_content', {
                 short_name: companyShortName
             } ), company_div.id );
+
+            var company = this.gamedatas.all_companies[companyShortName];
+            
+            var factoryWidth = companyShortName == 'henderson' ? 93 : 97;
+            var distanceToLastAutomation = companyShortName == 'henderson' ? 76 : 80;
+            for(var index in company.factories){
+                var factory = company.factories[index];
+                // add automation token spots
+                var numberOfAutomations = factory['automation'];
+                for(var i = 0; i < numberOfAutomations; i++){
+                    dojo.place( this.format_block( 'automation_holder', {
+                        short_name: companyShortName,
+                        factory: index,
+                        number: i,
+                        left: 65+factoryWidth*(index-1)+distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
+                    } ), company_div.id );
+                }
+
+                // add worker spots
+
+                // add manager spots
+            }
+
+            
+
+            // add salesperson spots
+
+            // add resource stock
+
+            // add goods stock
         },
 
         placeCompany: function(company, from){
             var hash = this.hashString(company.short_name);
             this['companyArea'+company.owner_id].addToStockWithId(hash, company.short_name, from);
             this.placeShareValue(company.share_value_step, company.short_name, company.owner_id);
+        },
+
+        placeAutomationToken: function(automation){
+            dojo.place( this.format_block( 'jstpl_automation_token', {
+                card_type: automation.card_type,
+            } ), automation.card_location );
         },
 
         placeAvailableCompany: function(shortName){
@@ -579,13 +618,19 @@ function (dojo, declare) {
             var appeal = notif.args.appeal;
             var playerId = notif.args.owner_id;
             var initialShareValueStep = notif.args.initial_share_value_step;
+            var automationTokens = notif.args.automation_tokens;
 
             this.placeCompany({
                     short_name: shortName,
                     owner_id: playerId,
-                    share_value_step: initialShareValueStep
+                    share_value_step: initialShareValueStep,
                 }, 'available_companies');
             this.available_companies.removeFromStockById(shortName);
+
+            for(var index in automationTokens){
+                var automation = automationTokens[index];
+                this.placeAutomationToken(automation);
+            }
 
             this.placeStock({
                 card_type: shortName + "_director",
