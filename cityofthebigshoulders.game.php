@@ -192,6 +192,12 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function getPlayerShares($player_id)
+    {
+        $sql = "SELECT card_id AS card_id, card_type AS card_type FROM card WHERE primary_type = 'stock' AND card_location_arg = $player_id AND owner_type = 'player'";
+        return self::getObjectListFromDB($sql);
+    }
+
     function getShareValues()
     {
         $sql = "SELECT short_name AS short_name, id AS id, share_value_step AS share_value_step FROM company";
@@ -199,7 +205,7 @@ class CityOfTheBigShoulders extends Table
 
         foreach($share_value_steps as $share_value_step)
         {
-            $share_value_step['value'] = self::STEP_TO_VALUE[$share_value_step['share_value_step']];
+            $share_value_step['value'] = self::getShareValue($share_value_step['share_value_step']);
         }
 
         return $share_value_steps;
@@ -638,6 +644,12 @@ class CityOfTheBigShoulders extends Table
 
         if($stock_type == 'director')
             throw new BgaVisibleSystemException("Can't buy director's share");
+        
+        // check if share available
+        $sql = "SELECT card_id FROM card WHERE card_type = $certificate AND owner_type <> player";
+        $stock = getObjectFromDB( $sql );
+        if($stock == null)
+            throw new BgaVisibleSystemException("Share is not available");
 
         $player_id = $player_id = self::getActivePlayerId();
         $round = self::getGameStateValue( "round" );
@@ -651,7 +663,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         $player = self::getPlayer($player_id);
-        $share_values = self::getShareValue();
+        $share_values = self::getShareValues();
         $share_value = $share_values[$short_name]['value'];
 
         $multiplier = 1;
@@ -660,10 +672,130 @@ class CityOfTheBigShoulders extends Table
         else if($stock_type == 'preferred')
             $multiplier = 2;
         
+        // check if player can buy share
         if($player['treasury'] < $share_value * $multipler)
             throw new BgaUserException( self::_("You don't have enough money to buy this certificate") );
         
+        // check if certificate limit reached
+        $player_number = self::getPlayersNumber();
+        $certificate_limit = 14;
+        if($player_number == 2)
+            $certificate_limit = 10;
+        else if($player_number == 3)
+            $certificate_limit == 12;
+        if(count($player_shares) == $certificate_limit)
+            throw new BgaUserException( self::_("You have reached your certificate limit") );
         
+        // check if 60% limit in single company reached
+        $player_shares = self::getPlayerShares($player_id);
+        $owned_share = $multiplier;
+        foreach($player_shares as $player_share)
+        {
+            $split = explode('_', $player_share['card_type']);
+            $owned_short_name = $split[0];
+            $owned_stock_type = $split[1];
+
+            if($owned_short_name != $short_name)
+                continue;
+
+            if($owned_stock_type == 'director' || $owned_stock_type == 'preferred')
+            {
+                if($stock_type == 'director' || $stock_type == 'preferred')
+                    throw new BgaUserException( self::_("You cannot own both the director's certificate and the preferred certificate") );
+            }
+
+            if($owned_stock_type == 'preferred')
+            {
+                $owned_share += 2;
+            }
+            else if ($owned_stock_type == 'director')
+            {
+                $owned_share += 3;
+            }
+            else if ($owned_stock_type == 'common')
+            {
+                $owned_share += 1;
+            }
+            else
+            {
+                throw new BgaVisibleSystemException("Found impossible stock type when checking player's shares");
+            }
+        }
+
+        if($owned_share > 6)
+            throw new BgaUserException( self::_("You cannot own more than 60% of any one company") );
+        
+        // TODO advanced game: check if player gains ownership of company
+
+        // update player treasury
+        $certificate_cost = $share_value * $multipler;
+        $new_treasury = $player['treasury'] - $certificate_cost;
+        $sql = "UPDATE player 
+            SET treasury=$new_treasury
+            WHERE player_id='$player_id'";
+        self::DbQuery( $sql );
+
+        $counters = [$money_id => ['counter_name' => $money_id, 'counter_value' => $newTreasury]];
+
+        // update company treasury if bought from company
+        // also set where the stock comes from for notification purposes
+        $from = "";
+        if($stock['owner_type'] == 'company')
+        {
+            $sql = "SELECT treasury AS treasury FROM company WHERE short_name=$short_name";
+            $company_treasury = self::getUniqueValueFromDB($sql);
+            $new_company_treasury = $company_treasury + $certificate_cost;
+
+            $sql = "UPDATE company 
+            SET treasury=$new_company_treasury
+            WHERE short_name=$short_name";
+        
+            self::DbQuery( $sql );
+
+            $company_money_id = "money_${short_name}";
+            $counters[$company_money_id] =  ['counter_name' => $company_money_id, 'counter_value' => $new_company_treasury];
+
+            $from = "company_stock_holder_${short_name}";
+        }
+        else if($stock['owner_type'] == 'bank')
+        {
+            $from = "bank";
+        }
+        else
+        {
+            throw new BgaVisibleSystemException("Can only buy share from bank or company");
+        }
+
+        // update stock location
+        $card_id = $stock['card_id'];
+        $stock['owner_type'] = 'player';
+        $stock['card_location'] = 'personal_area_'.$player_id;
+        $stock['card_location_arg'] = $player_id;
+        $sql = "UPDATE card SET 
+                owner_type = player,
+                card_location => 'personal_area_'.$player_id,
+                card_location_arg => $player_id
+            WHERE card_id = $card_id";
+        self::DbQuery( $sql );
+
+        // notify all players
+        // company and player treasury changed
+        // share certificate added to player area
+        $string_stock_type = $stock_type;
+        if($stock_type = 'director')
+            $string_stock_type = "director's";
+        $company_material = $this->companies[$short_name];
+
+        self::notifyAllPlayers( "certificateBought", clienttranslate( '${player_name} bought a ${string_stock_type} stock from ${company_name}' ), array(
+            'player_id' => $player_id,
+            'string_stock_type' => $string_stock_type,
+            'player_name' => self::getActivePlayerName(),
+            'company_name' => $companyMaterial['name'],
+            'short_name' => $companyMaterial['short_name'],
+            'stock' => $stock,
+            'counters' => $counters,
+            'from' => $from // can be bank or company_stock_holder_${short_name}
+        ) );
     }
 
     function sellShares($selected_shares)
@@ -746,7 +878,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // sell shares
-        $share_values = self::getShareValue();
+        $share_values = self::getShareValues();
         $money_gained = 0;
         foreach($stocks as $stock)
         {
@@ -846,12 +978,12 @@ class CityOfTheBigShoulders extends Table
         // create stocks and give director's share to player
         $initial_stocks = [
             ['owner_type' => 'player', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_director', 'card_type_arg' => $company_id, 'card_location' => 'personal_area_'.$player_id, 'card_location_arg' => $player_id],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_preferred', 'card_type_arg' => $company_id, 'card_location' => 'company_stock_holder_'.$company_short_name, 'card_location_arg' => $company_id],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'limbo', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_preferred', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
         ];
 
         $values = [];
@@ -875,11 +1007,9 @@ class CityOfTheBigShoulders extends Table
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
 
-        // get the id of the stock that was bought by the player
-        // this is needed when players want to sell their shares
-        $sql = "SELECT card_id AS card_id FROM card WHERE primary_type = 'stock' AND card_type_arg = $company_id AND owner_type = 'player'";
-        $stock = self::getNonEmptyObjectFromDB($sql);
-        $director_stock_id = $stock['card_id'];
+        // get the id of the stock that were just created
+        $sql = "SELECT * FROM card WHERE primary_type = 'stock' AND card_type_arg = $company_id";
+        $stocks = self::getObjectListFromDB($sql);
 
         // notify players that company started
         $money_id = "money_${player_id}";
@@ -897,8 +1027,7 @@ class CityOfTheBigShoulders extends Table
             'counters' => [
                 $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),
                 $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
-            'stocks' => $initial_stocks,
-            'director_stock_id' => $director_stock_id
+            'stocks' => $stocks
         ) );
 
         $this->gamestate->nextState( 'gameStartFirstCompany' );

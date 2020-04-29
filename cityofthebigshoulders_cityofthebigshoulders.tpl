@@ -27,7 +27,7 @@
 
 <!--<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>-->
 
-<div id="main_board_wrapper">
+<div id="main_board_wrapper" class="whiteblock">
     <div id="main_board" class="center">
         <div id="share_track">
             <!-- BEGIN share_track -->
@@ -44,25 +44,32 @@
 </div>
 
 <div id=player_area_wrapper>
-    <div id="building_area">my buildings</div>
     <!-- BEGIN player_area -->
-    <div id="player_{PLAYER_ID}" class="clearfix">
-        <h1>{PLAYER_ID}/{PLAYER_NAME}/{PLAYER_COLOR}</h1>
-        <div id="personal_area_{PLAYER_ID}">personal area</div>
-        <div id="company_area_wrapper">
-            <h2>owned companies area</h2>
-            <div id="company_area_{PLAYER_ID}" class="clearfix"></div>
+    <div id="player_{PLAYER_ID}" class="whiteblock">
+        <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
+        <div id="building_area"></div>
+        <div class="personal_share_area">
+            <h3>Personal Shares</h3>
+            <div id="personal_area_{PLAYER_ID}"></div>
+        </div>
+        <div class="owned_companies_area">
+            <h3>Owned Companies</h3>
+            <div id="company_area_{PLAYER_ID}"></div>
         </div>
     </div>
     <!-- END player_area -->
 </div>
 
-<div id="companies_wrapper" class="clearfix">
-    <h1>available companies</h1>
-    <div id="companies" class="clearfix"></div>
+<div class="whiteblock" >
+    <h3>Available Shares</h3>
+    <div id="available_shares_company"></div>
+    <div id="available_shares_bank"></div>
 </div>
 
-<div id="available_companies"></div>
+<div class="whiteblock">
+    <h3>Available Companies</h3>
+    <div id="available_companies"></div>
+</div>
 
 <script type="text/javascript">
 
@@ -78,10 +85,8 @@ var jstpl_player_board = '\<div class="cp_board">\
     <div class="board_item"><div id="money_icon_${id}" class="token money"></div><span id="money_${id}">0</span></div>\
 </div>';
 
-var jstpl_company_content = '<div id="company_stock_holder_${short_name}" class="company_stock_holder"></div>\
+var jstpl_company_content = '\
     <div class="board_item company_money"><div id="money_icon_${short_name}" class="token money"></div><span id="money_${short_name}">0</span></div>';
-
-var jstpl_stock = '<div class="stock ${short_name} ${stock_type}"></div>';
 
 var jstpl_stock_interior = '<div class="stock_percent"></div>';
 

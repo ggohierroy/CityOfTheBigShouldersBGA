@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `sold_shares` (
     `player_id` INT(10) UNSIGNED NOT NULL,
     `round` TINYINT(3) UNSIGNED NOT NULL,
     `company_short_name` VARCHAR(16) NOT NULL,
-    PRIMARY KEY (`player_id`, `round`, `company_id`)
+    PRIMARY KEY (`player_id`, `round`, `company_short_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `card` (

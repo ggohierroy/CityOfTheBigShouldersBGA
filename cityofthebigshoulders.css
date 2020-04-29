@@ -118,7 +118,7 @@
 }
 
 .company_money{
-    top: 85px;
+    top: 160px;
     left: 70px
 }
 
@@ -131,14 +131,6 @@
 }
 
 .money {  background-position: 0px 0px; }
-
-.company_stock_holder {
-    width: 109px;
-    height: 73px;
-    position: relative;
-    left: 241px;
-    top: 156px;
-}
 
 .stock {
     width: 109px;
@@ -189,4 +181,16 @@
     background-position: -57px -29px;
     width: 13px;
     height: 22px;
+}
+
+.personal_share_area {
+    margin: 5px 5px;
+    padding: 5px 5px;
+    display: inline-block;
+}
+
+.owned_companies_area {
+    margin: 5px 5px;
+    padding: 5px 5px;
+    display: inline-block;
 }

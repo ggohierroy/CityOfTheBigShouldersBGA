@@ -60,7 +60,7 @@ function (dojo, declare) {
                 this.createCompaniesStock(gamedatas.all_companies, player_id);
 
                 // create personal share stocks
-                this.createShareStock(gamedatas.all_companies, player_id);
+                this.createShareStock(gamedatas.all_companies, 'personal_area_'+player_id);
                 
                 // TODO: Setting up players boards if needed
                 var player_board_div = $('player_board_'+player_id);
@@ -70,6 +70,9 @@ function (dojo, declare) {
             // create share value zones
             this.createShareValueZones();
             this.createAppealZones();
+
+            // create available shares stock
+            this.createShareStock(gamedatas.all_companies, 'available_shares_company');
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
@@ -323,9 +326,6 @@ function (dojo, declare) {
                         this.placeAutomationToken(item)
                         break;
                 }
-
-            //dojo.addClass("company_stock_holder_" + shortName, shortName + " preferred")
-
             }
         },
 
@@ -336,11 +336,19 @@ function (dojo, declare) {
                 var hashStockType = this.hashString(stockType);
                 this[stock.card_location].addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
             } else if (stock.owner_type == 'company') {
-                var typeInfo = stockType.split('_');
-                dojo.place( this.format_block( 'jstpl_stock', {
-                    short_name: typeInfo[0],
-                    stock_type: typeInfo[1]
-                } ) , stock.card_location );
+                var hashStockType = this.hashString(stockType);
+                this.available_shares_company.addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
+            }
+        },
+
+        moveStock: function(stock, from)
+        {
+            var stockType = stock.card_type;
+            if(stock.owner_type == 'player') {
+                var hashStockType = this.hashString(stockType);
+                this[stock.card_location].addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
+            } else if (stock.owner_type == 'company') {
+                // TODO: this can only happen during emergency fundraise in the advanced game
             }
         },
 
@@ -436,12 +444,10 @@ function (dojo, declare) {
             }
         },
 
-        createShareStock: function(allCompanies, playerId){
+        createShareStock: function(allCompanies, location){
             var newStock = new ebg.stock();
-            propertyName = 'personal_area_'+playerId;
-            id = 'personal_area_'+playerId;
-            newStock.create( this, $(id), 109, 73);
-            this[propertyName] = newStock;
+            newStock.create( this, $(location), 109, 73);
+            this[location] = newStock;
             newStock.image_items_per_row = 3;
             newStock.setSelectionMode(0);
 
@@ -669,6 +675,9 @@ function (dojo, declare) {
 
             dojo.subscribe( 'startCompany', this, "notif_startCompany" );
             this.notifqueue.setSynchronous( 'startCompany', 500 );
+
+            dojo.subscribe( 'certificateBought', this, "notif_certificateBought" );
+            this.notifqueue.setSynchronous( 'certificateBought', 500 );
         },  
         
         // TODO: from this point and below, you can write your game notifications handling methods
@@ -696,6 +705,7 @@ function (dojo, declare) {
             var initialShareValueStep = notif.args.initial_share_value_step;
             var automationTokens = notif.args.automation_tokens;
             var directorStockId = notif.args.director_stock_id;
+            var stocks = notif.args.stocks;
 
             this.placeCompany({
                     short_name: shortName,
@@ -709,18 +719,11 @@ function (dojo, declare) {
                 this.placeAutomationToken(automation);
             }
 
-            this.placeStock({
-                card_type: shortName + "_director",
-                card_location: "personal_area_" + playerId,
-                owner_type: 'player',
-                card_id: directorStockId
-            }, 'available_companies')
-
-            this.placeStock({
-                card_type: shortName + "_preferred",
-                card_location: "company_stock_holder_" + shortName,
-                owner_type: 'company'
-            });
+            for(var index in stocks)
+            {
+                var stock = stocks[index];
+                this.placeStock(stock, 'available_companies');
+            }
 
             this.placeAppealToken({
                 short_name: shortName,
@@ -732,5 +735,16 @@ function (dojo, declare) {
 
             this.updateCounters(notif.args.counters);
         },
+
+        notif_certificateBought: function(notif)
+        {
+            debugger;
+            this.moveStock({
+                card_type: card_type,
+                card_id: card_id
+            }, from)
+
+            this.updateCounters(notif.args.counters);
+        }
    });             
 });
