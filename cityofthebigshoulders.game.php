@@ -669,6 +669,43 @@ class CityOfTheBigShoulders extends Table
     function sellShares($selected_shares)
     {
         self::checkAction( 'sellShares' );
+
+        if(count($selected_shares) == 0){
+            $this->gamestate->nextState( 'playerBuyPhase' );
+            return;
+        }
+
+        $in_clause = "(".implode(",", $selected_shares).")";
+
+        $sql = "SELECT * FROM card WHERE card_id IN $in_clause";
+        $stocks = self::getObjectListFromDB($sql);
+
+        // check that shares can be sold
+        foreach($stocks as $stock)
+        {
+            $card_type = $stock['card_type'];
+            if($stock['owner_type'] != 'player')
+                throw new BgaVisibleSystemException("${card_type} does not belong to any player");
+            
+            $split = explode('_', $card_type);
+            $short_name = $split[0];
+            $stock_type = $split[1];
+
+            $player_id = self::getActivePlayerId();
+            if($stock['card_location_arg'] != $player_id)
+                throw new BgaVisibleSystemException("${card_type} does not belong to active player");
+            
+            // basic game -> cannot sell director's share
+            if($stock_type == 'director')
+                throw new BgaUserException( self::_("You cannot sell a director's share in the basic game") );
+            
+            // TODO -> advanced game condition for selling director's share
+        }
+
+        // sell shares
+        // TODO
+
+        $this->gamestate->nextState( 'playerBuyPhase' );
     }
 
     function startCompany($company_short_name, $initial_share_value_step)

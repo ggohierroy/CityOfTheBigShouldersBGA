@@ -225,6 +225,7 @@ function (dojo, declare) {
                     
                     case 'client_playerStockPhaseSellShares':
                         this.addActionButton( 'confirm_sell', _('Confirm'), 'onConfirmShareSell');
+                        this.addActionButton( 'skip_sell', _('Skip'), 'onSkipSell');
                         this.addActionButton( 'cancel_sell', _('Cancel'), 'onCancel');
                         break;
                 }
@@ -607,12 +608,23 @@ function (dojo, declare) {
             }, this, function( result ) {} );
         },
 
+        onSkipSell: function(){
+            if(!this.checkAction('sellShares'))
+            {
+                return;
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/sellShares.html", {
+                selected_shares: ''
+            }, this, function( result ) {} );
+        },
+
         onStockStartCompany: function(){
 
         },
 
         onStockPass: function(){
-
+            
         },
         
         ///////////////////////////////////////////////////
