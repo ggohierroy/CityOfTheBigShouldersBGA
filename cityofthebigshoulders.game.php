@@ -35,6 +35,10 @@ class CityOfTheBigShoulders extends Table
         parent::__construct();
         
         self::initGameStateLabels( array( 
+            "turns_this_phase" => 10,
+            "round" => 11,
+            "phase" => 12,
+            "priority_deal_player_id" => 13,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -87,14 +91,14 @@ class CityOfTheBigShoulders extends Table
 
         // Init global values with their initial values
         //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
-        
+        self::setGameStateInitialValue( 'turns_this_phase', 0 );
+
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         // TODO: setup the initial game situation here
-        $this->initializeBoardTokens();
         $this->initializeDecks($players);
 
         // Activate first player (which is in general a good idea :) )
@@ -542,17 +546,6 @@ class CityOfTheBigShoulders extends Table
         self::DbQuery( $sql );
     }
 
-    function initializeBoardTokens()
-    {
-        $sql = "INSERT INTO board_token (token_name, token_value) 
-            VALUES
-            ('round_marker',0),
-            ('phase_marker',0),
-            ('wokers_in_market',4),
-            ('deal_player_id',NULL)";
-        self::DbQuery( $sql );
-    }
-
     function getCompanyByShortName($company_short_name)
     {
         return self::getObjectFromDB(
@@ -777,11 +770,28 @@ class CityOfTheBigShoulders extends Table
 
     function gameStartFirstCompany()
     {
-        // Activate next player
-        $player_id = self::activeNextPlayer();
+        $turns_this_phase = self::getGameStateValue( "turns_this_phase" );
+
+        $player_number = self::getPlayersNumber();
         
-        self::giveExtraTime( $player_id );
-        $this->gamestate->nextState( 'nextPlayer' );
+        if($turns_this_phase+1 == $player_number)
+        {
+            // everyone has started a company, go to next phase with active player starting next phase
+            self::setGameStateValue( "turns_this_phase", 0 );
+            $player_id = self::getActivePlayerId();
+            self::giveExtraTime( $player_id );
+
+            $this->gamestate->nextState('playerStockPhase');
+        }
+        else
+        {
+            self::incGameStateValue( "turns_this_phase", 1 );
+            // Activate next player
+            $player_id = $this->activePrevPlayer();
+            
+            self::giveExtraTime( $player_id );
+            $this->gamestate->nextState( 'nextPlayer' );
+        }
     }
 
 //////////////////////////////////////////////////////////////////////////////

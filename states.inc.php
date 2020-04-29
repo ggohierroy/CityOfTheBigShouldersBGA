@@ -82,11 +82,11 @@ $machinestates = array(
 
     4 => array(
         "name" => "playerStockPhase",
-        "description" => clienttranslate('${actplayer} must choose to sell/buy stock, start a company, or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must choose to sell/buy stock, start a company, or pass'),
+        "description" => clienttranslate('${actplayer} must choose a stock action'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a stock action'),
         "type" => "activeplayer",
-        "possibleactions" => array( "stSellStock", "stBuyStock", "startCompany", "stPass" ),
-        "transitions" => array( "nextPlayer" => 5 )
+        "possibleactions" => array( "stSellBuyStock", "startCompany", "stPass" ),
+        "transitions" => array( "gameStockPhase" => 5 )
     ),
 
     5 => array(
