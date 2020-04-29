@@ -47,6 +47,13 @@ CREATE TABLE IF NOT EXISTS `company` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `sold_shares` (
+    `player_id` INT(10) UNSIGNED NOT NULL,
+    `round` TINYINT(3) UNSIGNED NOT NULL,
+    `company_short_name` VARCHAR(16) NOT NULL,
+    PRIMARY KEY (`player_id`, `round`, `company_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `card` (
   `card_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `primary_type` varchar(16) NOT NULL,

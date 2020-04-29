@@ -192,6 +192,19 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function getShareValues()
+    {
+        $sql = "SELECT short_name AS short_name, id AS id, share_value_step AS share_value_step FROM company";
+        $share_value_steps = self::getCollectionFromDB($sql);
+
+        foreach($share_value_steps as $share_value_step)
+        {
+            $share_value_step['value'] = self::STEP_TO_VALUE[$share_value_step['share_value_step']];
+        }
+
+        return $share_value_steps;
+    }
+
     function getCurrentCompanyOrder($companies = null)
     {
         if($companies == null)
@@ -609,68 +622,58 @@ class CityOfTheBigShoulders extends Table
     
     */
 
-    
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state arguments
-////////////
-
-    /*
-        Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
-        These methods function is to return some additional information that is specific to the current
-        game state.
-    */
-
-    /*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
+    function buyCertificate($certificate)
     {
-        // Get some values from the current game situation in database...
-    
-        // return values:
-        return array(
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
-        );
-    }    
-    */
+        self::checkAction( 'buyCertificate' );
 
-    // need the round to not show start company action during first round
-    function argPlayerStockPhase()
-    {
+        if($certificate == '')
+        {
+            $this->gamestate->nextState( 'gameStockPhase' );
+            return;
+        }
+
+        $split = explode('_', $certificate);
+        $short_name = $split[0];
+        $stock_type = $split[1];
+
+        if($stock_type == 'director')
+            throw new BgaVisibleSystemException("Can't buy director's share");
+
+        $player_id = $player_id = self::getActivePlayerId();
         $round = self::getGameStateValue( "round" );
-        return ["round" => $round];
-    }
+        $sql = "SELECT company_short_name FROM sold_shares WHERE round = $round AND player_id = $player_id";
+        $companies_sold_shares = self::getCollectionFromDB($sql);
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state actions
-////////////
+        if($companies_sold_shares[$short_name] == null)
+        {
+            $name = $this->companies[$short_name]['name'];
+                throw new BgaUserException( self::_("You can't buy shares from ${name} because you sold shares from that company this decade") );
+        }
 
-    /*
-        Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
-        The action method of state X is called everytime the current game state is set to X.
-    */
-    
-    /*
-    
-    Example for game state "MyGameState":
+        $player = self::getPlayer($player_id);
+        $share_values = self::getShareValue();
+        $share_value = $share_values[$short_name]['value'];
 
-    function stMyGameState()
-    {
-        // Do some stuff ...
+        $multiplier = 1;
+        if($stock_type == 'director')
+            $multiplier = 3;
+        else if($stock_type == 'preferred')
+            $multiplier = 2;
         
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
+        if($player['treasury'] < $share_value * $multipler)
+            throw new BgaUserException( self::_("You don't have enough money to buy this certificate") );
+        
+        
+    }
 
     function sellShares($selected_shares)
     {
         self::checkAction( 'sellShares' );
 
-        if(count($selected_shares) == 0){
+        $player_id = self::getActivePlayerId();
+
+        if(count($selected_shares) == 0)
+        {
             $this->gamestate->nextState( 'playerBuyPhase' );
             return;
         }
@@ -679,6 +682,8 @@ class CityOfTheBigShoulders extends Table
 
         $sql = "SELECT * FROM card WHERE card_id IN $in_clause";
         $stocks = self::getObjectListFromDB($sql);
+
+        $companies_selling = [];
 
         // check that shares can be sold
         foreach($stocks as $stock)
@@ -691,7 +696,6 @@ class CityOfTheBigShoulders extends Table
             $short_name = $split[0];
             $stock_type = $split[1];
 
-            $player_id = self::getActivePlayerId();
             if($stock['card_location_arg'] != $player_id)
                 throw new BgaVisibleSystemException("${card_type} does not belong to active player");
             
@@ -699,11 +703,86 @@ class CityOfTheBigShoulders extends Table
             if($stock_type == 'director')
                 throw new BgaUserException( self::_("You cannot sell a director's share in the basic game") );
             
+            $multiplier = 1;
+            if($stock_type == 'director')
+                $multiplier = 3;
+            else if($stock_type == 'preferred')
+                $multiplier = 2;
+            
+            if(array_key_exists($short_name, $companies_selling))
+            {
+                $current_lost_value = $companies_selling[$short_name]['lost_value'];
+                $companies_selling[$short_name] = $current_lost_value + $multiplier;
+            }
+            else
+            {
+                $companies_selling[$short_name] = ['company_id' => $stock['card_type_arg'], 'short_name' => $short_name, 'lost_value' => $multiplier];
+            }
+            
+            
             // TODO -> advanced game condition for selling director's share
         }
 
+        // insert in sold companies table, this player can't buy shares from this company this decade
+        $round = self::getGameStateValue( "round" );
+        $sql = "INSERT INTO sold_shares (player_id, round, company_short_name) VALUES ";
+        $values = [];
+        foreach($companies_selling as $company)
+        {
+            $short_name = $company['short_name'];
+            $values[] = "($player_id, $round, $short_name)";
+
+            // also update companies to reflect new share value
+            // make sure value is not less than 0
+            $company_id = $companies_selling['company_id'];
+            $lost_value = $companies_selling['lost_value'];
+            $sql_company = "UPDATE company SET share_value_step =
+                CASE
+                    WHEN share_value_step - $lost_value >= 0 THEN share_value_step - $lost_value
+                    ELSE 0
+                END
+            WHERE id = $company_id";
+            self::DbQuery( $sql_company );
+        }
+
         // sell shares
-        // TODO
+        $share_values = self::getShareValue();
+        $money_gained = 0;
+        foreach($stocks as $stock)
+        {
+            $card_id = $stock['card_id'];
+            $card_type = $stock['card_type'];
+            $split = explode('_', $card_type);
+            $short_name = $split[0];
+            $stock_type = $split[1];
+
+            $multiplier = 1;
+            if($stock_type == 'director')
+                $multiplier = 3;
+            else if($stock_type == 'preferred')
+                $multiplier = 2;
+
+            $share_value = $share_values[$short_name]['value'];
+
+            $money_gained += $share_value*$multiplier;
+
+            // update card location to bank
+            $sql = "UPDATE card SET card_location=bank, owner_type=bank, card_location_arg=NULL WHERE card_id=$card_id";
+            self::DbQuery( $sql );
+        }
+
+        // update player treasury
+        $sql = "UPDATE player 
+            SET treasury=treasury+$money_gained
+            WHERE player_id='$player_id'";
+        self::DbQuery( $sql );
+
+        // TODO notify players
+        // -> change in player treasury
+        // -> stocks moving from player area to bank
+        // -> share value drop
+        self::notifyAllPlayers( "sellShares", clienttranslate( '${player_name} has sold shares' ), array(
+        ) );
 
         $this->gamestate->nextState( 'playerBuyPhase' );
     }
@@ -824,6 +903,68 @@ class CityOfTheBigShoulders extends Table
 
         $this->gamestate->nextState( 'gameStartFirstCompany' );
     }
+
+    
+//////////////////////////////////////////////////////////////////////////////
+//////////// Game state arguments
+////////////
+
+    /*
+        Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
+        These methods function is to return some additional information that is specific to the current
+        game state.
+    */
+
+    /*
+    
+    Example for game state "MyGameState":
+    
+    function argMyGameState()
+    {
+        // Get some values from the current game situation in database...
+    
+        // return values:
+        return array(
+            'variable1' => $value1,
+            'variable2' => $value2,
+            ...
+        );
+    }    
+    */
+
+    // need the round to not show start company action during first round
+    function argPlayerStockPhase()
+    {
+        $round = self::getGameStateValue( "round" );
+        return ["round" => $round];
+    }
+
+    function argPlayerBuyPhase()
+    {
+        return [];
+    }
+
+//////////////////////////////////////////////////////////////////////////////
+//////////// Game state actions
+////////////
+
+    /*
+        Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
+        The action method of state X is called everytime the current game state is set to X.
+    */
+    
+    /*
+    
+    Example for game state "MyGameState":
+
+    function stMyGameState()
+    {
+        // Do some stuff ...
+        
+        // (very often) go to another gamestate
+        $this->gamestate->nextState( 'some_gamestate_transition' );
+    }    
+    */
 
     function gameStartFirstCompany()
     {

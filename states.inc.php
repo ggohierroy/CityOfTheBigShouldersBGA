@@ -92,8 +92,8 @@ $machinestates = array(
 
     8 => array(
         "name" => "playerBuyPhase",
-        "description" => clienttranslate('${actplayer} must choose a company to buy stock from or skip'),
-        "descriptionmyturn" => clienttranslate('${you} must choose a company to buy stock from or skip'),
+        "description" => clienttranslate('${actplayer} must choose a company from which to buy a certificate from'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a company from which to buy a certificate from'),
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "skip" ),

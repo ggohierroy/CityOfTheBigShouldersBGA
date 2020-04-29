@@ -101,6 +101,20 @@
       self::ajaxResponse( );
     }
 
+    public function buyCertificate()
+    {
+      self::setAjaxMode();
+
+      // Retrieve arguments
+      // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+      $certificate = self::getArg( "certificate", AT_alphanum, true );
+
+      // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
+      $this->game->buyCertificate( $certificate );
+
+      self::ajaxResponse( );
+    }
+
   }
   
 

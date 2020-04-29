@@ -208,13 +208,15 @@ function (dojo, declare) {
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
                     break;
 */
+                    case 'playerBuyPhase':
+                        this.addActionButton( 'skip_buy', _('Skip'), 'onSkipBuy');
+                        break;
                     case 'client_playerTurnSelectStartingShareValue':
                         this.addActionButton( 'initial_share_35', '$35', 'onStartCompany');
                         this.addActionButton( 'initial_share_40', '$40', 'onStartCompany');
                         this.addActionButton( 'initial_share_50', '$50', 'onStartCompany');
                         this.addActionButton( 'initial_share_60', '$60', 'onStartCompany');
                         break;
-                    
                     case 'playerStockPhase':
                         this.addActionButton( 'sell_buy', _('Sell/Buy Shares'), 'onSellBuyShare');
                         if(args.round > 0){
@@ -222,7 +224,6 @@ function (dojo, declare) {
                         }
                         this.addActionButton( 'stock_pass', _('Pass'), 'onStockPass');
                         break;
-                    
                     case 'client_playerStockPhaseSellShares':
                         this.addActionButton( 'confirm_sell', _('Confirm'), 'onConfirmShareSell');
                         this.addActionButton( 'skip_sell', _('Skip'), 'onSkipSell');
@@ -608,6 +609,17 @@ function (dojo, declare) {
             }, this, function( result ) {} );
         },
 
+        onSkipBuy: function(){
+            if(!this.checkAction('buyCertificate'))
+            {
+                return;
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", {
+                certificate: ''
+            }, this, function( result ) {} );
+        },
+
         onSkipSell: function(){
             if(!this.checkAction('sellShares'))
             {
@@ -624,7 +636,7 @@ function (dojo, declare) {
         },
 
         onStockPass: function(){
-            
+
         },
         
         ///////////////////////////////////////////////////
