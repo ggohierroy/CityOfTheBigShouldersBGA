@@ -39,6 +39,7 @@ class CityOfTheBigShoulders extends Table
             "round" => 11,
             "phase" => 12,
             "priority_deal_player_id" => 13,
+            "consecutive_passes" => 14,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -636,6 +637,13 @@ class CityOfTheBigShoulders extends Table
     }    
     */
 
+    // need the round to not show start company action during first round
+    function argPlayerStockPhase()
+    {
+        $round = self::getGameStateValue( "round" );
+        return ["round" => $round];
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state actions
 ////////////
@@ -657,6 +665,11 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'some_gamestate_transition' );
     }    
     */
+
+    function sellShares($selected_shares)
+    {
+        self::checkAction( 'sellShares' );
+    }
 
     function startCompany($company_short_name, $initial_share_value_step)
     {
@@ -746,6 +759,12 @@ class CityOfTheBigShoulders extends Table
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
 
+        // get the id of the stock that was bought by the player
+        // this is needed when players want to sell their shares
+        $sql = "SELECT card_id AS card_id FROM card WHERE primary_type = 'stock' AND card_type_arg = $company_id AND owner_type = 'player'";
+        $stock = self::getNonEmptyObjectFromDB($sql);
+        $director_stock_id = $stock['card_id'];
+
         // notify players that company started
         $money_id = "money_${player_id}";
         $company_money_id = "money_${company_short_name}";
@@ -762,7 +781,8 @@ class CityOfTheBigShoulders extends Table
             'counters' => [
                 $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),
                 $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
-            'stocks' => $initial_stocks
+            'stocks' => $initial_stocks,
+            'director_stock_id' => $director_stock_id
         ) );
 
         $this->gamestate->nextState( 'gameStartFirstCompany' );
@@ -778,6 +798,8 @@ class CityOfTheBigShoulders extends Table
         {
             // everyone has started a company, go to next phase with active player starting next phase
             self::setGameStateValue( "turns_this_phase", 0 );
+            self::setGameStateValue( "consecutive_passes", 0 );
+
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );
 

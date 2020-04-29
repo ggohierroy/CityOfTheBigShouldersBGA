@@ -78,6 +78,29 @@
       self::ajaxResponse( );
     }
 
+    public function sellShares()
+    {
+      self::setAjaxMode();
+
+      // Retrieve arguments
+      // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+      $selected_shares_raw = self::getArg( "selected_shares", AT_numberlist, true );
+
+      // Removing last ';' if exists
+      if( substr( $selected_shares_raw, -1 ) == ';' )
+          $selected_shares_raw = substr( $selected_shares_raw, 0, -1 );
+
+      if( $selected_shares_raw == '' )
+          $selected_shares = array();
+      else
+          $selected_shares = explode( ';', $selected_shares_raw );
+
+      // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
+      $this->game->sellShares( $selected_shares );
+
+      self::ajaxResponse( );
+    }
+
   }
   
 

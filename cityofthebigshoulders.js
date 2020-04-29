@@ -134,6 +134,10 @@ function (dojo, declare) {
                 case 'gameStartFirstCompany':
                     this.available_companies.setSelectionMode(0);
                     break;
+                case 'client_playerStockPhaseSellShares':
+                    var playerId = this.getActivePlayerId();
+                    this['personal_area_'+playerId].setSelectionMode(2);
+                    break;
             
             /* Example:
             
@@ -160,8 +164,9 @@ function (dojo, declare) {
             
             switch( stateName )
             {
-                case 'client_playerTurnSelectStartingShareValue':
-                    //this.available_companies.setSelectionMode(0);
+                case 'client_playerStockPhaseSellShares':
+                    var playerId = this.getActivePlayerId();
+                    this['personal_area_'+playerId].setSelectionMode(0);
                     break;
             
             /* Example:
@@ -208,6 +213,19 @@ function (dojo, declare) {
                         this.addActionButton( 'initial_share_40', '$40', 'onStartCompany');
                         this.addActionButton( 'initial_share_50', '$50', 'onStartCompany');
                         this.addActionButton( 'initial_share_60', '$60', 'onStartCompany');
+                        break;
+                    
+                    case 'playerStockPhase':
+                        this.addActionButton( 'sell_buy', _('Sell/Buy Shares'), 'onSellBuyShare');
+                        if(args.round > 0){
+                            this.addActionButton( 'start_company', _('Start Company'), 'onStockStartCompany');
+                        }
+                        this.addActionButton( 'stock_pass', _('Pass'), 'onStockPass');
+                        break;
+                    
+                    case 'client_playerStockPhaseSellShares':
+                        this.addActionButton( 'confirm_sell', _('Confirm'), 'onConfirmShareSell');
+                        this.addActionButton( 'cancel_sell', _('Cancel'), 'onCancel');
                         break;
                 }
             }
@@ -314,7 +332,7 @@ function (dojo, declare) {
             
             if(stock.owner_type == 'player'){
                 var hashStockType = this.hashString(stockType);
-                this[stock.card_location].addToStockWithId(hashStockType, stockType, from);
+                this[stock.card_location].addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
             } else if (stock.owner_type == 'company') {
                 var typeInfo = stockType.split('_');
                 dojo.place( this.format_block( 'jstpl_stock', {
@@ -562,6 +580,40 @@ function (dojo, declare) {
             }
         },
 
+        onSellBuyShare: function(){
+            this.setClientState("client_playerStockPhaseSellShares", {
+                descriptionmyturn : _('You must select the shares you want to sell')
+            });
+        },
+
+        onConfirmShareSell: function(){
+            if(!this.checkAction('sellShares'))
+            {
+                return;
+            }
+
+            var playerId = this.getActivePlayerId();
+            var selectedShares = this['personal_area_'+playerId].getSelectedItems();
+
+            var ids = [];
+            for(var index in selectedShares){
+                var selectedShare = selectedShares[index];
+                var split = selectedShare.id.split('_');
+                ids.push(split[2]);
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/sellShares.html", {
+                selected_shares: ids.join(';') 
+            }, this, function( result ) {} );
+        },
+
+        onStockStartCompany: function(){
+
+        },
+
+        onStockPass: function(){
+
+        },
         
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
@@ -619,6 +671,7 @@ function (dojo, declare) {
             var playerId = notif.args.owner_id;
             var initialShareValueStep = notif.args.initial_share_value_step;
             var automationTokens = notif.args.automation_tokens;
+            var directorStockId = notif.args.director_stock_id;
 
             this.placeCompany({
                     short_name: shortName,
@@ -635,7 +688,8 @@ function (dojo, declare) {
             this.placeStock({
                 card_type: shortName + "_director",
                 card_location: "personal_area_" + playerId,
-                owner_type: 'player'
+                owner_type: 'player',
+                card_id: directorStockId
             }, 'available_companies')
 
             this.placeStock({
