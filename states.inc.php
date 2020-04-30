@@ -114,7 +114,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameStockPhase",
-        "transitions" => array( "playerStockPhase" => 4, "buildingPhase" => 7, "playerPriceProtection" => 6 )
+        "transitions" => array( "playerStockPhase" => 4, "playerBuildingPhase" => 7, "playerPriceProtection" => 6 )
     ),
 
     6 => array(
