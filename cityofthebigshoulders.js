@@ -577,6 +577,12 @@ function (dojo, declare) {
             }
 
             var items = this.available_shares_company.getSelectedItems();
+
+            if(items.length == 0){
+                this.restoreServerGameState();
+                return;
+            }
+
             if(items.length == 1){
                 this.available_companies.unselectAll();
                 var item_id = items[0].id; // brunswick_common_3
@@ -597,6 +603,11 @@ function (dojo, declare) {
             }
 
             var items = this.available_companies.getSelectedItems();
+            if(items.length == 0){
+                this.restoreServerGameState();
+                return;
+            }
+
             if(items.length == 1){
 
                 var gamestate = this.gamedatas.gamestate;
@@ -709,11 +720,23 @@ function (dojo, declare) {
         },
 
         onConfirmBuy: function(){
+            if(!this.checkAction('buyCertificate'))
+            {
+                return;
+            }
 
-        },
+            var selectedShares = this['available_shares_company'].getSelectedItems();
+            if(selectedShares.length == 0)
+            {
+                this.showMessage( _('You must select at least one certificate to buy'), 'info' );
+                return;
+            }
 
-        onStockStartCompany: function(){
+            var item = selectedShares[0];
 
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", {
+                certificate: item.id
+            }, this, function( result ) {} );
         },
 
         onStockPass: function(){

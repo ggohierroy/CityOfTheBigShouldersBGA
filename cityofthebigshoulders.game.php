@@ -638,21 +638,19 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'buyCertificate' );
 
         if($certificate == '')
-        {
-            $this->gamestate->nextState( 'gameStockPhase' );
-            return;
-        }
+            throw new BgaVisibleSystemException("Certificate identifier is empty");
 
         $split = explode('_', $certificate);
         $short_name = $split[0];
         $stock_type = $split[1];
+        $card_id = $split[2];
 
         if($stock_type == 'director')
             throw new BgaVisibleSystemException("Can't buy director's share");
         
         // check if share available
-        $sql = "SELECT card_id FROM card WHERE card_type = $certificate AND owner_type <> player";
-        $stock = getObjectFromDB( $sql );
+        $sql = "SELECT card_id FROM card WHERE card_id = $card_id";
+        $stock = self::getObjectFromDB( $sql );
         if($stock == null)
             throw new BgaVisibleSystemException("Share is not available");
 
@@ -661,10 +659,10 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT company_short_name FROM sold_shares WHERE round = $round AND player_id = $player_id";
         $companies_sold_shares = self::getCollectionFromDB($sql);
 
-        if($companies_sold_shares[$short_name] == null)
+        if($companies_sold_shares[$short_name] != null)
         {
             $name = $this->companies[$short_name]['name'];
-                throw new BgaUserException( self::_("You can't buy shares from ${name} because you sold shares from that company this decade") );
+            throw new BgaUserException( self::_("You can't buy shares from ${name} because you sold shares from that company this decade") );
         }
 
         $player = self::getPlayer($player_id);
