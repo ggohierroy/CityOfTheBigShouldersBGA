@@ -203,9 +203,9 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT short_name AS short_name, id AS id, share_value_step AS share_value_step FROM company";
         $share_value_steps = self::getCollectionFromDB($sql);
 
-        foreach($share_value_steps as $share_value_step)
+        foreach($share_value_steps as $key => $share_value_step)
         {
-            $share_value_step['value'] = self::getShareValue($share_value_step['share_value_step']);
+            $share_value_steps[$key]['value'] = self::getShareValue($share_value_step['share_value_step']);
         }
 
         return $share_value_steps;
@@ -655,7 +655,7 @@ class CityOfTheBigShoulders extends Table
             throw new BgaVisibleSystemException("Can't buy director's share");
         
         // check if share available
-        $sql = "SELECT card_id AS card_id, owner_type AS owner_type FROM card WHERE card_id = $card_id";
+        $sql = "SELECT card_id AS card_id, owner_type AS owner_type, card_type AS card_type FROM card WHERE card_id = $card_id";
         $stock = self::getObjectFromDB( $sql );
         if($stock == null)
             throw new BgaVisibleSystemException("Share is not available");
@@ -765,11 +765,11 @@ class CityOfTheBigShoulders extends Table
             $company_money_id = "money_${short_name}";
             $counters[$company_money_id] =  ['counter_name' => $company_money_id, 'counter_value' => $new_company_treasury];
 
-            $from = "company_stock_holder_${short_name}";
+            $from = "available_shares_company";
         }
         else if($stock['owner_type'] == 'bank')
         {
-            $from = "bank";
+            $from = "available_shares_bank";
         }
         else
         {
@@ -1131,7 +1131,7 @@ class CityOfTheBigShoulders extends Table
             $player_id = $this->activeNextPlayer();
             
             self::giveExtraTime( $player_id );
-            $this->gamestate->nextState( 'nextPlayer' );
+            $this->gamestate->nextState( 'playerStockPhase' );
         }
     }
 

@@ -367,6 +367,7 @@ function (dojo, declare) {
             if(stock.owner_type == 'player') {
                 var hashStockType = this.hashString(stockType);
                 this[stock.card_location].addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
+                this[from].removeFromStockById(stockType+'_'+stock.card_id);
             } else if (stock.owner_type == 'company') {
                 // TODO: this can only happen during emergency fundraise in the advanced game
             }
@@ -841,11 +842,7 @@ function (dojo, declare) {
 
         notif_certificateBought: function(notif)
         {
-            debugger;
-            this.moveStock({
-                card_type: card_type,
-                card_id: card_id
-            }, from)
+            this.moveStock(notif.args.stock, notif.args.from);
 
             this.updateCounters(notif.args.counters);
         }
