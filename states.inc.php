@@ -81,22 +81,31 @@ $machinestates = array(
     ),
 
     4 => array(
-        "name" => "playerStockPhase",
-        "description" => clienttranslate('${actplayer} must choose a stock action'),
-        "descriptionmyturn" => clienttranslate('${you} must choose a stock action'),
+        "name" => "playerSellPhase",
+        "description" => clienttranslate('${actplayer} may sell any number of certificates to the bank'),
+        "descriptionmyturn" => clienttranslate('${you} may sell any number of certificates to the bank'),
         "type" => "activeplayer",
-        "args" => "argPlayerStockPhase",
-        "possibleactions" => array( "sellShares", "startCompany", "pass" ),
-        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8 )
+        "possibleactions" => array( "sellShares", "skipSell", "passStockAction" ),
+        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9 )
+    ),
+
+    9 => array(
+        "name" => "playerSkipSellBuyPhase",
+        "description" => clienttranslate('${actplayer} may buy an available certificate or start a company'),
+        "descriptionmyturn" => clienttranslate('${you} may buy an available certificate or start a company'),
+        "type" => "activeplayer",
+        "args" => "argPlayerBuyPhase",
+        "possibleactions" => array( "buyCertificate", "startCompany", "passStockAction" ),
+        "transitions" => array( "gameStockPhase" => 5 )
     ),
 
     8 => array(
         "name" => "playerBuyPhase",
-        "description" => clienttranslate('${actplayer} must choose a company from which to buy a certificate from'),
-        "descriptionmyturn" => clienttranslate('${you} must choose a company from which to buy a certificate from'),
+        "description" => clienttranslate('${actplayer} may buy an available certificate or start a company'),
+        "descriptionmyturn" => clienttranslate('${you} may buy an available certificate or start a company'),
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
-        "possibleactions" => array( "buyCertificate", "skip" ),
+        "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy" ),
         "transitions" => array( "gameStockPhase" => 5 )
     ),
 

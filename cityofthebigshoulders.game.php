@@ -628,6 +628,11 @@ class CityOfTheBigShoulders extends Table
     
     */
 
+    function skipSell()
+    {
+        $this->gamestate->nextState( 'playerSkipSellBuyPhase' );
+    }
+
     function buyCertificate($certificate)
     {
         self::checkAction( 'buyCertificate' );
@@ -796,6 +801,8 @@ class CityOfTheBigShoulders extends Table
             'counters' => $counters,
             'from' => $from // can be bank or company_stock_holder_${short_name}
         ) );
+
+        $this->gamestate->nextState( 'gameStockPhase' );
     }
 
     function sellShares($selected_shares)
@@ -920,13 +927,17 @@ class CityOfTheBigShoulders extends Table
     }
 
     function startCompany($company_short_name, $initial_share_value_step)
-    {
-        self::dump('company_name', $company_short_name);
-        self::dump('initial_share_value_step', $initial_share_value_step);
-        self::trace('startCompany');
-        
+    {        
         // Check that this player is active and that this action is possible at this moment
         self::checkAction( 'startCompany' );
+
+        $state = $this->gamestate->state();
+        if($state == 'playerSkipSellBuyPhase' || $state == 'playerBuyPhase')
+        {
+            $round = self::getGameStateValue( "round" );
+            if($round == 0)
+                throw new BgaVisibleSystemException( self::_("You can't start a new company on the first round") );
+        }
 
         $company = self::getCompanyByShortName($company_short_name);
 
@@ -1062,15 +1073,10 @@ class CityOfTheBigShoulders extends Table
     */
 
     // need the round to not show start company action during first round
-    function argPlayerStockPhase()
+    function argPlayerBuyPhase()
     {
         $round = self::getGameStateValue( "round" );
         return ["round" => $round];
-    }
-
-    function argPlayerBuyPhase()
-    {
-        return [];
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1110,7 +1116,7 @@ class CityOfTheBigShoulders extends Table
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );
 
-            $this->gamestate->nextState('playerStockPhase');
+            $this->gamestate->nextState('playerSellPhase');
         }
         else
         {

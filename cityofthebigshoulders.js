@@ -61,6 +61,8 @@ function (dojo, declare) {
 
                 // create personal share stocks
                 this.createShareStock(gamedatas.all_companies, 'personal_area_'+player_id);
+                if(player_id == this.player_id )
+                    dojo.connect( this['personal_area_'+player_id], 'onChangeSelection', this, 'onPersonalShareSelected' );
                 
                 // TODO: Setting up players boards if needed
                 var player_board_div = $('player_board_'+player_id);
@@ -73,6 +75,7 @@ function (dojo, declare) {
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
+            dojo.connect( this.available_shares_company, 'onChangeSelection', this, 'onAvailableShareSelected' );
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
@@ -137,9 +140,21 @@ function (dojo, declare) {
                 case 'gameStartFirstCompany':
                     this.available_companies.setSelectionMode(0);
                     break;
-                case 'client_playerStockPhaseSellShares':
+                case 'playerSellPhase':
                     var playerId = this.getActivePlayerId();
                     this['personal_area_'+playerId].setSelectionMode(2);
+                    break;
+                case 'playerSkipSellBuyPhase':
+                    this.available_companies.setSelectionMode(1);
+                    this.available_companies.unselectAll();
+                    this.available_shares_company.setSelectionMode(1);
+                    this.available_shares_company.unselectAll();
+                    break;
+                case 'playerBuyPhase':
+                    this.available_companies.setSelectionMode(1);
+                    this.available_companies.unselectAll();
+                    this.available_shares_company.setSelectionMode(1);
+                    this.available_shares_company.unselectAll();
                     break;
             
             /* Example:
@@ -211,6 +226,9 @@ function (dojo, declare) {
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
                     break;
 */
+                    case 'playerSkipSellBuyPhase':
+                        this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
+                        break;
                     case 'playerBuyPhase':
                         this.addActionButton( 'skip_buy', _('Skip'), 'onSkipBuy');
                         break;
@@ -219,18 +237,20 @@ function (dojo, declare) {
                         this.addActionButton( 'initial_share_40', '$40', 'onStartCompany');
                         this.addActionButton( 'initial_share_50', '$50', 'onStartCompany');
                         this.addActionButton( 'initial_share_60', '$60', 'onStartCompany');
+                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancel');
                         break;
-                    case 'playerStockPhase':
-                        this.addActionButton( 'sell_buy', _('Sell/Buy Shares'), 'onSellBuyShare');
-                        if(args.round > 0){
-                            this.addActionButton( 'start_company', _('Start Company'), 'onStockStartCompany');
-                        }
-                        this.addActionButton( 'stock_pass', _('Pass'), 'onStockPass');
+                    case 'client_playerTurnBuyCertificate':
+                        this.addActionButton( 'confirm_buy', _('Confirm'), 'onConfirmBuy');
+                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancel');
                         break;
-                    case 'client_playerStockPhaseSellShares':
+                    case 'playerSellPhase':
+                        this.addActionButton( 'skip_sell', _('Skip to Buy'), 'onSkipSell');
+                        this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
+                        break;
+                    case 'client_playerTurnConfirmSellShares':
                         this.addActionButton( 'confirm_sell', _('Confirm'), 'onConfirmShareSell');
-                        this.addActionButton( 'skip_sell', _('Skip'), 'onSkipSell');
-                        this.addActionButton( 'cancel_sell', _('Cancel'), 'onCancel');
+                        this.addActionButton( 'skip_sell', _('Skip to Buy'), 'onSkipSell');
+                        this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
                         break;
                 }
             }
@@ -534,6 +554,42 @@ function (dojo, declare) {
             }
         },
 
+        onPersonalShareSelected: function(control_name, item_id){
+            if(!this.checkAction('sellShares'))
+            {
+                return;
+            }
+            
+            var playerId = this.player_id;
+            var numberOfItems = this['personal_area_'+playerId].getSelectedItems().length;
+            
+            this.setClientState("client_playerTurnConfirmSellShares", {
+                descriptionmyturn : dojo.string.substitute(_('Sell ${numberOfCertificates} certificates'),{
+                    numberOfCertificates: numberOfItems
+                })
+            });
+        },
+
+        onAvailableShareSelected: function(control_name, item_id){
+            if(!this.checkAction('buyCertificate'))
+            {
+                return;
+            }
+
+            var items = this.available_shares_company.getSelectedItems();
+            if(items.length == 1){
+                this.available_companies.unselectAll();
+                var item_id = items[0].id; // brunswick_common_3
+                var companyShortName = item_id.split('_')[0];
+                var companyName = this.gamedatas.all_companies[companyShortName].name;
+                this.setClientState("client_playerTurnBuyCertificate", {
+                    descriptionmyturn : dojo.string.substitute(_('Buy certificate for ${companyName}'),{
+                        companyName: companyName
+                    })
+                });
+            }
+        },
+
         onCompanySelected: function(control_name, item_id){
             if(!this.checkAction('startCompany'))
             {
@@ -542,6 +598,18 @@ function (dojo, declare) {
 
             var items = this.available_companies.getSelectedItems();
             if(items.length == 1){
+
+                var gamestate = this.gamedatas.gamestate;
+                if(gamestate.name == 'playerSkipSellBuyPhase' || gamestate.name == 'playerBuyPhase')
+                {
+                    if(gamestate.args.round == 0){
+                        this.showMessage( _('You cannot start a new company during the first decade'), 'info' );
+                        this.available_companies.unselectAll();
+                        return;
+                    }
+                }
+
+                this.available_shares_company.unselectAll();
                 var companyShortName = items[0].id;
                 var companyName = this.gamedatas.all_companies[companyShortName].name;
                 this.setClientState("client_playerTurnSelectStartingShareValue", {
@@ -602,6 +670,11 @@ function (dojo, declare) {
 
             var playerId = this.getActivePlayerId();
             var selectedShares = this['personal_area_'+playerId].getSelectedItems();
+            if(selectedShares.length == 0)
+            {
+                this.showMessage( _('You must select at least one certificate to sell'), 'info' );
+                return;
+            }
 
             var ids = [];
             for(var index in selectedShares){
@@ -632,9 +705,11 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/sellShares.html", {
-                selected_shares: ''
-            }, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", {}, this, function( result ) {} );
+        },
+
+        onConfirmBuy: function(){
+
         },
 
         onStockStartCompany: function(){

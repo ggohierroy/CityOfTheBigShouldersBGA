@@ -115,6 +115,15 @@
       self::ajaxResponse( );
     }
 
+    public function skipSell()
+    {
+      self::setAjaxMode();
+
+      $this->game->skipSell();
+
+      self::ajaxResponse();
+    }
+
   }
   
 
