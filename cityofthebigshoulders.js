@@ -740,7 +740,12 @@ function (dojo, declare) {
         },
 
         onStockPass: function(){
+            if(!this.checkAction('passStockAction'))
+            {
+                return;
+            }
 
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
         },
         
         ///////////////////////////////////////////////////

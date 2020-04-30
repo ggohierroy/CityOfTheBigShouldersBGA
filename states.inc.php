@@ -77,7 +77,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "gameStartFirstCompany",
-        "transitions" => array( "nextPlayer" => 2, "playerStockPhase" => 4 )
+        "transitions" => array( "nextPlayer" => 2, "playerSellPhase" => 4 )
     ),
 
     4 => array(
@@ -114,7 +114,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameStockPhase",
-        "transitions" => array( "playerStockPhase" => 5, "buildingPhase" => 7, "playerPriceProtection" => 6 )
+        "transitions" => array( "playerStockPhase" => 4, "buildingPhase" => 7, "playerPriceProtection" => 6 )
     ),
 
     6 => array(
@@ -127,12 +127,21 @@ $machinestates = array(
     ),
 
     7 => array(
-        "name" => "playerStockPhase",
-        "description" => clienttranslate('${actplayer} must choose to sell/buy stock, start a company, or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must choose to sell/buy stock, start a company, or pass'),
-        "type" => "activeplayer",
-        "possibleactions" => array( "stSellStock", "stBuyStock", "stStartCompany", "stPass" ),
-        "transitions" => array( "nextPlayer" => 5 )
+        "name" => "playerBuildingPhase",
+        "description" => clienttranslate('${actplayer} must choose a building to play'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a building to play'),
+        "type" => "multipleactiveplayer",
+        "possibleactions" => array( "playBuilding", "discardBuilding" ),
+        "action" => "st_MultiPlayerInit",
+        "transitions" => array( "nextPlayer" => 10 )
+    ),
+
+    10 => array(
+        "name" => "gameActionPhaseSetup",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameActionPhaseSetup",
+        "transitions" => array( "nextPlayer" => 11 )
     ),
     
 /*

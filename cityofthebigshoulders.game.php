@@ -633,6 +633,12 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'playerSkipSellBuyPhase' );
     }
 
+    function passStockAction()
+    {
+        self::incGameStateValue( "consecutive_passes", 1 );
+        $this->gamestate->nextState( 'gameStockPhase' );
+    }
+
     function buyCertificate($certificate)
     {
         self::checkAction( 'buyCertificate' );
@@ -649,17 +655,17 @@ class CityOfTheBigShoulders extends Table
             throw new BgaVisibleSystemException("Can't buy director's share");
         
         // check if share available
-        $sql = "SELECT card_id FROM card WHERE card_id = $card_id";
+        $sql = "SELECT card_id AS card_id, owner_type AS owner_type FROM card WHERE card_id = $card_id";
         $stock = self::getObjectFromDB( $sql );
         if($stock == null)
             throw new BgaVisibleSystemException("Share is not available");
 
-        $player_id = $player_id = self::getActivePlayerId();
+        $player_id = self::getActivePlayerId();
         $round = self::getGameStateValue( "round" );
         $sql = "SELECT company_short_name FROM sold_shares WHERE round = $round AND player_id = $player_id";
         $companies_sold_shares = self::getCollectionFromDB($sql);
 
-        if($companies_sold_shares[$short_name] != null)
+        if(isset($companies_sold_shares[$short_name]))
         {
             $name = $this->companies[$short_name]['name'];
             throw new BgaUserException( self::_("You can't buy shares from ${name} because you sold shares from that company this decade") );
@@ -676,10 +682,11 @@ class CityOfTheBigShoulders extends Table
             $multiplier = 2;
         
         // check if player can buy share
-        if($player['treasury'] < $share_value * $multipler)
+        if($player['treasury'] < $share_value * $multiplier)
             throw new BgaUserException( self::_("You don't have enough money to buy this certificate") );
         
         // check if certificate limit reached
+        $player_shares = self::getPlayerShares($player_id);
         $player_number = self::getPlayersNumber();
         $certificate_limit = 14;
         if($player_number == 2)
@@ -690,7 +697,6 @@ class CityOfTheBigShoulders extends Table
             throw new BgaUserException( self::_("You have reached your certificate limit") );
         
         // check if 60% limit in single company reached
-        $player_shares = self::getPlayerShares($player_id);
         $owned_share = $multiplier;
         foreach($player_shares as $player_share)
         {
@@ -731,27 +737,28 @@ class CityOfTheBigShoulders extends Table
         // TODO advanced game: check if player gains ownership of company
 
         // update player treasury
-        $certificate_cost = $share_value * $multipler;
+        $certificate_cost = $share_value * $multiplier;
         $new_treasury = $player['treasury'] - $certificate_cost;
         $sql = "UPDATE player 
             SET treasury=$new_treasury
             WHERE player_id='$player_id'";
         self::DbQuery( $sql );
 
-        $counters = [$money_id => ['counter_name' => $money_id, 'counter_value' => $newTreasury]];
+        $money_id = "money_${player_id}";
+        $counters = [$money_id => ['counter_name' => $money_id, 'counter_value' => $new_treasury]];
 
         // update company treasury if bought from company
         // also set where the stock comes from for notification purposes
         $from = "";
         if($stock['owner_type'] == 'company')
         {
-            $sql = "SELECT treasury AS treasury FROM company WHERE short_name=$short_name";
+            $sql = "SELECT treasury AS treasury FROM company WHERE short_name='$short_name'";
             $company_treasury = self::getUniqueValueFromDB($sql);
             $new_company_treasury = $company_treasury + $certificate_cost;
 
             $sql = "UPDATE company 
             SET treasury=$new_company_treasury
-            WHERE short_name=$short_name";
+            WHERE short_name='$short_name'";
         
             self::DbQuery( $sql );
 
@@ -775,9 +782,9 @@ class CityOfTheBigShoulders extends Table
         $stock['card_location'] = 'personal_area_'.$player_id;
         $stock['card_location_arg'] = $player_id;
         $sql = "UPDATE card SET 
-                owner_type = player,
-                card_location => 'personal_area_'.$player_id,
-                card_location_arg => $player_id
+                owner_type = 'player',
+                card_location = 'personal_area_$player_id',
+                card_location_arg = $player_id
             WHERE card_id = $card_id";
         self::DbQuery( $sql );
 
@@ -793,13 +800,14 @@ class CityOfTheBigShoulders extends Table
             'player_id' => $player_id,
             'string_stock_type' => $string_stock_type,
             'player_name' => self::getActivePlayerName(),
-            'company_name' => $companyMaterial['name'],
-            'short_name' => $companyMaterial['short_name'],
+            'company_name' => $company_material['name'],
+            'short_name' => $company_material['short_name'],
             'stock' => $stock,
             'counters' => $counters,
             'from' => $from // can be bank or company_stock_holder_${short_name}
         ) );
-
+        
+        self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameStockPhase' );
     }
 
@@ -921,6 +929,7 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers( "sellShares", clienttranslate( '${player_name} has sold shares' ), array(
         ) );
 
+        self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'playerBuyPhase' );
     }
 
@@ -1038,7 +1047,8 @@ class CityOfTheBigShoulders extends Table
                 $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
             'stocks' => $stocks
         ) );
-
+        
+        self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameStartFirstCompany' );
     }
 
@@ -1098,6 +1108,36 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'some_gamestate_transition' );
     }    
     */
+
+    function stGameStockPhase()
+    {
+        $consecutive_passes = self::getGameStateValue( "consecutive_passes" );
+        $player_number = self::getPlayersNumber();
+
+        if($consecutive_passes == $player_number)
+        {
+            self::setGameStateValue( "consecutive_passes", 0 );
+            self::setGameStateValue( "turns_this_phase", 0 );
+
+            $player_id = self::getActivePlayerId();
+            self::giveExtraTime( $player_id );
+
+            $this->gamestate->nextState('playerBuildingPhase');
+        }
+        else
+        {
+            self::incGameStateValue( "turns_this_phase", 1 );
+            // Activate next player
+            $player_id = $this->activeNextPlayer();
+            
+            self::giveExtraTime( $player_id );
+            $this->gamestate->nextState( 'nextPlayer' );
+        }
+    }
+
+    function st_MultiPlayerInit() {
+        $this->gamestate->setAllPlayersMultiactive();
+    }
 
     function gameStartFirstCompany()
     {

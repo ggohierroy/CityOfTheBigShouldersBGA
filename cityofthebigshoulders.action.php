@@ -124,6 +124,15 @@
       self::ajaxResponse();
     }
 
+    public function passStockAction()
+    {
+      self::setAjaxMode();
+
+      $this->game->passStockAction();
+
+      self::ajaxResponse();
+    }
+
   }
   
 
