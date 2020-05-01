@@ -133,6 +133,20 @@
       self::ajaxResponse();
     }
 
+    public function selectBuildings()
+    {
+      self::setAjaxMode();
+
+      // Retrieve arguments
+      // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+      $played_building_id = self::getArg( "playedBuildingId", AT_posint, true );
+      $discarded_building_id = self::getArg( "discardedBuildingId", AT_posint, true );
+
+      $this->game->selectBuildings( $played_building_id, $discarded_building_id );
+
+      self::ajaxResponse( );
+    }
+
   }
   
 

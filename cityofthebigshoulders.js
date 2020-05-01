@@ -32,6 +32,16 @@ function (dojo, declare) {
             // this.myGlobalValue = 0;
 
             this.companyNameToImagePosition = { 'anglo':0, 'brunswick':1,'cracker': 2, 'doggett': 3, 'elgin': 4, 'fairbank': 5, 'henderson': 6, 'libby': 7, 'spalding': 8, 'swift': 9 };
+            this.buildingNumberToImagePosition = {
+                'building1':0, 'building2':1, 'building3':2, 'building4':5, 'building5':6,
+                'building6':7, 'building7':10, 'building8':11, 'building9':12, 'building10':15,
+                'building11':16, 'building12':17, 'building13':3, 'building14':4, 'building15':8,
+                'building16':9, 'building17':13, 'building18':14, 'building19':18, 'building20':19,
+                'building21':20, 'building22':21, 'building23':25, 'building24':26, 'building25':30,
+                'building26':31, 'building27':35, 'building28':36, 'building29':22, 'building30':34,
+                'building31':37, 'building32':38, 'building33':23, 'building34':24, 'building35':27,
+                'building36':28, 'building37':29, 'building38':32, 'building39':33, 'building40':39,
+                'building41':40, 'building42':41, 'building43':42, 'building44':43  };
         },
         
         /*
@@ -80,6 +90,9 @@ function (dojo, declare) {
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
+
+            // create buildings stock
+            this.createBuildingsStock(gamedatas.all_buildings);
             
             // place owned in the game
             for(var i in gamedatas.owned_companies){
@@ -155,6 +168,9 @@ function (dojo, declare) {
                     this.available_companies.unselectAll();
                     this.available_shares_company.setSelectionMode(1);
                     this.available_shares_company.unselectAll();
+                    break;
+                case 'playerBuildingPhase':
+                    
                     break;
             
             /* Example:
@@ -252,6 +268,13 @@ function (dojo, declare) {
                         this.addActionButton( 'skip_sell', _('Skip to Buy'), 'onSkipSell');
                         this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
                         break;
+                    case 'clientPlayerDiscardBuilding':
+                        this.addActionButton( 'cancel_play_building', _('Cancel'), 'onCancelSelectBuildings');
+                        break;
+                    case 'clientBuildingPhaseConfirm':
+                        this.addActionButton( 'confirm_buildings', _('Confirm'), 'onConfirmBuildings');
+                        this.addActionButton( 'cancel_play_building', _('Cancel'), 'onCancelSelectBuildings');
+                        break;
                 }
             }
         },        
@@ -265,6 +288,36 @@ function (dojo, declare) {
             script.
         
         */
+
+       setupNewBuilding: function(item_div, item_type_id, item_id)
+       {
+            dojo.connect( $(item_id), 'onclick', this, 'onClickBuildingPlayerArea' );
+       },
+
+        createBuildingsStock: function(buildings){
+            var newStock = new ebg.stock();
+
+            //newStock.onItemCreate = dojo.hitch( this, 'setupCompany' ); 
+
+            newStock.create( this, $('building_area_'+this.player_id), 50, 50);
+            this.buildings = newStock;
+
+            // Specify that there are 5 buildings per row
+            newStock.image_items_per_row = 5;
+            newStock.setSelectionMode(0);
+            
+            var i = 0;
+            for(var index in buildings){
+                var hash = this.hashString(index);
+
+                var imagePosition = this.buildingNumberToImagePosition[index];
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+
+                i++;
+            }
+
+            newStock.onItemCreate = dojo.hitch( this, 'setupNewBuilding' );
+        },
 
         placeAppealTokens: function(company_order){
             var count = company_order.length;
@@ -345,8 +398,26 @@ function (dojo, declare) {
                     case 'automation':
                         this.placeAutomationToken(item)
                         break;
+                    case 'building':
+                        this.placeBuilding(item)
+                        break;
                 }
             }
+        },
+
+        placeBuilding: function(building, from){
+            var hashBuildingType = this.hashString(building.card_type);
+            var itemId = building.card_type+'_'+building.card_id;
+            this.buildings.addToStockWithId(hashBuildingType, itemId, from);
+
+            if(building.card_location.indexOf('_play') !== -1){
+                var div = this.buildings.getItemDivId(itemId);
+                dojo.addClass(div, "building_to_play");
+            } else if(building.card_location.indexOf('_discard') !== -1){
+                var div = this.buildings.getItemDivId(itemId);
+                dojo.addClass(div, "building_to_discard");
+            }
+
         },
 
         placeStock: function(stock, from){
@@ -546,6 +617,13 @@ function (dojo, declare) {
         
         */
 
+        onCancelSelectBuildings: function(event){
+            dojo.stopEvent(event);
+            dojo.query('.building_to_play').removeClass('building_to_play');
+            dojo.query('.building_to_discard').removeClass('building_to_discard');
+            this.restoreServerGameState();
+        },
+
         onCancel : function(event) {
             dojo.stopEvent(event);
             if (this.on_client_state) {
@@ -595,6 +673,50 @@ function (dojo, declare) {
                     })
                 });
             }
+        },
+
+        onClickBuildingPlayerArea: function(event)
+        {
+            // Preventing default browser reaction
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('selectBuildings'))
+                return;
+
+            var state = this.gamedatas.gamestate.name;
+            if(state == "playerBuildingPhase"){
+                dojo.addClass(event.target, "building_to_play");
+                this.setClientState("clientPlayerDiscardBuilding", {
+                    descriptionmyturn : _('You must choose a building to discard')
+                });
+            }
+            else if(state == "clientPlayerDiscardBuilding"){
+                if(!dojo.hasClass(event.target, "building_to_play")){
+                    dojo.addClass(event.target, "building_to_discard");
+                    this.setClientState("clientBuildingPhaseConfirm", {
+                        descriptionmyturn : _('Confirm selection')
+                    });
+                }
+            }
+        },
+
+        onConfirmBuildings: function(event){
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('selectBuildings'))
+                return;
+
+            // example: building_area_2319929_item_building11_36
+            var buildingToPlayId = dojo.query('.building_to_play')[0].id;
+            var buildingToDiscardId = dojo.query('.building_to_discard')[0].id;
+            
+            var splitBuildingToPlay = buildingToPlayId.split('_');
+            var splitBuildingToDiscard = buildingToDiscardId.split('_');
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/selectBuildings.html", {
+                playedBuildingId: splitBuildingToPlay[5],
+                discardedBuildingId: splitBuildingToDiscard[5]
+            }, this, function( result ) {} );
         },
 
         onCompanySelected: function(control_name, item_id){

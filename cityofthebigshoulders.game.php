@@ -134,10 +134,22 @@ class CityOfTheBigShoulders extends Table
         $result['owned_companies'] = $owned_companies;
         $result['company_order'] = self::getCurrentCompanyOrder($owned_companies);
 
+        $result['all_buildings'] = $this->building;
         $result['all_companies'] = $this->companies;
 
-        // gather all items in card table
-        $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg FROM card";
+        // gather all items in card table that are visible to the player
+        $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
+            FROM card
+            WHERE
+                (card_location <> 'demand_deck' AND
+                card_location <> 'asset_deck' AND
+                card_location <> 'era_2' AND
+                card_location <> 'era_3' AND
+                card_location <> 'resource_bag' AND
+                primary_type <> 'building')
+            OR
+                ((card_location LIKE 'player_$current_player_id%' OR card_location LIKE 'building_track_%') AND
+                primary_type = 'building')";
         $result['items'] = self::getCollectionFromDb( $sql );
 
         // add a counter for each company (because all counters must exist on setup)
@@ -627,6 +639,51 @@ class CityOfTheBigShoulders extends Table
     }
     
     */
+
+    function selectBuildings($played_building_id, $discarded_building_id)
+    {
+        self::checkAction( 'selectBuildings' );
+        $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
+
+        if($played_building_id == $discarded_building_id)
+            throw new BgaVisibleSystemException("Cannot play and discard same building");
+       
+        // get player's buildings
+        $sql = "SELECT card_id AS card_id, card_location AS card_location FROM card WHERE primary_type = 'building' AND card_location LIKE 'player_$player_id%'";
+        $buildings = self::getCollectionFromDB($sql);
+
+        if(!isset($buildings[$played_building_id]))
+            throw new BgaVisibleSystemException("Building does not belong tu current player");
+        
+        if(!isset($buildings[$discarded_building_id]))
+            throw new BgaVisibleSystemException("Building does not belong tu current player");
+
+        // update building location to 'waiting' location
+        foreach($buildings as $building_id => $building)
+        {
+            $id = $building_id;
+            $sql = "";
+            if($building_id == $played_building_id)
+            {
+                $sql = "UPDATE card SET card_location = 'player_${player_id}_play' WHERE card_id = $id";
+            }
+            else if($building_id == $discarded_building_id)
+            {
+                $sql = "UPDATE card SET card_location = 'player_${player_id}_discard' WHERE card_id = $id";
+            }
+            else
+            {
+                $sql = "UPDATE card SET card_location = 'player_${player_id}' WHERE card_id = $id";
+            }
+
+            self::dump('sql', $sql);
+
+            self::DbQuery($sql);
+        }
+
+        // set multiplayer inactive
+        $this->gamestate->setPlayerNonMultiactive($player_id, 'next'); // deactivate player; if none left, transition to 'next' state
+    }
 
     function skipSell()
     {

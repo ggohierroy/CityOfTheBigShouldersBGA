@@ -29,6 +29,9 @@
 
 <div id="main_board_wrapper" class="whiteblock">
     <div id="main_board" class="center">
+        <!-- BEGIN building_track -->
+        <div id="building_track_{PLAYER_ID}" class="building_track" style="top: {TOP}px"></div>
+        <!-- END building_track -->
         <div id="share_track">
             <!-- BEGIN share_track -->
             <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
@@ -47,7 +50,7 @@
     <!-- BEGIN player_area -->
     <div id="player_{PLAYER_ID}" class="whiteblock">
         <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
-        <div id="building_area"></div>
+        <div id="building_area_{PLAYER_ID}"></div>
         <div class="personal_share_area">
             <h3>Personal Shares</h3>
             <div id="personal_area_{PLAYER_ID}"></div>

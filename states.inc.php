@@ -131,7 +131,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must choose a building to play'),
         "descriptionmyturn" => clienttranslate('${you} must choose a building to play'),
         "type" => "multipleactiveplayer",
-        "possibleactions" => array( "playBuilding", "discardBuilding" ),
+        "possibleactions" => array( "selectBuildings" ),
         "action" => "st_MultiPlayerInit",
         "transitions" => array( "nextPlayer" => 10 )
     ),

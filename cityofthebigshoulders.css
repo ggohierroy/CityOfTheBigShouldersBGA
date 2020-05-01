@@ -71,6 +71,7 @@
     background-image: url(img/board_small.png);
     width: 980px;
     height: 530px;
+    position: relative;
 }
 
 .center {
@@ -187,10 +188,28 @@
     margin: 5px 5px;
     padding: 5px 5px;
     display: inline-block;
+    width: 350px;
 }
 
 .owned_companies_area {
     margin: 5px 5px;
     padding: 5px 5px;
     display: inline-block;
+}
+
+.building_track {
+    left: 506px;
+    height: 50px;
+    width: 267px;
+    background-color: white;
+    opacity: 50%;
+    position: absolute;
+}
+
+.building_to_play{
+    border: 3px green solid;
+}
+
+.building_to_discard{
+    border: 3px red solid;
 }

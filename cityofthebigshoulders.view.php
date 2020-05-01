@@ -58,6 +58,30 @@
                 "Z_INDEX" => 16-$i
             ) );
         }
+
+        // building track top 135px +
+        $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "building_track" );
+
+        $track_colors = ["ff0000", "ffa500", "008000", "0000ff"];
+        for($i = 0; $i < 4; $i++)
+        {
+            $track_color = $track_colors[$i];
+            $player_id = 0;
+            // find player id for this color
+            foreach ( $players as $key => $player )
+            {
+                if($player['player_color'] == $track_color)
+                    $player_id = $key;
+            }
+
+            if($player_id == 0)
+                continue;
+
+            $this->page->insert_block ( "building_track", array (
+                "TOP" => 135 + $i*61.5,
+                "PLAYER_ID" => $player_id
+            ) );
+        }
         
         $this->page->begin_block( "cityofthebigshoulders_cityofthebigshoulders", "player_area" );
         
