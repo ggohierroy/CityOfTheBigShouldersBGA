@@ -133,7 +133,7 @@ $machinestates = array(
         "type" => "multipleactiveplayer",
         "possibleactions" => array( "selectBuildings" ),
         "action" => "st_MultiPlayerInit",
-        "transitions" => array( "nextPlayer" => 10 )
+        "transitions" => array( "gameActionPhaseSetup" => 10 )
     ),
 
     10 => array(
@@ -141,7 +141,16 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameActionPhaseSetup",
-        "transitions" => array( "nextPlayer" => 11 )
+        "transitions" => array( "playerActionPhase" => 11 )
+    ),
+
+    11 => array(
+        "name" => "playerActionPhase",
+        "description" => clienttranslate('${actplayer} must choose an action'),
+        "descriptionmyturn" => clienttranslate('${you} must choose an action'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "buildingAction" ),
+        "transitions" => array( "gameActionPhase" => 12 )
     ),
     
 /*

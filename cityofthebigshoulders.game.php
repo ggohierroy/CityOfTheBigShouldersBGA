@@ -73,7 +73,7 @@ class CityOfTheBigShoulders extends Table
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
         $default_colors = $gameinfos['player_colors'];
- 
+
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
@@ -93,6 +93,8 @@ class CityOfTheBigShoulders extends Table
         // Init global values with their initial values
         //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
         self::setGameStateInitialValue( 'turns_this_phase', 0 );
+        self::setGameStateInitialValue( 'round', 0 );
+        self::setGameStateInitialValue( 'consecutive_passes', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -682,7 +684,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // set multiplayer inactive
-        $this->gamestate->setPlayerNonMultiactive($player_id, 'next'); // deactivate player; if none left, transition to 'next' state
+        $this->gamestate->setPlayerNonMultiactive($player_id, 'gameActionPhaseSetup'); // deactivate player; if none left, transition to 'next' state
     }
 
     function skipSell()
@@ -1166,6 +1168,14 @@ class CityOfTheBigShoulders extends Table
     }    
     */
 
+    function stGameActionPhaseSetup()
+    {
+        // get buildings that should be played or discarded
+        $sql = "SELECT ";
+
+        $this->gamestate->nextState( 'playerActionPhase' );
+    }
+
     function stGameStockPhase()
     {
         $consecutive_passes = self::getGameStateValue( "consecutive_passes" );
@@ -1199,8 +1209,13 @@ class CityOfTheBigShoulders extends Table
     function gameStartFirstCompany()
     {
         $turns_this_phase = self::getGameStateValue( "turns_this_phase" );
-
         $player_number = self::getPlayersNumber();
+
+        // update player order for action phase (reverse from company start order)
+        $player_id = self::getActivePlayerId();
+        $player_order = $player_number - $turns_this_phase;
+        $sql = "UPDATE player SET player_order = $player_order WHERE player_id = '$player_id'";
+        self::DbQuery( $sql );
         
         if($turns_this_phase+1 == $player_number)
         {
