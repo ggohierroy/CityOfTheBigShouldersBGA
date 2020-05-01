@@ -88,7 +88,7 @@
  }
 
  .board_item {
-	width: 50px;
+	/* width: 50px; */
 	height: auto;
 	display: inline-block;
 	margin-bottom: 2px;
@@ -124,14 +124,28 @@
 }
 
  .token {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+    background-image: url( 'img/tokens.png' );
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.token-small {
+    width: 15px;
+    height: 15px;
     background-image: url( 'img/tokens.png' );
     display: inline-block;
     vertical-align: middle;
 }
 
 .money {  background-position: 0px 0px; }
+
+.meeple { background-position-y: -105px; }
+.meeple-red { background-position-x: -93px }
+.meeple-blue { background-position-x: 0px; }
+.meeple-green { background-position-x: -15px; }
+.meeple-yellow { background-position-x: -108px }
 
 .stock {
     width: 109px;
@@ -184,6 +198,13 @@
     height: 22px;
 }
 
+.worker {
+    background-image: url('img/tokens.png');
+    background-position: -106px -22px;
+    width: 12px;
+    height: 27px;
+}
+
 .personal_share_area {
     margin: 5px 5px;
     padding: 5px 5px;
@@ -201,8 +222,6 @@
     left: 506px;
     height: 50px;
     width: 267px;
-    background-color: white;
-    opacity: 50%;
     position: absolute;
 }
 
@@ -212,4 +231,14 @@
 
 .building_to_discard{
     border: 3px red solid;
+}
+
+#job_market{
+    left: 353px;
+    top: 188px;
+    height: 177px;
+    width: 58px;
+    /* background-color: white;
+    opacity: 50%; */
+    position: absolute;
 }

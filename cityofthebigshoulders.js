@@ -74,14 +74,23 @@ function (dojo, declare) {
                 if(player_id == this.player_id )
                     dojo.connect( this['personal_area_'+player_id], 'onChangeSelection', this, 'onPersonalShareSelected' );
                 
-                // TODO: Setting up players boards if needed
+                // Setting up players boards if needed
+                var hexColorConvert = {"ff0000": 'red', "008000": 'green', "0000ff": 'blue', "ffa500": 'yellow'};
                 var player_board_div = $('player_board_'+player_id);
-                dojo.place( this.format_block('jstpl_player_board', player ), player_board_div );
+                dojo.place( this.format_block('jstpl_player_board', {
+                    id: player.id,
+                    color: hexColorConvert[player.color]
+                } ), player_board_div );
+
+                // create building tracks
+                this['building_track_'+player_id] = this.createBuildingsStock(gamedatas.all_buildings, 'building_track_'+player_id, 'setupNewBuilding');
+                this['building_track_'+player_id].item_margin=4;
             }
 
             // create share value zones
             this.createShareValueZones();
             this.createAppealZones();
+            this.createJobMarketZone();
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
@@ -92,7 +101,7 @@ function (dojo, declare) {
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
 
             // create buildings stock
-            this.createBuildingsStock(gamedatas.all_buildings);
+            this.buildings = this.createBuildingsStock(gamedatas.all_buildings, 'building_area_'+this.player_id, 'setupNewBuilding');
             
             // place owned in the game
             for(var i in gamedatas.owned_companies){
@@ -288,19 +297,21 @@ function (dojo, declare) {
             script.
         
         */
+        
+        moveBuilding: function(building){
+            var split = building.card_location.split('_');
+            //var playerId = split[1]; // can't do this because building_track_id
+        },
 
        setupNewBuilding: function(item_div, item_type_id, item_id)
        {
             dojo.connect( $(item_id), 'onclick', this, 'onClickBuildingPlayerArea' );
        },
 
-        createBuildingsStock: function(buildings){
+        createBuildingsStock: function(buildings, stockName, itemCreateCallback){
             var newStock = new ebg.stock();
 
-            //newStock.onItemCreate = dojo.hitch( this, 'setupCompany' ); 
-
-            newStock.create( this, $('building_area_'+this.player_id), 50, 50);
-            this.buildings = newStock;
+            newStock.create( this, $(stockName), 50, 50);
 
             // Specify that there are 5 buildings per row
             newStock.image_items_per_row = 5;
@@ -315,8 +326,11 @@ function (dojo, declare) {
 
                 i++;
             }
+            
+            if(itemCreateCallback)
+                newStock.onItemCreate = dojo.hitch( this, itemCreateCallback );
 
-            newStock.onItemCreate = dojo.hitch( this, 'setupNewBuilding' );
+            return newStock;
         },
 
         placeAppealTokens: function(company_order){
@@ -382,6 +396,39 @@ function (dojo, declare) {
             }
         },
 
+        createJobMarketZone: function(){
+            var zone = new ebg.zone();
+            zone.create( this, 'job_market', 12, 27 );
+            zone.setPattern('custom');
+            this.job_market = zone;
+            this.job_market.itemIdToCoords = function( i, control_width ) {
+                if( i%12==0 )
+                {   return {  x:9,y:0, w:12, h:27 }; }
+                else if( i%12==1 )
+                {   return {  x:38,y:0, w:12, h:27 }; }
+                else if( i%12==2 )
+                {   return {  x:9,y:27, w:12, h:27 }; }
+                else if( i%12==3 )
+                {   return {  x:38,y:27, w:12, h:27 }; }
+                else if( i%12==4 )
+                {   return {  x:9,y:59, w:12, h:27 }; }
+                else if( i%12==5 )
+                {   return {  x:38,y:59, w:12, h:27 }; }
+                else if( i%12==6 )
+                {   return {  x:9,y:86, w:12, h:27 }; }
+                else if( i%12==7 )
+                {   return {  x:38,y:86, w:12, h:27 }; }
+                else if( i%12==8 )
+                {   return {  x:9,y:118, w:12, h:27 }; }
+                else if( i%12==9 )
+                {   return {  x:38,y:118, w:12, h:27 }; }
+                else if( i%12==10 )
+                {   return {  x:9,y:145, w:12, h:27 }; }
+                else if( i%12==11 )
+                {   return {  x:38,y:145, w:12, h:27 }; }
+            };
+        },
+
         placeItemsOnBoard: function(gamedatas){
 
             for(var property in gamedatas.items){
@@ -401,19 +448,43 @@ function (dojo, declare) {
                     case 'building':
                         this.placeBuilding(item)
                         break;
+                    case 'worker':
+                        this.placeWorker(item)
+                        break;
                 }
             }
+        },
+
+        placeWorker: function(worker){
+            var itemId = worker.card_type + '_' + worker.card_id;
+
+            if(!dojo.byId(itemId)){
+                dojo.place( this.format_block( 'jstpl_token', {
+                    token_id: itemId, 
+                    token_class: 'worker'
+                } ), worker.card_location );
+            }
+
+            this.job_market.placeInZone(itemId);
         },
 
         placeBuilding: function(building, from){
             var hashBuildingType = this.hashString(building.card_type);
             var itemId = building.card_type+'_'+building.card_id;
+
+            var location = building.card_location; // building_track_2319929 or player_2319930 or player_2319930_play
+
+            if (location.indexOf('building_track') !== -1){
+                this[location].addToStockWithId(hashBuildingType, itemId, from);
+                return;
+            }
+
             this.buildings.addToStockWithId(hashBuildingType, itemId, from);
 
-            if(building.card_location.indexOf('_play') !== -1){
+            if(location.indexOf('_play') !== -1){
                 var div = this.buildings.getItemDivId(itemId);
                 dojo.addClass(div, "building_to_play");
-            } else if(building.card_location.indexOf('_discard') !== -1){
+            } else if(location.indexOf('_discard') !== -1){
                 var div = this.buildings.getItemDivId(itemId);
                 dojo.addClass(div, "building_to_discard");
             }
@@ -492,8 +563,9 @@ function (dojo, declare) {
         },
 
         placeAutomationToken: function(automation){
-            dojo.place( this.format_block( 'jstpl_automation_token', {
-                card_type: automation.card_type,
+            dojo.place( this.format_block( 'jstpl_token', {
+                token_id: automation.card_type,
+                token_class: 'automation_token'
             } ), automation.card_location );
         },
 
@@ -904,6 +976,12 @@ function (dojo, declare) {
 
             dojo.subscribe( 'certificateBought', this, "notif_certificateBought" );
             this.notifqueue.setSynchronous( 'certificateBought', 500 );
+
+            dojo.subscribe ('buildingsSelected', this, "notif_buildingsSelected");
+            this.notifqueue.setSynchronous( 'notif_buildingsSelected', 500 );
+
+            dojo.subscribe ('workersAdded', this, "notif_workersAdded");
+            this.notifqueue.setSynchronous( 'notif_workersAdded', 500 );
         },  
         
         // TODO: from this point and below, you can write your game notifications handling methods
@@ -962,11 +1040,24 @@ function (dojo, declare) {
             this.updateCounters(notif.args.counters);
         },
 
-        notif_certificateBought: function(notif)
-        {
+        notif_certificateBought: function(notif) {
             this.moveStock(notif.args.stock, notif.args.from);
 
             this.updateCounters(notif.args.counters);
+        },
+
+        notif_workersAdded: function(notif){
+            for(var i in notif.args.all_workers){
+                var worker = notif.args.all_workers[i];
+                this.placeWorker(worker);
+            }
+        },
+
+        notif_buildingsSelected: function(notif){
+            for(var i in notif.buildings){
+                var building = notif.buildings[i];
+                this.moveBuilding(building);
+            }
         }
    });             
 });

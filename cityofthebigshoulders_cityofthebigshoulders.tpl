@@ -29,6 +29,7 @@
 
 <div id="main_board_wrapper" class="whiteblock">
     <div id="main_board" class="center">
+        <div id="job_market"></div>
         <!-- BEGIN building_track -->
         <div id="building_track_{PLAYER_ID}" class="building_track" style="top: {TOP}px"></div>
         <!-- END building_track -->
@@ -85,11 +86,12 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 */
 
 var jstpl_player_board = '\<div class="cp_board">\
-    <div class="board_item"><div id="money_icon_${id}" class="token money"></div><span id="money_${id}">0</span></div>\
+    <div class="board_item"><div class="token money"></div><span id="money_${id}">0</span></div>\
+    <div class="board_item"><div class="token-small meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
 </div>';
 
 var jstpl_company_content = '\
-    <div class="board_item company_money"><div id="money_icon_${short_name}" class="token money"></div><span id="money_${short_name}">0</span></div>';
+    <div class="board_item company_money"><div class="token money"></div><span id="money_${short_name}">0</span></div>';
 
 var jstpl_stock_interior = '<div class="stock_percent"></div>';
 
@@ -97,7 +99,7 @@ var jstpl_share_token = '<div id="share_token_${short_name}" class="company_toke
 var jstpl_appeal_token = '<div id="appeal_token_${short_name}" class="company_token ${short_name}_token"></div>';
 
 var automation_holder = '<div id="${short_name}_automation_holder_${factory}_${number}" class="automation_holder" style="left:${left}px;"</div>'
-var jstpl_automation_token = '<div id="${card_type}" class="automation_token"></div>'
+var jstpl_token = '<div id="${token_id}" class="${token_class}"></div>'
 </script>  
 
 {OVERALL_GAME_FOOTER}

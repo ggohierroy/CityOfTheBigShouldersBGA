@@ -101,7 +101,7 @@ class CityOfTheBigShoulders extends Table
         //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
-        // TODO: setup the initial game situation here
+        // setup the initial game situation here
         $this->initializeDecks($players);
 
         // Activate first player (which is in general a good idea :) )
@@ -127,10 +127,10 @@ class CityOfTheBigShoulders extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id AS id, player_score AS score, treasury AS treasury, number_partners AS number_partners FROM player ";
+        $sql = "SELECT player_id AS id, player_score AS score, treasury AS treasury, number_partners AS number_partners, current_number_partners AS current_number_partners FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        // Gather all information about current game situation (visible by player $current_player_id).
         $sql = "SELECT id AS id, treasury AS treasury, appeal AS appeal, next_company_id AS next_company_id, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
         $owned_companies = self::getCollectionFromDb( $sql );
         $result['owned_companies'] = $owned_companies;
@@ -171,10 +171,12 @@ class CityOfTheBigShoulders extends Table
         foreach($result['players'] as $player_id => $player)
         {
             $money_id = "money_${player_id}";
-            $partner_id = "parter_${player_id}";
+            $partner_id = "partner_${player_id}";
+            $partner_current = "partner_current_${player_id}";
 
             $result ['counters'] [$money_id] = array ('counter_name' => "money_${player_id}", 'counter_value' => $player['treasury'] );
-            //$result ['counters'] [$partner_id] = array ('counter_name' => $partner_id, 'counter_value' => $player['number_partners'] );
+            $result ['counters'] [$partner_current] = array ('counter_name' => $partner_current, 'counter_value' => $player['current_number_partners'] );
+            $result ['counters'] [$partner_id] = array ('counter_name' => $partner_id, 'counter_value' => $player['number_partners'] );
         }
   
         return $result;
@@ -574,6 +576,12 @@ class CityOfTheBigShoulders extends Table
             $resource = array_pop($resource_bag);
 
             $cards[] = "(NULL,'resource','$resource','resource_bag','$i')";
+        }
+
+        // insert 4 workers
+        for($i = 0; $i < 4; $i++)
+        {
+            $cards[] = "(NULL,'worker','worker','job_market','0')";
         }
 
         $sql .= implode( $cards, ',' );
@@ -1171,8 +1179,77 @@ class CityOfTheBigShoulders extends Table
     function stGameActionPhaseSetup()
     {
         // get buildings that should be played or discarded
-        $sql = "SELECT ";
+        $sql = "SELECT card_id AS card_id, card_type AS card_type, card_location AS card_location FROM card WHERE primary_type = 'building' AND (card_location LIKE '%_play' OR card_location LIKE '%_discard')";
+        $buildings = self::getCollectionFromDB($sql);
 
+        $player_number = self::getPlayersNumber();
+        if(count($buildings) != 2 * $player_number)
+            throw new BgaVisibleSystemException("Expected more buildings to play and discard");
+
+        $number_of_workers_to_add = 0;
+
+        $new_buildings = [];
+        
+        // update location to track
+        foreach($buildings as $building_id => $building)
+        {
+            $sql = "";
+            $split = explode('_', $building['card_location']);
+            $building_action = $split[2];
+            $player_id = $split[1];
+            $building_number = $building['card_type'];
+            if($building_action == 'play')
+            {
+                // compute number of workers to add to board
+                $number_of_workers = $this->building[$building_number]['number_of_workers'];
+                $number_of_workers_to_add += $number_of_workers;
+
+                $new_buildings[$building_id] = $building;
+                $new_buildings[$building_id]['card_location'] = "building_track_${player_id}";
+
+                $sql = "UPDATE card SET card_location = 'building_track_${player_id}' WHERE card_id = $building_id";
+            }
+            else if($building_action == 'discard')
+            {
+                $sql = "UPDATE card SET card_location = 'building_discard' WHERE card_id = $building_id";
+            }
+            else
+            {
+                throw new BgaVisibleSystemException("Building should be marked as play or discard");
+            }
+            
+            self::DbQuery($sql);
+        }
+
+        // add workers to board
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location,card_location_arg) VALUES ";
+        $cards = [];
+        for($i = 0; $i < $number_of_workers_to_add; $i++)
+        {
+            $cards[] = "(NULL,'worker','worker',0,'job_market',0)";
+        }
+        $sql .= implode( $cards, ',' );
+        self::DbQuery( $sql );
+
+        $sql = "SELECT * FROM card WHERE primary_type = 'worker'";
+        $workers = self::getCollectionFromDB($sql);
+
+        // notify players
+        self::notifyAllPlayers( "buildingsSelected", clienttranslate( 'New buildings have been played to the board' ), array(
+            'buildings' => $new_buildings
+        ) );
+
+        self::notifyAllPlayers( "workersAdded", clienttranslate( '${workers_added} new workers added to the job market' ), array(
+            'workers_added' => $number_of_workers_to_add,
+            'all_workers' => $workers
+        ) );
+
+        // get first player in turn order and set as active player
+        $sql = "SELECT player_id FROM player WHERE player_order = 1";
+        $player = self::getNonEmptyObjectFromDB($sql);
+        $this->gamestate->changeActivePlayer( $player['player_id'] ); 
+
+        // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
     }
 
