@@ -297,11 +297,6 @@ function (dojo, declare) {
             script.
         
         */
-        
-        moveBuilding: function(building){
-            var split = building.card_location.split('_');
-            //var playerId = split[1]; // can't do this because building_track_id
-        },
 
        setupNewBuilding: function(item_div, item_type_id, item_id)
        {
@@ -1054,9 +1049,27 @@ function (dojo, declare) {
         },
 
         notif_buildingsSelected: function(notif){
-            for(var i in notif.buildings){
-                var building = notif.buildings[i];
-                this.moveBuilding(building);
+            
+            for(var i in notif.args.buildings){
+                var building = notif.args.buildings[i];
+                
+                var split = building.card_location.split('_'); // pattern building_track_playerId
+                var playerId = split[2];
+
+                this.placeBuilding(building, 'building_area_'+playerId);
+            }
+
+            var items = this.buildings.getAllItems();
+            for(var index in items){
+                var item = items[index];
+                var div = this.buildings.getItemDivId(item.id);
+                if(dojo.hasClass(div, 'building_to_discard')){
+                    // remove discarded building
+                    this.buildings.removeFromStockById(item.id);
+                } else if (dojo.hasClass(div, 'building_to_play')){
+                    // remove building that was moved to the building track
+                    this.buildings.removeFromStockById(item.id);
+                }
             }
         }
    });             
