@@ -1049,25 +1049,30 @@ function (dojo, declare) {
         },
 
         notif_buildingsSelected: function(notif){
-            
+            var currentPlayerId = this.player_id;
+            var currentPlayerBuilding = null;
             for(var i in notif.args.buildings){
                 var building = notif.args.buildings[i];
                 
                 var split = building.card_location.split('_'); // pattern building_track_playerId
                 var playerId = split[2];
 
-                this.placeBuilding(building, 'building_area_'+playerId);
+                if(playerId != currentPlayerId)
+                    this.placeBuilding(building, 'building_area_'+playerId);
+                else
+                    currentPlayerBuilding = building;
             }
 
             var items = this.buildings.getAllItems();
             for(var index in items){
                 var item = items[index];
-                var div = this.buildings.getItemDivId(item.id);
-                if(dojo.hasClass(div, 'building_to_discard')){
+                var divId = this.buildings.getItemDivId(item.id);
+                if(dojo.hasClass(divId, 'building_to_discard')){
                     // remove discarded building
                     this.buildings.removeFromStockById(item.id);
-                } else if (dojo.hasClass(div, 'building_to_play')){
+                } else if (dojo.hasClass(divId, 'building_to_play')){
                     // remove building that was moved to the building track
+                    this.placeBuilding(currentPlayerBuilding, divId);
                     this.buildings.removeFromStockById(item.id);
                 }
             }
