@@ -272,4 +272,14 @@
     top: 40px;
     position: absolute;
     height: 114px;
+    z-index: 100;
+}
+
+.worker-holder{
+    top: 32px;
+    position: absolute;
+    height: 27px;
+    width: 12px;
+    /* background-color: white;
+    opacity: 50%; */
 }

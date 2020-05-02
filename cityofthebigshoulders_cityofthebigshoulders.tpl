@@ -102,6 +102,7 @@ var jstpl_automation_holder = '<div id="${short_name}_automation_holder_${factor
 var jstpl_token = '<div id="${token_id}" class="${token_class}"></div>';
 
 var jstpl_factory = '<div id="${id}" class="factory" style="left:${left}px; width:${width}px;"</div>';
+var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${left}px;"</div>';
 
 </script>  
 

@@ -134,6 +134,7 @@ function (dojo, declare) {
 
             // connect all worker spots
             dojo.query(".worker_spot").connect( 'onclick', this, 'onWorkerSpotClicked' );
+            dojo.query(".factory").connect('onclick', this, 'onFactoryClicked');
             this.createWorkerZones();
  
             // Setup game notifications to handle (see "setupNotifications" method below)
@@ -300,6 +301,15 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_buildings', _('Confirm'), 'onConfirmBuildings');
                         this.addActionButton( 'cancel_play_building', _('Cancel'), 'onCancelSelectBuildings');
                         break;
+                    case 'client_actionChooseFactory':
+                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_chooseNumberOfWorkers':
+                        this.addActionButton( 'less_workers', _('-'), 'onRemoveWorker', null, false, 'gray');
+                        this.addActionButton( 'more_workers', _('+'), 'onAddWorker', null, false, 'gray');
+                        this.addActionButton( 'confirm_action', _('Confirm'), 'onConfirmAction');
+                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
+                        break;
                 }
             }
         },        
@@ -314,8 +324,7 @@ function (dojo, declare) {
         
         */
 
-        chooseFactory: function(action){
-            this.clientStateArgs.action = action;
+        chooseFactory: function(){
             this.setClientState("client_actionChooseFactory", {
                 descriptionmyturn : dojo.string.substitute(_('Choose a factory'),{
 
@@ -560,28 +569,41 @@ function (dojo, declare) {
             
             var factoryWidth = companyShortName == 'henderson' ? 93 : 97;
             var distanceToLastAutomation = companyShortName == 'henderson' ? 76 : 80;
-            for(var index in company.factories){
-                var factory = company.factories[index];
+            for(var factoryNumber in company.factories){
+                var factory = company.factories[factoryNumber];
                 
-                var factoryId = companyShortName + '_factory_' + index;
+                var factoryId = companyShortName + '_factory_' + factoryNumber;
                 dojo.place( this.format_block( 'jstpl_factory', {
                     id: factoryId,
-                    left: 65+factoryWidth*(index-1), // left of first factory + factory width * factory #
+                    left: 65+factoryWidth*(factoryNumber-1), // left of first factory + factory width * factory #
                     width: factoryWidth
                 } ), company_div.id );
 
                 // add automation token spots
-                var numberOfAutomations = factory['automation'];
+                var numberOfAutomations = factory.automation;
                 for(var i = 0; i < numberOfAutomations; i++){
                     dojo.place( this.format_block( 'jstpl_automation_holder', {
                         short_name: companyShortName,
-                        factory: index,
+                        factory: factoryNumber,
                         number: i,
                         left: distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
                     } ), factoryId );
                 }
 
                 // add worker spots
+                var numberOfWorkers = factory.workers;
+                var initialWorkerLeft = 43;
+                if(numberOfWorkers == 2){
+                    initialWorkerLeft = 29;
+                } else if (numberOfWorkers == 3){
+                    initialWorkerLeft = 15;
+                }
+                for(var i = 0; i < numberOfWorkers; i++){
+                    dojo.place( this.format_block( 'jstpl_worker_holder', {
+                        id: companyShortName+'_'+factoryNumber+'_worker_holder_'+i,
+                        left: initialWorkerLeft+27*i // left of first factory + factory width * factory # + left of last automation - distance between automation
+                    } ), factoryId );
+                }
 
                 // add manager spots
             }
@@ -728,18 +750,118 @@ function (dojo, declare) {
         
         */
 
+        onFactoryClicked: function(event){
+
+            var state = this.gamedatas.gamestate.name;
+            if(state != 'client_actionChooseFactory')
+                return;
+
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('buildingAction'))
+                return;
+
+            var factoryTargetId = event.currentTarget.id;
+            if(!dojo.hasClass(factoryTargetId, "active"))
+                return;
+            
+            var split = factoryTargetId.split('_'); // brunswick_factory_2
+            var companyShortName = split[0];
+            
+            var actionOk = true;
+            var costOk = true;
+            var message = "";
+            switch(this.clientStateArgs.buildingAction){
+                case "job_market_worker":
+                    // check if there are empty worker spots
+                    var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(factoryTargetId);
+                    if(emptyWorkerSpots == 0){
+                        actionOk = false;
+                        message = _("This factory doesn't have any more space for workers");
+                        break;
+                    }
+                    var cost = this.getCostOfWorkers(1);
+                    if(!this.checkCompanyMoney(companyShortName, cost)){
+                        costOk = false;
+                        break;
+                    }
+                    this.clientStateArgs.numberOfWorkersToBuy = 1;
+                    this.setClientState("client_chooseNumberOfWorkers", {
+                        descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
+                            cost: cost,
+                        })
+                    });
+                    break;
+            }
+
+            if(!costOk){
+                this.showMessage( _("Not enough money to pay for this action"), 'info' );
+                return;
+            }
+
+            if(!actionOk){
+                this.showMessage( message, 'info' );
+                return;
+            }
+
+            // deselect factories other than the current one
+            var factorySelector = '#'+factoryTargetId;
+            this.clientStateArgs.factoryId = factoryTargetId;
+            this.clientStateArgs.companyShortName = companyShortName;
+            dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
+            dojo.query(factorySelector).addClass('active');
+        },
+
+        checkCompanyMoney(companyShortName, cost){
+            var counterName = 'money_'+companyShortName;
+            var companyTreasury = this.gamedatas.counters[counterName]['counter_value'];
+            if(companyTreasury >= cost)
+                return true;
+            return false;
+        },
+
+        getCostOfWorkers(numberOfWorkers){
+            var workersInMarket = this.job_market.getAllItems().length;
+            var totalCost = 0;
+            var costConvert = {0: 50, 1: 40, 2: 40, 3: 40, 4: 40, 5: 30, 6: 30, 7: 30, 8: 30, 9: 20, 10: 20, 11: 20, 12: 20};
+            for(var i = 0; i<numberOfWorkers; i++){
+                var cost = costConvert[workersInMarket];
+                totalCost += cost;
+                if(workersInMarket > 0)
+                    workersInMarket--;
+            }
+            return totalCost;
+        },
+
+        getEmptyWorkerSpotsInFactory(factoryTargetId){
+            var split = factoryTargetId.split('_'); // brunswick_factory_2
+            var company = this.gamedatas.all_companies[split[0]]
+            var factorySelector = '#'+factoryTargetId;
+            var workerHolderChilds = dojo.query(factorySelector + '>.worker-holder>');
+            var numberOfWorkers = company.factories[split[2]].workers;
+            return numberOfWorkers - workerHolderChilds.length;
+        },
+
         onWorkerSpotClicked: function(event){
             dojo.stopEvent(event);
 
             if(!this.checkAction('buildingAction'))
                 return;
-            
+        
+            var state = this.gamedatas.gamestate.name;
+            if(state != 'playerActionPhase')
+                return;
+
+            var targetId = event.currentTarget.id;
+            if(!dojo.hasClass(targetId, "active"))
+                return;
+
             var playerId = this.getActivePlayerId();
-            var workerNumber = this.gamedatas.counters['partner_current_'+playerId]['counter_value'];
+            var counterName = 'partner_current_'+playerId;
+            var workerNumber = this.gamedatas.counters[counterName]['counter_value'];
             var workerId = 'worker_'+playerId+'_'+workerNumber;
 
-            // can only place one worker
-            if(dojo.byId(workerId))
+            if(workerNumber == 0)
                 return;
             
             // create worker
@@ -748,14 +870,20 @@ function (dojo, declare) {
                 token_class: 'token-small meeple meeple-'+this.player_color
             } ), 'overall_player_board_'+playerId );
 
+            // update meeple counter for current player (not reflected on the server yet)
+            dojo.byId(counterName).textContent = workerNumber - 1;
+
             // remove highlight from worker spots
             dojo.query('.worker_spot').removeClass('active');
 
-            var target = event.target;
+            var target = event.currentTarget;
+            this.clientStateArgs.buildingAction = target.id;
+            this.clientStateArgs.workerId = workerId;
+            
             switch(target.id){
                 case "job_market_worker":                    
                     this.job_market_worker_holder.placeInZone(workerId);
-                    this.chooseFactory("job_market");
+                    this.chooseFactory();
                     break;
             }
         },
@@ -764,6 +892,24 @@ function (dojo, declare) {
             dojo.stopEvent(event);
             dojo.query('.building_to_play').removeClass('building_to_play');
             dojo.query('.building_to_discard').removeClass('building_to_discard');
+            this.restoreServerGameState();
+        },
+
+        onCancelAction: function(event){
+            // destroy meeple
+            var workerId = this.clientStateArgs.workerId;
+            switch(this.clientStateArgs.buildingAction){
+                case 'job_market_worker':
+                    this.job_market_worker_holder.removeFromZone(workerId, true);
+                    break;
+            }
+
+            // reset counters with server-side counters
+            this.updateCounters(this.gamedatas.counters);
+
+            // make factories inactive
+            dojo.query('.factory').removeClass('active');
+
             this.restoreServerGameState();
         },
 
@@ -909,7 +1055,7 @@ function (dojo, declare) {
             }
 
             var initialShareValueStep = 4;
-            var buttonName = event.target.id;
+            var buttonName = event.currentTarget.id;
             switch(buttonName){
                 case 'initial_share_40':
                     initialShareValueStep = 5;
@@ -1012,6 +1158,54 @@ function (dojo, declare) {
             }
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
+        },
+
+        onAddWorker: function(){
+            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
+            var factoryId = this.clientStateArgs.factoryId;
+            var numberOfEmptySpots = this.getEmptyWorkerSpotsInFactory(factoryId);
+            
+            if(numberOfWorkersToBuy == numberOfEmptySpots)
+                return;
+
+            numberOfWorkersToBuy++;
+            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+
+            var companyShortName = this.clientStateArgs.companyShortName;
+            var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
+            if(!this.checkCompanyMoney(companyShortName, cost)){
+                this.showMessage( _("Not enough money to hire more workers"), 'info' );
+                return;
+            }
+
+            this.setClientState("client_chooseNumberOfWorkers", {
+                descriptionmyturn : dojo.string.substitute(_('Hire ${numberOfWorkers} worker for $${cost}'),{
+                    cost: cost,
+                    numberOfWorkers: numberOfWorkersToBuy
+                })
+            });
+        },
+
+        onRemoveWorker: function(){
+            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
+            if(numberOfWorkersToBuy == 1)
+                return;
+
+            numberOfWorkersToBuy--;
+            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+            
+            var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
+
+            this.setClientState("client_chooseNumberOfWorkers", {
+                descriptionmyturn : dojo.string.substitute(_('Hire ${numberOfWorkers} worker for $${cost}'),{
+                    cost: cost,
+                    numberOfWorkers: numberOfWorkersToBuy
+                })
+            });
+        },
+
+        onConfirmAction: function(){
+
         },
         
         ///////////////////////////////////////////////////
