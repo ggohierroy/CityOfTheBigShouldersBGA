@@ -142,10 +142,10 @@
 .money {  background-position: 0px 0px; }
 
 .meeple { background-position-y: -105px; }
-.meeple-red { background-position-x: -93px }
-.meeple-blue { background-position-x: 0px; }
-.meeple-green { background-position-x: -15px; }
-.meeple-yellow { background-position-x: -108px }
+.meeple-ff0000 { background-position-x: -93px }
+.meeple-0000ff { background-position-x: 0px; }
+.meeple-008000 { background-position-x: -15px; }
+.meeple-ffa500 { background-position-x: -108px }
 
 .stock {
     width: 109px;
@@ -188,7 +188,7 @@
     width: 13px;
     height: 22px;
     position: absolute;
-    top: 128px;
+    top: 88px;
 }
 
 .automation_token {
@@ -241,4 +241,35 @@
     /* background-color: white;
     opacity: 50%; */
     position: absolute;
+}
+
+.worker_spot {
+    z-index: 100;
+}
+
+.active {
+    border: 1px red solid;
+    cursor: pointer;
+}
+
+#job_market_worker{
+    left: 353px;
+    top: 136px;
+    height: 233px;
+    width: 58px;
+    position: absolute;
+}
+
+#job_market_worker_holder{
+    left: 353px;
+    top: 136px;
+    height: 233px;
+    width: 58px;
+    position: absolute;
+}
+
+.factory{
+    top: 40px;
+    position: absolute;
+    height: 114px;
 }

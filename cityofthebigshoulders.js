@@ -75,17 +75,20 @@ function (dojo, declare) {
                     dojo.connect( this['personal_area_'+player_id], 'onChangeSelection', this, 'onPersonalShareSelected' );
                 
                 // Setting up players boards if needed
-                var hexColorConvert = {"ff0000": 'red', "008000": 'green', "0000ff": 'blue', "ffa500": 'yellow'};
+                
                 var player_board_div = $('player_board_'+player_id);
                 dojo.place( this.format_block('jstpl_player_board', {
                     id: player.id,
-                    color: hexColorConvert[player.color]
+                    color: player.color
                 } ), player_board_div );
 
                 // create building tracks
                 this['building_track_'+player_id] = this.createBuildingsStock(gamedatas.all_buildings, 'building_track_'+player_id, 'setupNewBuilding');
                 this['building_track_'+player_id].item_margin=4;
             }
+
+            this.player_color = gamedatas.players[this.player_id].color;
+            this.clientStateArgs = {};
 
             // create share value zones
             this.createShareValueZones();
@@ -128,6 +131,10 @@ function (dojo, declare) {
 
             // update counters
             this.updateCounters(gamedatas.counters);
+
+            // connect all worker spots
+            dojo.query(".worker_spot").connect( 'onclick', this, 'onWorkerSpotClicked' );
+            this.createWorkerZones();
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -180,6 +187,15 @@ function (dojo, declare) {
                     break;
                 case 'playerBuildingPhase':
                     
+                    break;
+                case 'playerActionPhase':
+                    if(this.isCurrentPlayerActive())
+                        dojo.query('.worker_spot').addClass('active');
+                    else
+                        dojo.query('.worker_spot').removeClass('active');
+                    break;
+                case 'client_actionChooseFactory':
+                    dojo.query('#player_'+this.player_id+' .factory').addClass('active');
                     break;
             
             /* Example:
@@ -297,6 +313,21 @@ function (dojo, declare) {
             script.
         
         */
+
+        chooseFactory: function(action){
+            this.clientStateArgs.action = action;
+            this.setClientState("client_actionChooseFactory", {
+                descriptionmyturn : dojo.string.substitute(_('Choose a factory'),{
+
+                })
+            });
+        },
+
+        createWorkerZones: function(){
+            var zone = new ebg.zone();
+            zone.create( this, 'job_market_worker_holder', 15, 14 );
+            this.job_market_worker_holder = zone;
+        },
 
        setupNewBuilding: function(item_div, item_type_id, item_id)
        {
@@ -526,15 +557,23 @@ function (dojo, declare) {
             var distanceToLastAutomation = companyShortName == 'henderson' ? 76 : 80;
             for(var index in company.factories){
                 var factory = company.factories[index];
+                
+                var factoryId = companyShortName + '_factory_' + index;
+                dojo.place( this.format_block( 'jstpl_factory', {
+                    id: factoryId,
+                    left: 65+factoryWidth*(index-1), // left of first factory + factory width * factory #
+                    width: factoryWidth
+                } ), company_div.id );
+
                 // add automation token spots
                 var numberOfAutomations = factory['automation'];
                 for(var i = 0; i < numberOfAutomations; i++){
-                    dojo.place( this.format_block( 'automation_holder', {
+                    dojo.place( this.format_block( 'jstpl_automation_holder', {
                         short_name: companyShortName,
                         factory: index,
                         number: i,
-                        left: 65+factoryWidth*(index-1)+distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
-                    } ), company_div.id );
+                        left: distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
+                    } ), factoryId );
                 }
 
                 // add worker spots
@@ -683,6 +722,38 @@ function (dojo, declare) {
         },        
         
         */
+
+        onWorkerSpotClicked: function(event){
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('buildingAction'))
+                return;
+            
+            var playerId = this.getActivePlayerId();
+            var workerNumber = this.gamedatas.counters['partner_current_'+playerId]['counter_value'];
+            var workerId = 'worker_'+playerId+'_'+workerNumber;
+
+            // can only place one worker
+            if(dojo.byId(workerId))
+                return;
+            
+            // create worker
+            dojo.place( this.format_block( 'jstpl_token', {
+                token_id: workerId, 
+                token_class: 'token-small meeple meeple-'+this.player_color
+            } ), 'overall_player_board_'+playerId );
+
+            // remove highlight from worker spots
+            dojo.query('.worker_spot').removeClass('active');
+
+            var target = event.target;
+            switch(target.id){
+                case "job_market_worker":                    
+                    this.job_market_worker_holder.placeInZone(workerId);
+                    this.chooseFactory("job_market");
+                    break;
+            }
+        },
 
         onCancelSelectBuildings: function(event){
             dojo.stopEvent(event);
