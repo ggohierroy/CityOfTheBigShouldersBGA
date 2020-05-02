@@ -482,6 +482,11 @@ function (dojo, declare) {
         },
 
         placeWorker: function(worker){
+
+            // never more than 12 workers in the market
+            if(this.job_market.getItemNumber() == 12)
+                return;
+
             var itemId = worker.card_type + '_' + worker.card_id;
 
             if(!dojo.byId(itemId)){
