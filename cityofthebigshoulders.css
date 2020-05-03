@@ -48,25 +48,6 @@
 
 /********* You can start writing your CSS below this line: **********/
 
-
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
-
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
-
 #main_board {
     background-image: url(img/board_small.png);
     width: 980px;
@@ -261,11 +242,55 @@
 }
 
 #job_market_worker_holder{
-    left: 353px;
-    top: 136px;
     height: 233px;
     width: 58px;
     position: absolute;
+}
+
+.general-action {
+    height: 49px;
+    width: 49px;
+    position: absolute;
+}
+
+#advertising {
+    left: 420px;
+    top: 136px;
+}
+
+#fundraising_40{
+    left: 781px;
+    top: 198px;
+}
+
+#fundraising_60{
+    left: 780px;
+    top: 259px;
+}
+
+#fundraising_80{
+    left: 780px;
+    top: 321px;
+}
+
+#hire_manager{
+    left: 420px;
+    top: 198px;
+}
+
+#hire_salesperson{
+    left: 420px;
+    top: 260px;
+}
+
+#capital_investment{
+    left: 420px;
+    top: 321px;
+}
+
+#extra_dividends{
+    left: 781px;
+    top: 136px;
 }
 
 .factory{

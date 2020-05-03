@@ -95,7 +95,7 @@ function (dojo, declare) {
             this.createShareValueZones();
             this.createAppealZones();
             this.createJobMarketZone();
-            this.createWorkerZones();
+            this.createWorkerZones(gamedatas.general_action_spaces);
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
@@ -333,10 +333,12 @@ function (dojo, declare) {
             });
         },
 
-        createWorkerZones: function(){
-            var zone = new ebg.zone();
-            zone.create( this, 'job_market_worker_holder', 15, 14 );
-            this.job_market_worker_holder = zone;
+        createWorkerZones: function(actionSpaces){
+            for(var actionSpaceName in actionSpaces){
+                var zone = new ebg.zone();
+                zone.create( this, actionSpaceName+'_holder', 15, 14 );
+                this[actionSpaceName + '_holder'] = zone;
+            }
         },
 
        setupNewBuilding: function(item_div, item_type_id, item_id)

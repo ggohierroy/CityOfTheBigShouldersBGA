@@ -138,6 +138,7 @@ class CityOfTheBigShoulders extends Table
 
         $result['all_buildings'] = $this->building;
         $result['all_companies'] = $this->companies;
+        $result['general_action_spaces'] = $this->general_action_spaces;
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg

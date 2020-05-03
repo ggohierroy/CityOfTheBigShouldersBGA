@@ -29,9 +29,34 @@
 
 <div id="main_board_wrapper" class="whiteblock">
     <div id="main_board" class="center">
-        <div id="job_market_worker_holder"></div>
-        <div id="job_market_worker" class="worker_spot"></div>
+        <div id="job_market_worker" class="worker_spot">
+            <div id="job_market_worker_holder"></div>
+        </div>
         <div id="job_market"></div>
+        <div id="advertising" class="worker_spot general-action">
+            <div id="advertising_holder"></div>
+        </div>
+        <div id="fundraising_40" class="worker_spot general-action">
+            <div id="fundraising_40_holder"></div>
+        </div>
+        <div id="fundraising_60" class="worker_spot general-action">
+            <div id="fundraising_60_holder"></div>
+        </div>
+        <div id="fundraising_80" class="worker_spot general-action">
+            <div id="fundraising_80_holder"></div>
+        </div>
+        <div id="hire_manager" class="worker_spot general-action">
+            <div id="hire_manager_holder"></div>
+        </div>
+        <div id="hire_salesperson" class="worker_spot general-action">
+            <div id="hire_salesperson_holder"></div>
+        </div>
+        <div id="capital_investment" class="worker_spot general-action">
+            <div id="capital_investment_holder"></div>
+        </div>
+        <div id="extra_dividends" class="worker_spot general-action">
+            <div id="extra_dividends_holder"></div>
+        </div>
         <!-- BEGIN building_track -->
         <div id="building_track_{PLAYER_ID}" class="building_track" style="top: {TOP}px"></div>
         <!-- END building_track -->
