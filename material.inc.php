@@ -459,269 +459,405 @@ $this->capital_asset = [
   ],
 ];
 
+$this->general_action_spaces = [
+  "job_market" => [
+    "player_limit" => false,
+    "cost" => 999,
+    "payment" => "companytobank"
+  ],
+  "advertising" => [
+    "player_limit" => false,
+    "cost" => 20,
+    "payment" => "companytobank"
+  ],
+  "fundraising_40" => [
+    "player_limit" => false,
+    "cost" => 40,
+    "payment" => "banktocompany"
+  ],
+  "fundraising_60" => [
+    "player_limit" => true,
+    "cost" => 60,
+    "payment" => "banktocompany"
+  ],
+  "fundraising_80" => [
+    "player_limit" => true,
+    "cost" => 80,
+    "payment" => "banktocompany"
+  ],
+  "hire_manager" => [
+    "player_limit" => true,
+    "cost" => 60,
+    "payment" => "companytobank"
+  ],
+  "hire_salesperson" => [
+    "player_limit" => true,
+    "cost" => 70,
+    "payment" => "companytobank"
+  ],
+  "capital_investment" => [
+    "player_limit" => true,
+    "cost" => 999,
+    "payment" => "companytobank"
+  ],
+  "extra_dividends" => [
+    "player_limit" => false,
+    "cost" => 100,
+    "payment" => "companytoshareholders"
+  ]
+];
+
 $this->building = [
   "building1" => [ //capital asset discount
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 20,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $10 discount.")
   ],
   "building2" => [ //salesperson
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 20,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Salesperson.")
   ],
   "building3" => [ // wood + livestock
     "pips" => 1,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 wood(brown) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building4" => [ // appeal +1
     "pips" => 1,
     "min_players" => 4,
     "number_of_workers" => 2,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 1 space on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building5" => [ // wood + coal
     "pips" => 1,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
   ],
   "building6" => [ // automation
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
   ],
   "building7" => [ // wood + steel
     "pips" => 1,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
   ],
   "building8" => [ // different resources
     "pips" => 1,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
   ],
   "building9" => [ // appeal +2
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building10" => [ // produce good
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 20,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building immediately produces 1 good.")
   ],
   "building11" => [ // manager
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 20,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive a Manager.")
   ],
   "building12" => [ // same resources
     "pips" => 1,
     "min_players" => 4,
     "number_of_workers" => 2,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
   ],
   "building13" => [ // livestock + steel
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building14" => [ // manager
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 30,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Manager.")
   ],
   "building15" => [ // coal + steel
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 coal(black) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building16" => [ // appeal + 2
     "pips" => 2,
     "min_players" => 3,
     "number_of_workers" => 1,
+    "cost" => 30,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building17" => [ // coal + livestock
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building18" => [ // different resources
     "pips" => 2,
     "min_players" => 3,
     "number_of_workers" => 1,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
   ],
   "building19" => [ // capital asset discount
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 20,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $20 discount.")
   ],
   "building20" => [ // same resources
     "pips" => 2,
     "min_players" => 3,
     "number_of_workers" => 2,
+    "cost" => 10,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
   ],
   "building21" => [ // double automation
     "pips" => 2,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 90,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
   ],
   "building22" => [ // salesperson
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Salesperson.")
   ],
   "building23" => [ // double manager
     "pips" => 2,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 60,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Managers.")
   ],
   "building24" => [ // automation
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
   ],
   "building25" => [ // double salesperson
     "pips" => 2,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 80,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Salespeople.")
   ],
   "building26" => [ // double worker
     "pips" => 2,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 50,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building receives 2 Workers from the General Supply.")
   ],
   "building27" => [ // produce 2 goods
     "pips" => 2,
     "min_players" => 3,
     "number_of_workers" => 2,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("immediately produces 2 Goods.")
   ],
   "building28" => [ // appeal + 3
     "pips" => 2,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 50,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building29" => [ // 150 dividend
     "pips" => 3,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 30,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The company that uses this Building pays $150 from its treasury to its shareholders at $15 per share. If the company does not have $150 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building30" => [ // 200 dividend
     "pips" => 3,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 40,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The company that uses this Building pays $200 from its treasury to its shareholders at $20 per share. If the company does not have $200 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building31" => [ // 250 dividend
     "pips" => 3,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 50,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The company that uses this Building pays $250 from its treasury to its shareholders at $25 per share. If the company does not have $250 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building32" => [ // 300 dividend
     "pips" => 3,
     "min_players" => 4,
     "number_of_workers" => 0,
+    "cost" => 60,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The company that uses this Building pays $300 from its treasury to its shareholders at $30 per share. If the company does not have $300 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building33" => [ // double salesperson
     "pips" => 3,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Salespeople.")
   ],
   "building34" => [ // 2 coal + 1 livestock
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building35" => [ // double manager
     "pips" => 3,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Managers.")
   ],
   "building36" => [ // 2 livestock + 1 steel
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building37" => [ // 2 wood + 1 coal
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
   ],
   "building38" => [ // 2 steel + 1 wood
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 2 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
   ],
   "building39" => [ // appeal +3
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 60,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building40" => [ // capital asset discount
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 2,
+    "cost" => 40,
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $30 discount.")
   ],
   "building41" => [ // produce 3 goods
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 60,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will immediately produce 3 Goods.")
   ],
   "building42" => [ // double automation
     "pips" => 3,
     "min_players" => 2,
     "number_of_workers" => 1,
+    "cost" => 90,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
   ],
   "building43" => [ // worker + manager
     "pips" => 3,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 40,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Worker and 1 Manager from the General Supply to place in any of their factories.")
   ],
   "building44" => [ // worker + salesperson
     "pips" => 3,
     "min_players" => 3,
     "number_of_workers" => 0,
+    "cost" => 50,
+    "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Worker and 1 Salesperson from the General Supply to place in any of their factories.")
   ]
 ];

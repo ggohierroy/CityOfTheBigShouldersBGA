@@ -89,6 +89,7 @@ function (dojo, declare) {
 
             this.player_color = gamedatas.players[this.player_id].color;
             this.clientStateArgs = {};
+            this.clientStateArgs.actionArgs = {};
 
             // create share value zones
             this.createShareValueZones();
@@ -579,6 +580,8 @@ function (dojo, declare) {
                     width: factoryWidth
                 } ), company_div.id );
 
+                dojo.query("#"+factoryId).connect('onclick', this, 'onFactoryClicked');
+
                 // add automation token spots
                 var numberOfAutomations = factory.automation;
                 for(var i = 0; i < numberOfAutomations; i++){
@@ -785,7 +788,7 @@ function (dojo, declare) {
                         costOk = false;
                         break;
                     }
-                    this.clientStateArgs.numberOfWorkersToBuy = 1;
+                    this.clientStateArgs.actionArgs.numberOfWorkersToBuy = 1;
                     this.setClientState("client_chooseNumberOfWorkers", {
                         descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
                             cost: cost,
@@ -1161,7 +1164,7 @@ function (dojo, declare) {
         },
 
         onAddWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
+            var numberOfWorkersToBuy = this.clientStateArgs.actionArgs.numberOfWorkersToBuy;
             var factoryId = this.clientStateArgs.factoryId;
             var numberOfEmptySpots = this.getEmptyWorkerSpotsInFactory(factoryId);
             
@@ -1187,7 +1190,7 @@ function (dojo, declare) {
         },
 
         onRemoveWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
+            var numberOfWorkersToBuy = this.clientStateArgs.actionArgs.numberOfWorkersToBuy;
             if(numberOfWorkersToBuy == 1)
                 return;
 
@@ -1205,7 +1208,24 @@ function (dojo, declare) {
         },
 
         onConfirmAction: function(){
-
+            if(!this.checkAction('buildingAction'))
+                return;
+            
+            debugger;
+            var args = [];
+            for(var property in this.clientStateArgs.actionArgs){
+                var arg = this.clientStateArgs.actionArgs[property];
+                args.push(arg);
+            }
+            var actionArgs = args.join(",");
+            
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buildingAction.html", {
+                buildingAction: this.clientStateArgs.buildingAction,
+                companyShortName: this.clientStateArgs.companyShortName,
+                workerId: this.clientStateArgs.workerId,
+                factoryId: this.clientStateArgs.factoryId,
+                actionArgs: actionArgs
+            }, this, function( result ) {} );
         },
         
         ///////////////////////////////////////////////////

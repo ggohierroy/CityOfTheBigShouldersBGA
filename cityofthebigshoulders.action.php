@@ -147,6 +147,26 @@
       self::ajaxResponse( );
     }
 
+    public function buildingAction()
+    {
+      self::setAjaxMode();
+
+      // buildingAction: this.clientStateArgs.buildingAction,
+      // companyShortName: this.clientStateArgs.companyShortName,
+      // workerId: this.clientStateArgs.workerId,
+      // factoryId: this.clientStateArgs.factoryId,
+      // actionArgs: $actionArgs
+      $building_action = self::getArg( "buildingAction", AT_alphanum, true );
+      $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
+      $worker_id = self::getArg( "workerId", AT_alphanum, true );
+      $factory_id = self::getArg( "factoryId", AT_alphanum, false );
+      $action_args = self::getArg( "actionArgs", AT_numberlist, false );
+
+      $this->game->buildingAction( $building_action, $company_short_name, $worker_id, $factory_id, $action_args );
+
+      self::ajaxResponse( );
+    }
+
   }
   
 

@@ -650,6 +650,25 @@ class CityOfTheBigShoulders extends Table
     
     */
 
+    function buildingAction( $building_action, $company_short_name, $worker_id, $factory_id, $action_args )
+    {
+        // check if action is available (building has been played)
+
+        // check if there are spots left for another player
+
+        // check if company owned by player
+
+        // check if player has workers left
+
+        // check if cost can be payed
+
+        // create worker in building location
+
+        // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
+
+        // other effects depending on building
+    }
+
     function selectBuildings($played_building_id, $discarded_building_id)
     {
         self::checkAction( 'selectBuildings' );
