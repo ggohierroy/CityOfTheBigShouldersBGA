@@ -866,6 +866,8 @@ function (dojo, declare) {
 
             if(workerNumber == 0)
                 return;
+
+            // TODO: check if spot can be used multiple times
             
             // create worker
             dojo.place( this.format_block( 'jstpl_token', {
@@ -1172,7 +1174,7 @@ function (dojo, declare) {
                 return;
 
             numberOfWorkersToBuy++;
-            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+            this.clientStateArgs.actionArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
 
             var companyShortName = this.clientStateArgs.companyShortName;
             var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
@@ -1195,7 +1197,7 @@ function (dojo, declare) {
                 return;
 
             numberOfWorkersToBuy--;
-            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+            this.clientStateArgs.actionArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
             
             var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
 
@@ -1211,7 +1213,6 @@ function (dojo, declare) {
             if(!this.checkAction('buildingAction'))
                 return;
             
-            debugger;
             var args = [];
             for(var property in this.clientStateArgs.actionArgs){
                 var arg = this.clientStateArgs.actionArgs[property];

@@ -208,6 +208,46 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    // $factory_id -> 'brunswick_factory_1'
+    function hireWorkers($number_of_workers, $company_short_name, $factory_id)
+    {
+        $split = explode('_', $factory_id);
+        $factory_number = $split[2];
+        $condition = $company_short_name.'_'.$factory_number;
+        
+        $total_spots = $this->companies[$company_short_name]['factories'][$factory_number]['workers'];
+        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location LIKE '$condition%'";
+        $number_of_workers_in_factory = self::getUniqueValueFromDB($sql);
+        
+        $available_spots = $total_spots - $number_of_workers_in_factory;
+        if($available_spots < 0)
+            throw new BgaVisibleSystemException("Negative spots available in factory");
+        
+        if($available_spots < $number_of_workers)
+            throw new BgaVisibleSystemException("Not enough space for hired workers");
+
+        $sql = "SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'";
+        $workers_in_market = self::getObjectListFromDB($sql);
+        $number_of_workers_in_market = count($workers_in_market);
+        $convert = [0 => 50, 1 => 40, 2 => 40, 3 => 40, 4 => 40, 5 => 30, 6 => 30, 7 => 30, 8 => 30, 9 => 20, 10 => 20, 11 => 20, 12 => 20];
+        $cost = 0;
+        $values = [];
+        for($i = 0; $i < $number_of_workers; $i++){
+            $cost += $convert[$number_of_workers_in_market];
+            if($number_of_workers_in_market > 0){
+                $worker = array_shift($workers_in_market);
+                $values[] = $worker['card_id'];
+                $number_of_workers_in_market--;
+            }
+        }
+
+        // move these workers to the factory
+        $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company' WHERE card_id IN ";
+        $sql .= "(".implode( $values, ',' ).")";
+        self::DbQuery($sql);
+        return $cost;
+    }
+
     function getPlayerShares($player_id)
     {
         $sql = "SELECT card_id AS card_id, card_type AS card_type FROM card WHERE primary_type = 'stock' AND card_location_arg = $player_id AND owner_type = 'player'";
@@ -600,7 +640,7 @@ class CityOfTheBigShoulders extends Table
     function getPlayer($player_id)
     {
         return self::getObjectFromDB(
-            "SELECT player_id id, treasury treasury
+            "SELECT player_id AS id, treasury AS treasury, current_number_partners AS current_number_partners
             FROM player 
             WHERE player_id='$player_id'"
         );
@@ -652,21 +692,103 @@ class CityOfTheBigShoulders extends Table
 
     function buildingAction( $building_action, $company_short_name, $worker_id, $factory_id, $action_args )
     {
-        // check if action is available (building has been played)
+        self::checkAction( 'buildingAction' );
+        $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
 
-        // check if there are spots left for another player
+        // check if general action space
+        $building_material = $this->general_action_spaces[$building_action];
+
+        $building = null;
+        if($building_material == null){
+            // check if action is available (building has been played)
+            $sql = "SELECT card_id FROM card WHERE primary_type = 'building' AND card_type = '$building_action'";
+            $building = self::getObjectFromDB($sql);
+
+            if($building == null){
+                throw new BgaVisibleSystemException("Building does not exist");
+            }
+
+            $building_material = $this->building[$building_action];
+        }
+
+        // check if spot is available
+        if($building_material['player_limit']){
+            // get workers in that spot
+            $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'partner' AND card_location = '$building_action'";
+            $other_partners = self::getUniqueValueFromDB($sql);
+            if($other_partners != 0)
+                throw new BgaVisibleSystemException("There is already another partner on this action space");
+        }
 
         // check if company owned by player
+        $sql = "SELECT id AS id, owner_id AS owner_id, treasury AS treasury FROM company WHERE short_name = '$company_short_name' AND owner_id = '$player_id'";
+        $company = self::getObjectFromDB($sql);
+        if($company == null)
+            throw new BgaVisibleSystemException("The selected company is not owned by current player");
+        $company_id = $company['id'];
 
         // check if player has workers left
+        $player = self::getPlayer($player_id);
+        $number_of_partners = $player['current_number_partners'];
+        if($number_of_partners == 0)
+            throw new BgaVisibleSystemException("You don't have any more workers");
+        
+        $number_of_partners--;
+        $sql = "UPDATE player SET current_number_partners = $number_of_partners WHERE player_id = $player_id";
+        self::DbQuery($sql);
 
         // check if cost can be payed
+        $cost = 0;
+        $new_company_treasury = $company['treasury'];
+        if($building_action == 'job_market_worker'){
+            $number_of_workers = intval($action_args);
+            $cost = self::hireWorkers($number_of_workers, $company_short_name, $factory_id);
+        } else if ($building_action == 'capital_investment'){
+            // TODO: implement this
+        } else {
+            $cost = $building_material['cost'];
+        }
 
-        // create worker in building location
+        $payment_method = $building_material['payment'];
+        if($payment_method == 'companytobank' || $payment_method == 'companytoplayer' || $payment_method == 'companytoshareholders')
+        {
+            if($company['treasury'] < $cost)
+                throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this action");
+            $new_company_treasury -= $cost;
+        }
+
+        // other checks specific to action
+        switch($building_action){
+            case 'job_market_worker':                
+                break;
+        }
+
+        $values = [];
+        $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+        // create partner in building location
+        $values[] = "('player','partner','partner_${player_id}',0,'$building_action',0)";
 
         // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
+        switch($building_material['payment'])
+        {
+            case 'companytobank':
+                $sql = "UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id";
+                self::DbQuery($sql);
+                break;
+        }
 
         // other effects depending on building
+        switch($building_action){
+            case 'job_market_worker':
+                break;
+        }
+
+        $card_sql .= implode( $values, ',' );
+        self::DbQuery($card_sql);
+
+        // find a way to notify
+
+        // set state to next game state
     }
 
     function selectBuildings($played_building_id, $discarded_building_id)

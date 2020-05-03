@@ -460,7 +460,7 @@ $this->capital_asset = [
 ];
 
 $this->general_action_spaces = [
-  "job_market" => [
+  "job_market_worker" => [
     "player_limit" => false,
     "cost" => 999,
     "payment" => "companytobank"
