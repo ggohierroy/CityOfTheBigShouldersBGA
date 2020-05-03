@@ -91,10 +91,11 @@ function (dojo, declare) {
             this.clientStateArgs = {};
             this.clientStateArgs.actionArgs = {};
 
-            // create share value zones
+            // create zones
             this.createShareValueZones();
             this.createAppealZones();
             this.createJobMarketZone();
+            this.createWorkerZones();
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
@@ -136,7 +137,6 @@ function (dojo, declare) {
             // connect all worker spots
             dojo.query(".worker_spot").connect( 'onclick', this, 'onWorkerSpotClicked' );
             dojo.query(".factory").connect('onclick', this, 'onFactoryClicked');
-            this.createWorkerZones();
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -466,7 +466,7 @@ function (dojo, declare) {
         },
 
         placeItemsOnBoard: function(gamedatas){
-
+            var companyWorkers = [];
             for(var property in gamedatas.items){
                 var item = gamedatas.items[property];
 
@@ -484,10 +484,21 @@ function (dojo, declare) {
                     case 'building':
                         this.placeBuilding(item)
                         break;
+                    case 'partner':
+                        this.placePartner(item);
+                        break;
                     case 'worker':
-                        this.placeWorker(item)
+                        // we place company workers after everything because we want to place automation tokens first
+                        if(item.owner_type != 'company')
+                            this.placeWorker(item)
+                        else
+                            companyWorkers.push(item);
                         break;
                 }
+            }
+
+            for(var i = 0; i < companyWorkers.length; i++){
+                this.placeWorkerInFactory(companyWorkers[i]);
             }
         },
 
@@ -626,11 +637,59 @@ function (dojo, declare) {
             this.placeShareValue(company.share_value_step, company.short_name, company.owner_id);
         },
 
+        placePartner: function(partner){
+            var partnerId = partner.card_type; // worker_{playerId}_{workerNumber}
+            
+            if(!dojo.byId(partnerId)){
+                var playerId = partnerId.split('_')[1];
+                var playerColor = this.gamedatas.players[playerId].color;
+                dojo.place( this.format_block( 'jstpl_token', {
+                    token_id: partnerId, 
+                    token_class: 'token-small meeple meeple-'+playerColor
+                } ), 'overall_player_board_'+playerId );
+            }
+
+            this[partner.card_location + '_holder'].placeInZone(partnerId);
+        },
+
         placeAutomationToken: function(automation){
             dojo.place( this.format_block( 'jstpl_token', {
                 token_id: automation.card_type,
                 token_class: 'automation_token'
             } ), automation.card_location );
+        },
+
+        placeWorkerInFactory(worker, from){
+            var tokenId = 'worker_' + worker.card_id;
+            var workerSpotId = this.getNextAvailableWorkerSpot(worker.card_location);
+            if(from == 'market'){
+                this.job_market.removeFromZone(tokenId);
+                dojo.place( this.format_block( 'jstpl_token', {
+                    token_id: tokenId,
+                    token_class: 'worker'
+                } ), workerSpotId );
+                this.placeOnObject( tokenId, 'job_market');
+                this.slideToObject( tokenId, workerSpotId ).play();
+            } else if (from == 'supply'){
+
+            } else {
+                // just place worker directly
+                dojo.place( this.format_block( 'jstpl_token', {
+                    token_id: tokenId,
+                    token_class: 'worker'
+                } ), workerSpotId );
+            }
+        },
+
+        // factoryId -> spalding_2
+        getNextAvailableWorkerSpot(factoryId){
+            var split = factoryId.split('_');
+            var companyShortName = split[0];
+            var factoryNumber = split[1];
+
+            var factorySelector = '#'+companyShortName + '_factory_' + factoryNumber;
+            var availableWorkerSpots = dojo.query(factorySelector + '>.worker-holder:empty');
+            return availableWorkerSpots[0].id;
         },
 
         placeAvailableCompany: function(shortName){
@@ -870,10 +929,11 @@ function (dojo, declare) {
             // TODO: check if spot can be used multiple times
             
             // create worker
-            dojo.place( this.format_block( 'jstpl_token', {
-                token_id: workerId, 
-                token_class: 'token-small meeple meeple-'+this.player_color
-            } ), 'overall_player_board_'+playerId );
+            var target = event.currentTarget;
+            this.placePartner({
+                card_type: workerId,
+                card_location: target.id
+            });
 
             // update meeple counter for current player (not reflected on the server yet)
             dojo.byId(counterName).textContent = workerNumber - 1;
@@ -881,13 +941,11 @@ function (dojo, declare) {
             // remove highlight from worker spots
             dojo.query('.worker_spot').removeClass('active');
 
-            var target = event.currentTarget;
             this.clientStateArgs.buildingAction = target.id;
             this.clientStateArgs.workerId = workerId;
             
             switch(target.id){
                 case "job_market_worker":                    
-                    this.job_market_worker_holder.placeInZone(workerId);
                     this.chooseFactory();
                     break;
             }
@@ -1243,20 +1301,6 @@ function (dojo, declare) {
         */
         setupNotifications: function()
         {
-            console.log( 'notifications subscriptions setup' );
-            
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-
             dojo.subscribe( 'startCompany', this, "notif_startCompany" );
             this.notifqueue.setSynchronous( 'startCompany', 500 );
 
@@ -1268,24 +1312,41 @@ function (dojo, declare) {
 
             dojo.subscribe ('workersAdded', this, "notif_workersAdded");
             this.notifqueue.setSynchronous( 'notif_workersAdded', 500 );
-        },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
-        /*
-        Example:
-        
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
-            
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
+
+            dojo.subscribe('workersHired', this, "notif_workersHired");
+            this.notifqueue.setSynchronous('notif_workersHired', 500);
+
+            dojo.subscribe('actionUsed', this, "notif_actionUsed");
+            this.notifqueue.setSynchronous('notif_actionUsed', 500);
+
+            dojo.subscribe('countersUpdated', this, "notif_countersUpdated");
+            this.notifqueue.setSynchronous('notif_countersUpdated', 500);
+        },
+
+        notif_workersHired: function(notif){
+            for(var index in notif.args.worker_ids){
+                workerId = notif.args.worker_ids[index];
+                this.placeWorkerInFactory({
+                    card_id: workerId,
+                    card_location: notif.args.factory_id
+                }, 'market');
+            }
+        },
+
+        notif_countersUpdated: function(notif){
+            this.updateCounters(notif.args.counters);
+        },
+
+        notif_actionUsed: function(notif){
+            // create worker if it doesn't exist and move it to building
+            this.placePartner({
+                card_type: notif.args.worker_id,
+                card_location: notif.args.building_action
+            });
+
+            // update counters
+            this.updateCounters(notif.args.counters);
+        },
 
         notif_startCompany: function( notif )
         {

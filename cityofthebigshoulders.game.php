@@ -208,6 +208,10 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function addCounter(&$counters, $counter_name, $counter_value){
+        $counters[$counter_name] = ['counter_name' => $counter_name, 'counter_value' => $counter_value];
+    }
+
     // $factory_id -> 'brunswick_factory_1'
     function hireWorkers($number_of_workers, $company_short_name, $factory_id)
     {
@@ -245,6 +249,17 @@ class CityOfTheBigShoulders extends Table
         $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company' WHERE card_id IN ";
         $sql .= "(".implode( $values, ',' ).")";
         self::DbQuery($sql);
+
+        $company_material = $this->companies[$company_short_name];
+        $company_name = $company_material['name'];
+
+        self::notifyAllPlayers( "workersHired", clienttranslate( '${company_name} hired ${number_of_workers} workers from the job market' ), array(
+            'factory_id' => $condition,
+            'company_name' => $company_name,
+            'worker_ids' => $values,
+            'number_of_workers' => $number_of_workers
+        ) );
+
         return $cost;
     }
 
@@ -733,9 +748,27 @@ class CityOfTheBigShoulders extends Table
         if($number_of_partners == 0)
             throw new BgaVisibleSystemException("You don't have any more workers");
         
+        // TODO: front-end shouldn't send this
+        $worker_id = "worker_${player_id}_${number_of_partners}";
+        
+        // update player's number of partners
         $number_of_partners--;
         $sql = "UPDATE player SET current_number_partners = $number_of_partners WHERE player_id = $player_id";
         self::DbQuery($sql);
+
+        $counters = [];
+        self::addCounter($counters, "partner_current_${player_id}", $number_of_partners);
+
+        $company_material = $this->companies[$company_short_name];
+        $company_name = $company_material['name'];
+        // notify players that partner was played
+        self::notifyAllPlayers( "actionUsed", clienttranslate( '${player_name} used an action on behalf of ${company_name}' ), array(
+            'player_name' => self::getActivePlayerName(),
+            'company_name' => $company_name,
+            'worker_id' => $worker_id,
+            'building_action' => $building_action,
+            'counters' => $counters,
+        ) );
 
         // check if cost can be payed
         $cost = 0;
@@ -766,16 +799,28 @@ class CityOfTheBigShoulders extends Table
         $values = [];
         $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
         // create partner in building location
-        $values[] = "('player','partner','partner_${player_id}',0,'$building_action',0)";
+        $values[] = "('player','partner','${worker_id}',0,'$building_action',0)";
 
         // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
+        $message = null;
         switch($building_material['payment'])
         {
             case 'companytobank':
                 $sql = "UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id";
                 self::DbQuery($sql);
+
+                self::addCounter($counters, "money_${company_short_name}", $new_company_treasury);
+
+                $message = clienttranslate('${company_name} pays the bank $${cost}');
                 break;
         }
+
+        // notify payment
+        self::notifyAllPlayers( "countersUpdated", $message, array(
+            'cost' => $cost,
+            'company_name' => $company_name,
+            'counters' => $counters,
+        ) );
 
         // other effects depending on building
         switch($building_action){
@@ -786,7 +831,12 @@ class CityOfTheBigShoulders extends Table
         $card_sql .= implode( $values, ',' );
         self::DbQuery($card_sql);
 
-        // find a way to notify
+        // other notifications depending on building
+        switch($building_action){
+            case 'job_market_worker':
+                
+                break;
+        }
 
         // set state to next game state
     }
