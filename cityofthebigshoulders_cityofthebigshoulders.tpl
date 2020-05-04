@@ -29,6 +29,7 @@
 
 <div id="main_board_wrapper" class="whiteblock">
     <div id="main_board" class="center">
+        <div id="asset_track"></div>
         <div id="job_market_worker" class="worker_spot">
             <div id="job_market_worker_holder"></div>
         </div>

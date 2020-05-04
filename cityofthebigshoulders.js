@@ -42,6 +42,12 @@ function (dojo, declare) {
                 'building31':37, 'building32':38, 'building33':23, 'building34':24, 'building35':27,
                 'building36':28, 'building37':29, 'building38':32, 'building39':33, 'building40':39,
                 'building41':40, 'building42':41, 'building43':42, 'building44':43  };
+            this.assetNameToImagePosition = {
+                'color_catalog': 45, 'brand_recognition': 46, 'catalogue_empire': 47, 'mail_order_catalogue': 48, 'popular_partners': 49,
+                'price_protection': 50, 'backroom_deals': 51, 'union_stockyards': 52, 'regrigeration': 53, 'foundry': 54, 
+                'workshop': 55, 'michigan_lumber': 56, 'abattoir': 57, 'pennsylvania_coal': 58, 'cincinnati_steel': 59,
+                'brilliant_marketing': 60
+            };
         },
         
         /*
@@ -91,11 +97,12 @@ function (dojo, declare) {
             this.clientStateArgs = {};
             this.clientStateArgs.actionArgs = {};
 
-            // create zones
+            // create zones and stocks
             this.createShareValueZones();
             this.createAppealZones();
             this.createJobMarketZone();
             this.createWorkerZones(gamedatas.general_action_spaces);
+            this.createAssetTileStock(gamedatas.all_capital_assets);
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
@@ -330,6 +337,29 @@ function (dojo, declare) {
         
         */
 
+        createAssetTileStock: function(capitaAssets){
+            var newStock = new ebg.stock();
+
+            newStock.create( this, $('asset_track'), 50, 50);
+
+            // Specify that there are 5 buildings per row
+            newStock.image_items_per_row = 5;
+            newStock.setSelectionMode(0);
+            newStock.item_margin=5.5;
+
+            var i = 0;
+            for(var assetName in capitaAssets){
+                var hash = this.hashString(assetName);
+
+                var imagePosition = this.assetNameToImagePosition[assetName];
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+
+                i++;
+            }
+
+            this.capital_assets = newStock;
+        },
+
         placeManager: function(manager, slideFromSupply = false){
             var tokenId = 'manager_' + manager.card_id;
             var holder = manager.card_location + '_manager_holder';
@@ -342,6 +372,13 @@ function (dojo, declare) {
                 this.placeOnObject(tokenId, 'main_board');
                 this.slideToObject(tokenId, holder).play();
             }
+        },
+
+        placeAsset: function(item){
+            var assetName = item.card_type;
+            var hash = this.hashString(assetName);
+            this.capital_assets.addToStockWithId(hash, assetName);
+            return hash;
         },
 
         placeSalesperson: function(salesperson, slideFromSupply = false){
@@ -546,6 +583,7 @@ function (dojo, declare) {
 
         placeItemsOnBoard: function(gamedatas){
             var companyWorkers = [];
+            var newWeights = {};
             for(var property in gamedatas.items){
                 var item = gamedatas.items[property];
 
@@ -579,8 +617,14 @@ function (dojo, declare) {
                     case 'salesperson':
                         this.placeSalesperson(item);
                         break;
+                    case 'asset':
+                        var hash = this.placeAsset(item)
+                        newWeights[hash] = 80-Number(item.card_location); // 80 -> 40
+                        break;
                 }
             }
+
+            this.capital_assets.changeItemsWeight( newWeights ) // { 1: 10, 2: 20, itemType: Weight }
 
             for(var i = 0; i < companyWorkers.length; i++){
                 this.placeWorkerInFactory(companyWorkers[i]);

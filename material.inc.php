@@ -389,8 +389,8 @@ $this->demand = [
 $this->capital_asset = [
   "color_catalog" => [
     "starting" => false,
-    "name" => clienttranslate("Cincinnati Steel"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 wood(brown) and 1 coal(black) resources from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
+    "name" => clienttranslate("Color Catalog"),
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by $60. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
   ],
   "brand_recognition" => [
     "starting" => false,
@@ -409,13 +409,13 @@ $this->capital_asset = [
   ],
   "popular_partners" => [
     "starting" => false,
-    "name" => clienttranslate(""),
-    "tooltip" => clienttranslate("")
+    "name" => clienttranslate("Popular Partners"),
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to advance 1 step on the Stock Track after the Production step in the Operating Phase. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
   ],
   "price_protection" => [
     "starting" => false,
-    "name" => clienttranslate("Popular Partners"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to advance 1 step on the Stock Track after the Production step in the Operating Phase. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
+    "name" => clienttranslate("Price Protection"),
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to prevent moving backwards on the Stock Track if your company Withholds its profits, or if its shares are sold by another player. This bonus does not protect your share price when issuing shares to emergency fundraise. Immediate bonus: Automate 1 Worker and advance 2 spaces on the Appeal Track. A Worker must be employed prior to being automated and any Appeal Bonuses are gained immediately.")
   ],
   "backroom_deals" => [
     "starting" => false,
@@ -434,13 +434,13 @@ $this->capital_asset = [
   ],
   "foundry" => [
     "starting" => false,
-    "name" => clienttranslate(""),
-    "tooltip" => clienttranslate("")
+    "name" => clienttranslate("Foundry"),
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
   ],
   "workshop" => [
     "starting" => false,
     "name" => clienttranslate("Foundry"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 steel(blue) and 1 coal(black) resource from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
   ],
   "michigan_lumber" => [
     "starting" => true,

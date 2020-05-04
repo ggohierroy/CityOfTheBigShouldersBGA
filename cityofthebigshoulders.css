@@ -133,6 +133,14 @@
 .meeple-tan { background-position-x: -30px }
 .meeple-black { background-position-x: -77px }
 
+#asset_track{
+    left: 408px;
+    top: 423px;
+    height: 50px;
+    width: 278px;
+    position: absolute;
+}
+
 .stock {
     width: 109px;
     height: 73px;
