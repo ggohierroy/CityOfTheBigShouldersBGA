@@ -121,7 +121,7 @@ var jstpl_company_content = '\
     <div class="board_item company_money"><div class="token money"></div><span id="money_${short_name}">0</span></div>';
 
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
-var jstpl_appeal_token = '<div id="appeal_token_${short_name}" class="company_token ${short_name}_token"></div>';
+var jstpl_appeal_token = '<div id="${id}" class="company_token ${short_name}_token"></div>';
 
 var jstpl_automation_holder = '<div id="${short_name}_automation_holder_${factory}_${number}" class="automation_holder" style="left:${left}px;"</div>';
 var jstpl_token = '<div id="${token_id}" class="${token_class}"></div>';

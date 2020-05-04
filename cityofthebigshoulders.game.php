@@ -209,15 +209,45 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function increaseCompanyAppeal($company_short_name, $current_appeal, $steps){
+
+        $sql = "";
+        $new_appeal = $current_appeal;
+        if($current_appeal + $steps <= 16)
+        {
+            $new_appeal += $steps;
+            $sql = "UPDATE company SET appeal = $new_appeal WHERE short_name = '$company_short_name'";
+            self::DbQuery($sql);
+        } else if ($current_appeal < 16)
+        {
+            $new_appeal = 16;
+            $sql = "UPDATE company SET appeal = $new_appeal WHERE short_name = '$company_short_name'";
+            self::DbQuery($sql);
+        }
+
+        self::notifyAllPlayers( "appealIncreased", clienttranslate( '${company_name} increased its appeal to ${appeal}' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'company_short_name' => $company_short_name,
+            'appeal' => $new_appeal,
+            'previous_appeal' => $current_appeal,
+            'order' => self::getCurrentCompanyOrder()
+        ) );
+    }
+
+    function getCompanyName($company_short_name){
+        return $this->companies[$company_short_name]['name'];
+    }
+
     function addCounter(&$counters, $counter_name, $counter_value){
         $counters[$counter_name] = ['counter_name' => $counter_name, 'counter_value' => $counter_value];
     }
 
     // $factory_id -> 'brunswick_factory_1'
-    function hireWorkers($number_of_workers, $company_short_name, $factory_id)
+    function hireWorkers($number_of_workers, $company_short_name, $factory_number)
     {
-        $split = explode('_', $factory_id);
-        $factory_number = $split[2];
+        if(!$factory_number)
+            throw new BgaVisibleSystemException("Unknown factory number");
+
         $condition = $company_short_name.'_'.$factory_number;
         
         $total_spots = $this->companies[$company_short_name]['factories'][$factory_number]['workers'];
@@ -706,7 +736,7 @@ class CityOfTheBigShoulders extends Table
     
     */
 
-    function buildingAction( $building_action, $company_short_name, $worker_id, $factory_id, $action_args )
+    function buildingAction( $building_action, $company_short_name, $worker_id, $factory_number, $action_args )
     {
         self::checkAction( 'buildingAction' );
         $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
@@ -737,7 +767,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // check if company owned by player
-        $sql = "SELECT id AS id, owner_id AS owner_id, treasury AS treasury FROM company WHERE short_name = '$company_short_name' AND owner_id = '$player_id'";
+        $sql = "SELECT id AS id, owner_id AS owner_id, treasury AS treasury, appeal AS appeal FROM company WHERE short_name = '$company_short_name' AND owner_id = '$player_id'";
         $company = self::getObjectFromDB($sql);
         if($company == null)
             throw new BgaVisibleSystemException("The selected company is not owned by current player");
@@ -776,7 +806,7 @@ class CityOfTheBigShoulders extends Table
         $new_company_treasury = $company['treasury'];
         if($building_action == 'job_market_worker'){
             $number_of_workers = intval($action_args);
-            $cost = self::hireWorkers($number_of_workers, $company_short_name, $factory_id);
+            $cost = self::hireWorkers($number_of_workers, $company_short_name, $factory_number);
         } else if ($building_action == 'capital_investment'){
             // TODO: implement this
         } else {
@@ -791,9 +821,10 @@ class CityOfTheBigShoulders extends Table
             $new_company_treasury -= $cost;
         }
 
-        // other checks specific to action
+        // execute action
         switch($building_action){
-            case 'job_market_worker':                
+            case 'advertising':      
+                self::increaseCompanyAppeal($company_short_name, $company['appeal'], 1);          
                 break;
         }
 

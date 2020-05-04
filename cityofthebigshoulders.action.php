@@ -159,10 +159,10 @@
       $building_action = self::getArg( "buildingAction", AT_alphanum, true );
       $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
       $worker_id = self::getArg( "workerId", AT_alphanum, true );
-      $factory_id = self::getArg( "factoryId", AT_alphanum, false );
+      $factory_number = self::getArg( "factoryNumber", AT_posint, false );
       $action_args = self::getArg( "actionArgs", AT_numberlist, false );
 
-      $this->game->buildingAction( $building_action, $company_short_name, $worker_id, $factory_id, $action_args );
+      $this->game->buildingAction( $building_action, $company_short_name, $worker_id, $factory_number, $action_args );
 
       self::ajaxResponse( );
     }
