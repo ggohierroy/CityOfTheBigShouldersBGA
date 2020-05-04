@@ -234,6 +234,31 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
+    function hire_salesperson($company_short_name)
+    {
+        // check that company can hire more salesperson
+        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'salesperson' AND card_location = '$company_short_name'";
+        $value = self::getUniqueValueFromDB( $sql );
+        $salesperson_number = $this->companies[$company_short_name]['salesperson_number'];
+
+        if($salesperson_number <= $value)
+            throw new BgaVisibleSystemException("The company can no longer hire salespeople");
+        
+        // create manager in that factory
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
+            VALUES ('company', 'salesperson', 'salesperson', 0, '$company_short_name', 0)";
+        self::DbQuery($sql);
+        $salesperson_id = self::DbGetLastId();
+
+        // notify
+        self::notifyAllPlayers( "salespersonHired", clienttranslate( '${company_name} hired a salesperson' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'company_short_name' => $company_short_name,
+            'location' => $company_short_name,
+            'salesperson_id' => $salesperson_id
+        ) );
+    }
+
     function increaseCompanyAppeal($company_short_name, $current_appeal, $steps){
 
         $sql = "";
@@ -853,6 +878,9 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'hire_manager':
                 self::hire_manager($company_short_name, $factory_number);
+                break;
+            case 'hire_salesperson':
+                self::hire_salesperson($company_short_name);
                 break;
         }
 

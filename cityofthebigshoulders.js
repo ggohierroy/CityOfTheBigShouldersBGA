@@ -331,7 +331,6 @@ function (dojo, declare) {
         */
 
         placeManager: function(manager, slideFromSupply = false){
-            debugger;
             var tokenId = 'manager_' + manager.card_id;
             var holder = manager.card_location + '_manager_holder';
             dojo.place( this.format_block( 'jstpl_token', {
@@ -343,6 +342,29 @@ function (dojo, declare) {
                 this.placeOnObject(tokenId, 'main_board');
                 this.slideToObject(tokenId, holder).play();
             }
+        },
+
+        placeSalesperson: function(salesperson, slideFromSupply = false){
+            var tokenId = 'salesperson_' + salesperson.card_id;
+            var companyShortName = salesperson.card_location;
+            
+            originalSpot = companyShortName + '_salesperson_holder';
+            if(slideFromSupply){
+                originalSpot = 'main_board';
+            }
+
+            dojo.place( this.format_block( 'jstpl_token', {
+                token_id: tokenId, 
+                token_class: 'moveable-token meeple meeple-black'
+            } ), originalSpot);
+            
+            this[companyShortName + '_salesperson_holder'].placeInZone(tokenId);
+        },
+
+        companyHasSpaceForSalesperson: function(companyShortName){
+            var currentNumberSalersperon = this[companyShortName+'_salesperson_holder'].getAllItems.length;
+            var company = this.gamedatas.all_companies[companyShortName];
+            return company.salesperson_number > currentNumberSalersperon;
         },
 
         doesFactoryEmployManager: function(companyShortName, factoryNumber){
@@ -554,6 +576,9 @@ function (dojo, declare) {
                     case 'manager':
                         this.placeManager(item);
                         break;
+                    case 'salesperson':
+                        this.placeSalesperson(item);
+                        break;
                 }
             }
 
@@ -633,7 +658,9 @@ function (dojo, declare) {
 
             var array = item_id.split('_');
             var companyShortName = array[array.length - 1];
+            var companyId = 'company_' + companyShortName;
             dojo.place( this.format_block( 'jstpl_company_content', {
+                id: companyId,
                 short_name: companyShortName
             } ), company_div.id );
 
@@ -652,7 +679,7 @@ function (dojo, declare) {
                     id: factoryId,
                     left: 65+factoryWidth*(factoryNumber-1), // left of first factory + factory width * factory #
                     width: factoryWidth
-                } ), company_div.id );
+                } ), companyId );
 
                 dojo.connect( $(factoryId), 'onclick', this, 'onFactoryClicked' );
 
@@ -689,6 +716,19 @@ function (dojo, declare) {
             }
 
             // add salesperson spots
+
+            dojo.place( this.format_block( 'jstpl_salesperson_holder', {
+                id: companyShortName+'_salesperson_holder',
+                top: 89
+            } ), companyId );
+
+            var zone = new ebg.zone();
+            zone.create( this, companyShortName + '_salesperson_holder', 15, 15 );
+            zone.setPattern( 'custom' );
+            zone.itemIdToCoords = function( i, control_width ) {
+                return {x:0, y: 33*i, w:15, h:15}
+            };
+            this[companyShortName + '_salesperson_holder'] = zone;
 
             // add resource stock
 
@@ -960,6 +1000,11 @@ function (dojo, declare) {
                         actionOk = false;
                         message = _("This factory already employs a manager");
                     }
+                case "hire_salesperson":
+                    if(!this.companyHasSpaceForSalesperson(companyShortName)){
+                        actionOk = false;
+                        message = _("This company cannot hire any more salesperson");
+                    }
                     break;
             }
 
@@ -1074,6 +1119,7 @@ function (dojo, declare) {
                     this.chooseFactory();
                     break;
                 case "advertising":
+                case "hire_salesperson":
                     this.chooseCompany();
                     break;
             }
@@ -1454,6 +1500,16 @@ function (dojo, declare) {
 
             dojo.subscribe('managerHired', this, "notif_managerHired");
             this.notifqueue.setSynchronous('notif_managerHired', 500);
+
+            dojo.subscribe('salespersonHired', this, "notif_salespersonHired");
+            this.notifqueue.setSynchronous('notif_salespersonHired', 500);
+        },
+
+        notif_salespersonHired: function(notif){
+            this.placeSalesperson({
+                card_id: notif.args.salesperson_id,
+                card_location: notif.args.location
+            }, true);
         },
 
         notif_managerHired: function(notif){

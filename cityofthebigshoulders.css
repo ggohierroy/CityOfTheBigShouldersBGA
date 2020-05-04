@@ -131,6 +131,7 @@
 .meeple-008000 { background-position-x: -15px; }
 .meeple-ffa500 { background-position-x: -108px }
 .meeple-tan { background-position-x: -30px }
+.meeple-black { background-position-x: -77px }
 
 .stock {
     width: 109px;
@@ -321,4 +322,16 @@
     position: absolute;
     /* background-color: white;
     opacity: 50%; */
+}
+
+.salesperson-holder{
+    left: 31px;
+    width: 15px;
+    height: 15px;
+    position: absolute;
+}
+
+.company-content{
+    height: 229px;
+    width: 350px;
 }

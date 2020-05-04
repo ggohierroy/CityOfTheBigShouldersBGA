@@ -117,8 +117,9 @@ var jstpl_player_board = '\<div class="cp_board">\
     <div class="board_item"><div class="panel-token meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
 </div>';
 
-var jstpl_company_content = '\
-    <div class="board_item company_money"><div class="token money"></div><span id="money_${short_name}">0</span></div>';
+var jstpl_company_content = '<div id="${id}" class="company-content">\
+    <div class="board_item company_money"><div class="panel-token money"></div><span id="money_${short_name}">0</span></div>\
+    </div>';
 
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
 var jstpl_appeal_token = '<div id="${id}" class="company_token ${short_name}_token"></div>';
@@ -130,6 +131,8 @@ var jstpl_factory = '<div id="${id}" class="factory" style="left:${left}px; widt
 var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${left}px;"</div>';
 
 var jstpl_manager_holder = '<div id="${id}" class="manager-holder"</div>';
+
+var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"</div>';
 
 </script>  
 

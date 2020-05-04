@@ -40,6 +40,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => true,
     "salesperson" => [0 => 80, 1 => 90, 2=> 100, 3 => 110],
+    "salesperson_number" => 4,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -62,6 +63,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => true,
     "salesperson" => [0 => 20, 1 => 30],
+    "salesperson_number" => 2,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -83,6 +85,7 @@ $this->companies = [
     "initial_appeal" => 3,
     "has_asset" => true,
     "salesperson" => [0 => 50, 1 => 60, 2=> 70],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 2,
@@ -104,6 +107,7 @@ $this->companies = [
     "initial_appeal" => 3,
     "has_asset" => false,
     "salesperson" => [0 => 40, 1 => 50, 2=> 60],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -125,6 +129,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => false,
     "salesperson" => [0 => 20, 1 => 30, 2=> 40],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -152,6 +157,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => true,
     "salesperson" => [0 => 20, 1 => 30, 2=> 40],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 2,
@@ -173,6 +179,7 @@ $this->companies = [
     "initial_appeal" => 2,
     "has_asset" => true,
     "salesperson" => [0 => 30, 1 => 40, 2=> 50],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -194,6 +201,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => false,
     "salesperson" => [0 => 30, 1 => 40, 2=> 100, 3 => 50],
+    "salesperson_number" => 4,
     "factories" => [
       1 => [
         'workers'=> 1,
@@ -215,6 +223,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => false,
     "salesperson" => [0 => 50, 1 => 60, 2=> 70],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 2,
@@ -236,6 +245,7 @@ $this->companies = [
     "initial_appeal" => 2,
     "has_asset" => false,
     "salesperson" => [0 => 50, 1 => 60, 2=> 70],
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 2,
