@@ -104,29 +104,33 @@
     left: 70px
 }
 
- .token {
+ .panel-token {
+    background-image: url( 'img/tokens.png' );
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.moveable-token {
+    background-image: url( 'img/tokens.png' );
+    position: absolute;
+}
+
+.money {  
+    background-position: 0px 0px; 
     width: 28px;
     height: 28px;
-    background-image: url( 'img/tokens.png' );
-    display: inline-block;
-    vertical-align: middle;
 }
 
-.token-small {
+.meeple { 
     width: 15px;
     height: 15px;
-    background-image: url( 'img/tokens.png' );
-    display: inline-block;
-    vertical-align: middle;
+    background-position-y: -105px; 
 }
-
-.money {  background-position: 0px 0px; }
-
-.meeple { background-position-y: -105px; }
 .meeple-ff0000 { background-position-x: -93px }
 .meeple-0000ff { background-position-x: 0px; }
 .meeple-008000 { background-position-x: -15px; }
 .meeple-ffa500 { background-position-x: -108px }
+.meeple-tan { background-position-x: -30px }
 
 .stock {
     width: 109px;
@@ -305,6 +309,16 @@
     position: absolute;
     height: 27px;
     width: 12px;
+    /* background-color: white;
+    opacity: 50%; */
+}
+
+.manager-holder{
+    top: 9px;
+    left: 14px;
+    width: 15px;
+    height: 15px;
+    position: absolute;
     /* background-color: white;
     opacity: 50%; */
 }

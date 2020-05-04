@@ -209,6 +209,31 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function hire_manager($company_short_name, $factory_number)
+    {
+        $location = "${company_short_name}_${factory_number}";
+
+        // check that factory doesn't already have a manager
+        $sql = "SELECT card_id FROM card WHERE primary_type = 'manager' AND card_location = '$location'";
+        $value = self::getUniqueValueFromDB( $sql );
+        if($value != null)
+            throw new BgaVisibleSystemException("Factory already has a manager");
+
+        // create manager in that factory
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
+            VALUES ('company', 'manager', 'manager', 0, '$location', 0)";
+        self::DbQuery($sql);
+        $manager_id = self::DbGetLastId();
+
+        // notify
+        self::notifyAllPlayers( "managerHired", clienttranslate( '${company_name} hired a manager' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'company_short_name' => $company_short_name,
+            'location' => $location,
+            'manager_id' => $manager_id
+        ) );
+    }
+
     function increaseCompanyAppeal($company_short_name, $current_appeal, $steps){
 
         $sql = "";
@@ -825,6 +850,9 @@ class CityOfTheBigShoulders extends Table
         switch($building_action){
             case 'advertising':      
                 self::increaseCompanyAppeal($company_short_name, $company['appeal'], 1);          
+                break;
+            case 'hire_manager':
+                self::hire_manager($company_short_name, $factory_number);
                 break;
         }
 

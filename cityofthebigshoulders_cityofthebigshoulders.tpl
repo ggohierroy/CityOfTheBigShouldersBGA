@@ -113,8 +113,8 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 */
 
 var jstpl_player_board = '\<div class="cp_board">\
-    <div class="board_item"><div class="token money"></div><span id="money_${id}">0</span></div>\
-    <div class="board_item"><div class="token-small meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
+    <div class="board_item"><div class="panel-token money"></div><span id="money_${id}">0</span></div>\
+    <div class="board_item"><div class="panel-token meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
 </div>';
 
 var jstpl_company_content = '\
@@ -128,6 +128,8 @@ var jstpl_token = '<div id="${token_id}" class="${token_class}"></div>';
 
 var jstpl_factory = '<div id="${id}" class="factory" style="left:${left}px; width:${width}px;"</div>';
 var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${left}px;"</div>';
+
+var jstpl_manager_holder = '<div id="${id}" class="manager-holder"</div>';
 
 </script>  
 

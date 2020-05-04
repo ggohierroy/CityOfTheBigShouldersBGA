@@ -136,8 +136,6 @@ function (dojo, declare) {
 
             // connect all worker spots
             dojo.query(".worker_spot").connect( 'onclick', this, 'onWorkerSpotClicked' );
-            //dojo.query(".factory").connect('onclick', this, 'onFactoryClicked');
-            //dojo.query(".company").connect('onclick', this, 'onCompanyClicked');
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -331,6 +329,27 @@ function (dojo, declare) {
             script.
         
         */
+
+        placeManager: function(manager, slideFromSupply = false){
+            debugger;
+            var tokenId = 'manager_' + manager.card_id;
+            var holder = manager.card_location + '_manager_holder';
+            dojo.place( this.format_block( 'jstpl_token', {
+                token_id: tokenId, 
+                token_class: 'moveable-token meeple meeple-tan'
+            } ), holder);
+            
+            if(slideFromSupply){
+                this.placeOnObject(tokenId, 'main_board');
+                this.slideToObject(tokenId, holder).play();
+            }
+        },
+
+        doesFactoryEmployManager: function(companyShortName, factoryNumber){
+            var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
+            var managerHolderChild = dojo.query(factorySelector + '>.manager-holder>');
+            return managerHolderChild.length > 0;
+        },
 
         chooseFactory: function(){
             this.setClientState("client_actionChooseFactory", {
@@ -532,6 +551,9 @@ function (dojo, declare) {
                         else
                             companyWorkers.push(item);
                         break;
+                    case 'manager':
+                        this.placeManager(item);
+                        break;
                 }
             }
 
@@ -661,9 +683,10 @@ function (dojo, declare) {
                 }
 
                 // add manager spots
+                dojo.place( this.format_block( 'jstpl_manager_holder', {
+                    id: companyShortName+'_'+factoryNumber+'_manager_holder'
+                } ), factoryId );
             }
-
-            
 
             // add salesperson spots
 
@@ -686,7 +709,7 @@ function (dojo, declare) {
                 var playerColor = this.gamedatas.players[playerId].color;
                 dojo.place( this.format_block( 'jstpl_token', {
                     token_id: partnerId, 
-                    token_class: 'token-small meeple meeple-'+playerColor
+                    token_class: 'moveable-token meeple meeple-'+playerColor
                 } ), 'overall_player_board_'+playerId );
             }
 
@@ -915,7 +938,7 @@ function (dojo, declare) {
                 this.showMessage( _("Could not find associated building"), 'error' );
             }
 
-            var cost = 0;
+            var cost = buildingMaterial.cost;
             var buildingAction = this.clientStateArgs.buildingAction;
 
             // make checks specific to action and get cost of action
@@ -932,8 +955,11 @@ function (dojo, declare) {
                     break;
                 case "capital_investment":
                     break;
-                default:
-                    cost = buildingMaterial.cost;
+                case "hire_manager":
+                    if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
+                        actionOk = false;
+                        message = _("This factory already employs a manager");
+                    }
                     break;
             }
 
@@ -1043,7 +1069,8 @@ function (dojo, declare) {
             this.clientStateArgs.workerId = workerId;
             
             switch(target.id){
-                case "job_market_worker":                    
+                case "job_market_worker":
+                case "hire_manager":
                     this.chooseFactory();
                     break;
                 case "advertising":
@@ -1424,6 +1451,16 @@ function (dojo, declare) {
 
             dojo.subscribe('appealIncreased', this, "notif_appealIncreased");
             this.notifqueue.setSynchronous('notif_appealIncreased', 500);
+
+            dojo.subscribe('managerHired', this, "notif_managerHired");
+            this.notifqueue.setSynchronous('notif_managerHired', 500);
+        },
+
+        notif_managerHired: function(notif){
+            this.placeManager({
+                card_id: notif.args.manager_id,
+                card_location: notif.args.location
+            }, true);
         },
 
         notif_appealIncreased: function(notif){
