@@ -1252,12 +1252,7 @@ function (dojo, declare) {
                 case "hire_manager":
                     this.chooseFactory();
                     break;
-                case "advertising":
-                case "hire_salesperson":
-                case "fundraising_40":
-                case "fundraising_60":
-                case "fundraising_80":
-                case "extra_dividends":
+                default:
                     this.chooseCompany();
                     break;
             }

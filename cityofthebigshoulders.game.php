@@ -210,7 +210,16 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
-    function distributeDividends($company_short_name, $money){
+    function getBuildingOwner($building)
+    {
+        $location = $building['card_location']; // building_track_{player_id}
+        $player_id = explode('_', $location)[2];
+        $sql = "SELECT player_name, treasury, player_id FROM player WHERE player_id = $player_id";
+        return self::getNonEmptyObjectFromDB($sql);
+    }
+
+    function distributeDividends($company_short_name, $money)
+    {
         $sql = "SELECT owner_type, card_type, card_type_arg, card_location_arg
             FROM card 
             WHERE primary_type = 'stock' AND card_type LIKE '$company_short_name%'";
@@ -942,13 +951,19 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'buildingAction' );
         $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
 
-        // check if general action space
-        $building_material = $this->general_action_spaces[$building_action];
-
+        $building_material = null;
         $building = null;
-        if($building_material == null){
+        $player_limit = true;
+        // check if general action space
+        if(isset($this->general_action_spaces[$building_action]))
+        {
+            $building_material = $this->general_action_spaces[$building_action];
+            $player_limit = $building_material['player_limit'];
+        }
+        else 
+        {
             // check if action is available (building has been played)
-            $sql = "SELECT card_id FROM card WHERE primary_type = 'building' AND card_type = '$building_action'";
+            $sql = "SELECT card_id, card_location FROM card WHERE primary_type = 'building' AND card_type = '$building_action'";
             $building = self::getObjectFromDB($sql);
 
             if($building == null){
@@ -959,7 +974,8 @@ class CityOfTheBigShoulders extends Table
         }
 
         // check if spot is available
-        if($building_material['player_limit']){
+        if($player_limit)
+        {
             // get workers in that spot
             $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'partner' AND card_location = '$building_action'";
             $other_partners = self::getUniqueValueFromDB($sql);
@@ -1001,7 +1017,7 @@ class CityOfTheBigShoulders extends Table
             'building_action' => $building_action,
             'counters' => $counters,
         ) );
-
+        
         // check if cost can be payed
         $cost = 0;
         $new_company_treasury = $company['treasury'];
@@ -1028,7 +1044,9 @@ class CityOfTheBigShoulders extends Table
 
         // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
         $message = null;
-        switch($building_material['payment'])
+        $player_name = '';
+        $payment_method = $building_material['payment'];
+        switch($payment_method)
         {
             case 'companytobank':
                 $message = clienttranslate('${company_name} pays the bank $${cost}');
@@ -1039,6 +1057,23 @@ class CityOfTheBigShoulders extends Table
             case 'companytoshareholders':
                 $message = clienttranslate('${company_name} pays its shareholders $${cost}');
                 break;
+            case 'companytoplayer':
+                
+                $message = clienttranslate('${company_name} pays ${player_name} $${cost}');
+                break;
+        }
+
+        if($payment_method == 'companytoplayer' || $payment_method == 'banktoplayer')
+        {
+            $building_owner = self::getBuildingOwner($building);
+            $player_id = $building_owner['player_id'];
+            $player_name = $building_owner['player_name'];
+            $new_player_treasury = $building_owner['treasury'] + $cost;
+
+            $sql = "UPDATE player SET treasury = $new_player_treasury WHERE player_id = $player_id";
+            self::DbQuery($sql);
+
+            self::addCounter($counters, "money_${player_id}", $new_player_treasury);
         }
 
         // update company treasury
@@ -1051,6 +1086,7 @@ class CityOfTheBigShoulders extends Table
             'cost' => $cost,
             'company_name' => $company_name,
             'counters' => $counters,
+            'player_name' => $player_name
         ) );
 
         // execute action
@@ -1129,8 +1165,6 @@ class CityOfTheBigShoulders extends Table
             {
                 $sql = "UPDATE card SET card_location = 'player_${player_id}' WHERE card_id = $id";
             }
-
-            self::dump('sql', $sql);
 
             self::DbQuery($sql);
         }
