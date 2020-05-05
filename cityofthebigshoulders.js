@@ -89,7 +89,7 @@ function (dojo, declare) {
                 } ), player_board_div );
 
                 // create building tracks
-                this['building_track_'+player_id] = this.createBuildingsStock(gamedatas.all_buildings, 'building_track_'+player_id, 'setupNewBuilding');
+                this['building_track_'+player_id] = this.createBuildingsStock(gamedatas.all_buildings, 'building_track_'+player_id, 'setupNewTrackBuilding');
                 this['building_track_'+player_id].item_margin=4;
             }
 
@@ -112,7 +112,7 @@ function (dojo, declare) {
             this.createCompaniesStock(gamedatas.all_companies);
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
 
-            // create buildings stock
+            // create buildings personal stock
             this.buildings = this.createBuildingsStock(gamedatas.all_buildings, 'building_area_'+this.player_id, 'setupNewBuilding');
             
             // place owned in the game
@@ -142,7 +142,8 @@ function (dojo, declare) {
             this.updateCounters(gamedatas.counters);
 
             // connect all worker spots
-            dojo.query(".worker_spot").connect( 'onclick', this, 'onWorkerSpotClicked' );
+            dojo.query(".worker_spot.general-action").connect( 'onclick', this, 'onWorkerSpotClicked' );
+            dojo.connect($('job_market_worker'), 'onclick', this, 'onWorkerSpotClicked');
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -197,10 +198,19 @@ function (dojo, declare) {
                     
                     break;
                 case 'playerActionPhase':
-                    if(this.isCurrentPlayerActive())
+                    if(this.isCurrentPlayerActive()){
                         dojo.query('.worker_spot').addClass('active');
-                    else
+                    } else {
                         dojo.query('.worker_spot').removeClass('active');
+                    }
+                    
+                    // disable fundraise actions that only become available in later rounds
+                    if(args.args.round < 4){
+                        dojo.removeClass('fundraising_80', 'active');
+                    }
+                    if(args.args.round < 2){
+                        dojo.removeClass('fundraising_60', 'active');
+                    }
                     break;
                 case 'client_actionChooseFactory':
                     dojo.query('#player_'+this.player_id+' .factory').addClass('active');
@@ -434,10 +444,36 @@ function (dojo, declare) {
             }
         },
 
-       setupNewBuilding: function(item_div, item_type_id, item_id)
-       {
+        setupNewTrackBuilding: function(item_div, item_type_id, item_id){
+            dojo.removeClass(item_div, "stockitem_unselectable");
+
+            // item_id -> building_track_2319929_item_building10_35
+            var split = item_id.split('_');
+            var building = split[4];
+
+            // create the worker spot
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: building,
+                class: 'worker_spot building-action'
+            } ) , item_div );
+
+            // create the partner zone
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: building + '_holder',
+                class: ''
+            } ) , building );
+
+            var zone = new ebg.zone();
+            zone.create( this, building+'_holder', 15, 14 );
+            this[building + '_holder'] = zone;
+
+            dojo.connect( $(building), 'onclick', this, 'onWorkerSpotClicked' );
+        },
+
+        setupNewBuilding: function(item_div, item_type_id, item_id)
+        {
             dojo.connect( $(item_id), 'onclick', this, 'onClickBuildingPlayerArea' );
-       },
+        },
 
         createBuildingsStock: function(buildings, stockName, itemCreateCallback){
             var newStock = new ebg.stock();
@@ -1053,7 +1089,9 @@ function (dojo, declare) {
             }
 
             var paymentMethod = buildingMaterial.payment;
-            if(paymentMethod == 'companytobank' || paymentMethod == 'companytoplayer' || paymentMethod == 'companytoshareholders')
+            if(paymentMethod == 'companytobank' || 
+                paymentMethod == 'companytoplayer' ||
+                paymentMethod == 'companytoshareholders')
             {
                 if(!this.checkCompanyMoney(companyShortName, cost)){
                     this.showMessage( _("Not enough money to pay for this action"), 'info' );
@@ -1164,6 +1202,10 @@ function (dojo, declare) {
                     break;
                 case "advertising":
                 case "hire_salesperson":
+                case "fundraising_40":
+                case "fundraising_60":
+                case "fundraising_80":
+                case "extra_dividends":
                     this.chooseCompany();
                     break;
             }
@@ -1547,6 +1589,22 @@ function (dojo, declare) {
 
             dojo.subscribe('salespersonHired', this, "notif_salespersonHired");
             this.notifqueue.setSynchronous('notif_salespersonHired', 500);
+
+            dojo.subscribe('dividendEarned', this, "notif_dividendEarned");
+            this.notifqueue.setSynchronous('notif_dividendEarned', 500);
+
+            dojo.subscribe('shareValueChange', this, "notif_shareValueChange");
+            this.notifqueue.setSynchronous('notif_shareValueChange', 500);
+        },
+
+        notif_shareValueChange: function(notif){
+            var shortName = notif.args.company_short_name;
+            this['share_zone_'+notif.args.previous_share_value_step].removeFromZone('share_token_'+shortName);
+            this['share_zone_'+notif.args.share_value_step].placeInZone('share_token_'+shortName);
+        },
+
+        notif_dividendEarned: function(notif){
+            this.updateCounters(notif.args.counters);
         },
 
         notif_salespersonHired: function(notif){

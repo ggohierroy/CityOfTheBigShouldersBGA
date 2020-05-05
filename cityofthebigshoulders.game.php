@@ -210,6 +210,133 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function distributeDividends($company_short_name, $money){
+        $sql = "SELECT owner_type, card_type, card_type_arg, card_location_arg
+            FROM card 
+            WHERE primary_type = 'stock' AND card_type LIKE '$company_short_name%'";
+        $stocks = self::getObjectListFromDB($sql);
+
+        // round down money to nearest 10
+        $money = floor($money/10)*10;
+
+        // announce per share earning
+        $per_share_earning = $money/10;
+        self::notifyAllPlayers( "earningsAnounced", clienttranslate( '${company_name} is paying $${per_share_earning} per share' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'per_share_earning' => $per_share_earning,
+        ));
+
+        $payment_to_company = 0;
+        $payment_to_players = [];
+        $player_ids = [];
+        foreach($stocks as $stock)
+        {
+            // get stock type (brunswick_director)
+            $split = explode('_', $stock['card_type']);
+            $stock_type = $split[1];
+            $multiplier = 1;
+            if($stock_type == 'director'){
+                $multiplier = 3;
+            } else if($stock_type == 'preferred'){
+                $multiplier = 2;
+            }
+
+            if($stock['owner_type'] == 'company'){
+                $payment_to_company += $multiplier * $per_share_earning;
+            } else if ($stock['owner_type'] == 'player'){
+                $player_id = $stock['card_location_arg'];
+                if(!isset($payment_to_players[$player_id]))
+                {
+                    array_push($player_ids, $player_id);
+                    $payment_to_players[$player_id] = $multiplier * $per_share_earning;
+                }
+                else
+                {
+                    $payment_to_players[$player_id] += $multiplier * $per_share_earning;
+                }
+            }
+        }
+
+        // get the players (need name and treasury)
+        $in_condition = "(".implode(',', $player_ids).")";
+        $sql = "SELECT player_id, player_name, treasury FROM player WHERE player_id IN $in_condition";
+        $players = self::getCollectionFromDB($sql);
+
+        // pay the players
+        foreach($payment_to_players as $player_id => $payment)
+        {
+            $new_treasury = $players[$player_id]['treasury'] + $payment;
+
+            $sql = "UPDATE player SET treasury = $new_treasury WHERE player_id = $player_id";
+            self::DbQuery($sql);
+
+            self::notifyAllPlayers( "dividendEarned", clienttranslate( '${player_name} earns $${earning}' ), array(
+                'player_name' => $players[$player_id]['player_name'],
+                'earning' => $payment,
+                'counters' => self::getCounter("money_${player_id}", $new_treasury)
+            ));
+        }
+
+        $sql = "SELECT id, treasury, share_value_step FROM company WHERE short_name = '$company_short_name'";
+        $company = self::getNonEmptyObjectFromDB($sql);
+        $company_id = $company['id'];   
+        $share_value_step = $company['share_value_step'];
+        $treasury = $company['treasury'];
+        $new_treasury = $treasury;
+        $update = false;
+
+        // pay the company
+        if($payment_to_company > 0)
+        {
+            $update = true;
+            $new_treasury += $payment_to_company;
+
+            self::notifyAllPlayers( "dividendEarned", clienttranslate( '${company_name} earns $${earning}' ), array(
+                'company_name' => self::getCompanyName($company_short_name),
+                'earning' => $payment_to_company,
+                'counters' => self::getCounter("money_${company_short_name}", $new_treasury)
+            ));
+        }
+
+        // check for share value increase
+        $share_value = self::getShareValue($share_value_step);
+        $new_share_value_step = $share_value_step;
+
+        if($money >= 3 * $share_value && $share_value_step > 6)
+        {
+            $update = true;
+            $new_share_value_step += 3;
+        } else if ($money >= 2 * $share_value)
+        {
+            $update = true;
+            $new_share_value_step += 2;
+        } else if ($money >= $share_value)
+        {
+            $update = true;
+            $new_share_value_step += 1;
+        }
+
+        if($update)
+        {
+            $sql = "UPDATE company SET treasury = $new_treasury, share_value_step = $new_share_value_step WHERE id = $company_id";
+            self::DbQuery($sql);
+        }
+
+        if($new_share_value_step > $share_value_step)
+        {
+            $new_share_value = self::getShareValue($new_share_value_step);
+            self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} increased to $${share_value}' ), array(
+                'company_short_name' => $company_short_name,
+                'company_name' => self::getCompanyName($company_short_name),
+                'share_value' => $new_share_value,
+                'share_value_step' => $new_share_value_step,
+                'previous_share_value_step' => $share_value_step
+            ));
+        }
+
+        // TODO: update player scores
+    }
+
     function hire_manager($company_short_name, $factory_number)
     {
         $location = "${company_short_name}_${factory_number}";
@@ -289,8 +416,33 @@ class CityOfTheBigShoulders extends Table
         return $this->companies[$company_short_name]['name'];
     }
 
-    function addCounter(&$counters, $counter_name, $counter_value){
+    function addCounter(&$counters, $counter_name, $counter_value)
+    {
         $counters[$counter_name] = ['counter_name' => $counter_name, 'counter_value' => $counter_value];
+    }
+
+    function getCounter($counter_name, $counter_value)
+    {
+        $counters = [];
+        $counters[$counter_name] = ['counter_name' => $counter_name, 'counter_value' => $counter_value];
+        return $counters;
+    }
+
+    function getCostToHireWorkers($number_of_workers)
+    {
+        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location ='job_market'";
+        $workers_in_market = self::getUniqueValueFromDB($sql);
+        $convert = [0 => 50, 1 => 40, 2 => 40, 3 => 40, 4 => 40, 5 => 30, 6 => 30, 7 => 30, 8 => 30, 9 => 20, 10 => 20, 11 => 20, 12 => 20];
+        $cost = 0;
+        $values = [];
+        for($i = 0; $i < $number_of_workers; $i++){
+            $cost += $convert[$workers_in_market];
+            if($workers_in_market > 0){
+                $workers_in_market--;
+            }
+        }
+
+        return $cost;
     }
 
     // $factory_id -> 'brunswick_factory_1'
@@ -341,8 +493,6 @@ class CityOfTheBigShoulders extends Table
             'worker_ids' => $values,
             'number_of_workers' => $number_of_workers
         ) );
-
-        return $cost;
     }
 
     function getPlayerShares($player_id)
@@ -787,7 +937,7 @@ class CityOfTheBigShoulders extends Table
     
     */
 
-    function buildingAction( $building_action, $company_short_name, $worker_id, $factory_number, $action_args )
+    function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
     {
         self::checkAction( 'buildingAction' );
         $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
@@ -830,7 +980,7 @@ class CityOfTheBigShoulders extends Table
         if($number_of_partners == 0)
             throw new BgaVisibleSystemException("You don't have any more workers");
         
-        // TODO: front-end shouldn't send this
+        // TODO: change the way we create partners to use total number of partners as well so ID is ascending
         $worker_id = "worker_${player_id}_${number_of_partners}";
         
         // update player's number of partners
@@ -857,7 +1007,7 @@ class CityOfTheBigShoulders extends Table
         $new_company_treasury = $company['treasury'];
         if($building_action == 'job_market_worker'){
             $number_of_workers = intval($action_args);
-            $cost = self::hireWorkers($number_of_workers, $company_short_name, $factory_number);
+            $cost = self::getCostToHireWorkers($number_of_workers);
         } else if ($building_action == 'capital_investment'){
             // TODO: implement this
         } else {
@@ -865,15 +1015,49 @@ class CityOfTheBigShoulders extends Table
         }
 
         $payment_method = $building_material['payment'];
-        if($payment_method == 'companytobank' || $payment_method == 'companytoplayer' || $payment_method == 'companytoshareholders')
+        if($payment_method == 'companytobank' || 
+            $payment_method == 'companytoplayer' || 
+            $payment_method == 'companytoshareholders')
         {
             if($company['treasury'] < $cost)
                 throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this action");
             $new_company_treasury -= $cost;
+        } else if ($payment_method == "banktocompany"){
+            $new_company_treasury += $cost;
         }
+
+        // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
+        $message = null;
+        switch($building_material['payment'])
+        {
+            case 'companytobank':
+                $message = clienttranslate('${company_name} pays the bank $${cost}');
+                break;
+            case 'banktocompany':
+                $message = clienttranslate('Bank pays ${company_name} $${cost}');
+                break;
+            case 'companytoshareholders':
+                $message = clienttranslate('${company_name} pays its shareholders $${cost}');
+                break;
+        }
+
+        // update company treasury
+        $sql = "UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id";
+        self::DbQuery($sql);
+        self::addCounter($counters, "money_${company_short_name}", $new_company_treasury);
+
+        // notify payment
+        self::notifyAllPlayers( "countersUpdated", $message, array(
+            'cost' => $cost,
+            'company_name' => $company_name,
+            'counters' => $counters,
+        ) );
 
         // execute action
         switch($building_action){
+            case 'job_market_worker':
+                self::hireWorkers($number_of_workers, $company_short_name, $factory_number);
+                break;
             case 'advertising':      
                 self::increaseCompanyAppeal($company_short_name, $company['appeal'], 1);          
                 break;
@@ -883,49 +1067,29 @@ class CityOfTheBigShoulders extends Table
             case 'hire_salesperson':
                 self::hire_salesperson($company_short_name);
                 break;
+            case 'fundraising_60':
+                $round = self::getGameStateValue( "round" );
+                if($round < 2)
+                    throw new BgaVisibleSystemException("Action cannot be used before 3rd decade");
+                break;
+            case 'fundraising_80':
+                $round = self::getGameStateValue( "round" );
+                if($round < 4)
+                    throw new BgaVisibleSystemException("Action cannot be used before 5th decade");
+                break;
+            case 'extra_dividends':
+                self::distributeDividends($company_short_name, 100);
+                break;
         }
 
         $values = [];
         $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+        
         // create partner in building location
         $values[] = "('player','partner','${worker_id}',0,'$building_action',0)";
 
-        // pay for the action (company -> bank, company -> player, bank -> player, bank -> company, company -> shareholders)
-        $message = null;
-        switch($building_material['payment'])
-        {
-            case 'companytobank':
-                $sql = "UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id";
-                self::DbQuery($sql);
-
-                self::addCounter($counters, "money_${company_short_name}", $new_company_treasury);
-
-                $message = clienttranslate('${company_name} pays the bank $${cost}');
-                break;
-        }
-
-        // notify payment
-        self::notifyAllPlayers( "countersUpdated", $message, array(
-            'cost' => $cost,
-            'company_name' => $company_name,
-            'counters' => $counters,
-        ) );
-
-        // other effects depending on building
-        switch($building_action){
-            case 'job_market_worker':
-                break;
-        }
-
         $card_sql .= implode( $values, ',' );
         self::DbQuery($card_sql);
-
-        // other notifications depending on building
-        switch($building_action){
-            case 'job_market_worker':
-                
-                break;
-        }
 
         // set state to next game state
     }
@@ -1429,6 +1593,12 @@ class CityOfTheBigShoulders extends Table
 
     // need the round to not show start company action during first round
     function argPlayerBuyPhase()
+    {
+        $round = self::getGameStateValue( "round" );
+        return ["round" => $round];
+    }
+
+    function argsPlayerActionPhase()
     {
         $round = self::getGameStateValue( "round" );
         return ["round" => $round];

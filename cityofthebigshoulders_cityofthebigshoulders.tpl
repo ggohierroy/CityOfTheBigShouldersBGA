@@ -133,6 +133,8 @@ var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${l
 
 var jstpl_manager_holder = '<div id="${id}" class="manager-holder"</div>';
 
+var jstpl_generic_div = '<div id="${id}" class="${class}"</div>';
+
 var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"</div>';
 
 </script>  

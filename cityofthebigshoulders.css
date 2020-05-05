@@ -266,6 +266,12 @@
     position: absolute;
 }
 
+.building-action {
+    height: 50px;
+    width: 50px;
+    position: absolute;
+}
+
 #advertising {
     left: 420px;
     top: 136px;
