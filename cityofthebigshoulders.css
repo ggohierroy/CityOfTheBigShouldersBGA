@@ -349,3 +349,42 @@
     height: 229px;
     width: 350px;
 }
+
+#haymarket{
+    width: 132px;
+    height: 37px;
+    top: 27px;
+    left: 13px;
+    position: absolute;
+}
+
+#haymarket_square{
+    width: 159px;
+    height: 73px;
+    top: 49px;
+    left: 352px;
+    position: absolute;
+}
+
+#supply_x{
+    left: 530px;
+}
+
+#supply_30{
+    left: 609px;
+}
+
+#supply_20{
+    left: 687px;
+}
+
+#supply_10{
+    left: 765px;
+}
+
+.supply{
+    width: 50px;
+    height: 50px;
+    top: 64px;
+    position: absolute;
+}

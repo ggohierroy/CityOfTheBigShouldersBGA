@@ -103,6 +103,11 @@ function (dojo, declare) {
             this.createJobMarketZone();
             this.createWorkerZones(gamedatas.general_action_spaces);
             this.createAssetTileStock(gamedatas.all_capital_assets);
+            this.createResourceStock('haymarket');
+            this.createResourceStock('supply_x');
+            this.createResourceStock('supply_30');
+            this.createResourceStock('supply_20');
+            this.createResourceStock('supply_10');
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
@@ -347,6 +352,28 @@ function (dojo, declare) {
         
         */
 
+        createResourceStock: function(stockName){
+            var newStock = new ebg.stock();
+
+            newStock.create( this, $(stockName), 14, 14);
+
+            // Specify that there are 5 buildings per row
+            newStock.image_items_per_row = 13;
+            newStock.setSelectionMode(0);
+            newStock.item_margin = 1;
+            newStock.centerItems = true;
+
+            var i = 0;
+            var resources = {'livestock': 11, 'coal': 8, 'wood': 9, 'steel': 3};
+            for(var resourceName in resources){
+                var imagePosition = resources[resourceName];
+                var hash = this.hashString(resourceName);
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/tokens.png', imagePosition );
+            }
+
+            this[stockName] = newStock;
+        },
+
         createAssetTileStock: function(capitaAssets){
             var newStock = new ebg.stock();
 
@@ -381,6 +408,28 @@ function (dojo, declare) {
             if(slideFromSupply){
                 this.placeOnObject(tokenId, 'main_board');
                 this.slideToObject(tokenId, holder).play();
+            }
+        },
+
+        placeResource: function(item){
+            var resourceName = item.card_type;
+            var hash = this.hashString(resourceName);
+            switch(item.card_location){
+                case 'haymarket':
+                    this.haymarket.addToStock(hash);
+                    break;
+                case 'x':
+                    this.supply_x.addToStock(hash);
+                    break;
+                case '30':
+                    this.supply_30.addToStock(hash);
+                    break;
+                case '20':
+                    this.supply_20.addToStock(hash);
+                    break;
+                case '10':
+                    this.supply_10.addToStock(hash);
+                    break;
             }
         },
 
@@ -656,6 +705,9 @@ function (dojo, declare) {
                     case 'asset':
                         var hash = this.placeAsset(item)
                         newWeights[hash] = 80-Number(item.card_location); // 80 -> 40
+                        break;
+                    case 'resource':
+                        this.placeResource(item);
                         break;
                 }
             }

@@ -33,7 +33,14 @@
         <div id="job_market_worker" class="worker_spot">
             <div id="job_market_worker_holder"></div>
         </div>
-        <div id="job_market"></div>
+        <div id="haymarket_square">
+            <div id="haymarket"></div>
+        </div>
+        <div id="supply_x" class="supply"></div>
+        <div id="supply_30" class="supply"></div>
+        <div id="supply_20" class="supply"></div>
+        <div id="supply_10" class="supply"></div>
+        <div id="job_market" class="supply"></div>
         <div id="advertising" class="worker_spot general-action">
             <div id="advertising_holder"></div>
         </div>
