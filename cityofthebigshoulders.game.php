@@ -218,6 +218,33 @@ class CityOfTheBigShoulders extends Table
         return self::getNonEmptyObjectFromDB($sql);
     }
 
+    function companyProduceGoods($company_short_name, $company_id, $number_of_goods)
+    {
+        // insert goods into database
+        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+        
+        $values = [];
+        for($i = 0; $i < $number_of_goods; $i++)
+        {
+            $values[] = "('company', 'good', 'good', 0, '$company_short_name', $company_id)";
+        }
+        $sql .= implode( $values, ',' );
+
+        self::DbQuery($sql);
+        
+        // get id of company goods
+        $sql = "SELECT card_id FROM card WHERE primary_type = 'good' AND card_location_arg = $company_id";
+        $good_ids = self::getObjectListFromDB( $sql, true );
+        
+        // notify players
+        self::notifyAllPlayers( "goodsProduced", clienttranslate( '${company_name} produces ${number_of_goods} goods' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'company_short_name' => $company_short_name,
+            'number_of_goods' => $number_of_goods,
+            'good_ids' => $good_ids
+        ));
+    }
+
     function distributeDividends($company_short_name, $money)
     {
         $sql = "SELECT owner_type, card_type, card_type_arg, card_location_arg
@@ -1058,7 +1085,6 @@ class CityOfTheBigShoulders extends Table
                 $message = clienttranslate('${company_name} pays its shareholders $${cost}');
                 break;
             case 'companytoplayer':
-                
                 $message = clienttranslate('${company_name} pays ${player_name} $${cost}');
                 break;
         }
@@ -1115,6 +1141,9 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'extra_dividends':
                 self::distributeDividends($company_short_name, 100);
+                break;
+            case 'building10':
+                self::companyProduceGoods($company_short_name, $company_id, 1);
                 break;
         }
 

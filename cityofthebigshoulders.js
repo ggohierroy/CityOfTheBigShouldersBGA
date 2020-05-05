@@ -709,6 +709,9 @@ function (dojo, declare) {
                     case 'resource':
                         this.placeResource(item);
                         break;
+                    case 'good':
+                        this.placeGood(item);
+                        break;
                 }
             }
 
@@ -864,7 +867,40 @@ function (dojo, declare) {
 
             // add resource stock
 
-            // add goods stock
+            // add goods zone
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: companyShortName+'_goods',
+                class: 'goods-holder'
+            } ), companyId );
+            
+            var zone = new ebg.zone();
+            zone.create( this, companyShortName + '_goods', 13, 22 );
+            this[companyShortName + '_goods'] = zone;
+        },
+
+        placeGood: function(good, from){
+
+            var companyShortName = good.card_location.split('_')[0]; // brunswick_goods
+            if(from == 'supply'){
+                // good produced -> create good
+                dojo.place( this.format_block( 'jstpl_generic_div', {
+                    id: 'good_' + good.card_id, 
+                    class: 'good_token'
+                } ), 'main_board' );
+
+                this[companyShortName + '_goods'].placeInZone('good_' + good.card_id);
+
+            } else if (from == 'company'){
+                // good exists -> move it
+            } else {
+                // page refresh -> create good
+                dojo.place( this.format_block( 'jstpl_generic_div', {
+                    id: 'good_' + good.card_id, 
+                    class: 'good_token'
+                } ), companyShortName + '_goods' );
+
+                this[companyShortName + '_goods'].placeInZone('good_' + good.card_id);
+            }
         },
 
         placeCompany: function(company, from){
@@ -1642,6 +1678,19 @@ function (dojo, declare) {
 
             dojo.subscribe('shareValueChange', this, "notif_shareValueChange");
             this.notifqueue.setSynchronous('notif_shareValueChange', 500);
+
+            dojo.subscribe('goodsProduced', this, "notif_goodsProduced");
+            this.notifqueue.setSynchronous('notif_goodsProduced', 500);
+        },
+
+        notif_goodsProduced: function(notif){
+            for(var index in notif.args.good_ids){
+                good_id = notif.args.good_ids[index];
+                this.placeGood({
+                    card_id: good_id,
+                    card_location: notif.args.company_short_name
+                }, 'supply');
+            }
         },
 
         notif_shareValueChange: function(notif){
