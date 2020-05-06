@@ -190,6 +190,7 @@
     background-position: -57px -29px;
     width: 13px;
     height: 22px;
+    position: absolute;
 }
 
 .good_token {
@@ -202,9 +203,10 @@
 
 .worker {
     background-image: url('img/tokens.png');
-    background-position: -106px -22px;
-    width: 12px;
-    height: 27px;
+    background-position: -98px -29px;
+    width: 13px;
+    height: 22px;
+    position: absolute;
 }
 
 .personal_share_area {
@@ -237,7 +239,7 @@
 
 #job_market{
     left: 353px;
-    top: 188px;
+    top: 192px;
     height: 177px;
     width: 58px;
     /* background-color: white;
@@ -328,10 +330,10 @@
 }
 
 .worker-holder{
-    top: 32px;
+    top: 36px;
     position: absolute;
-    height: 27px;
-    width: 12px;
+    height: 22px;
+    width: 13px;
     /* background-color: white;
     opacity: 50%; */
 }
