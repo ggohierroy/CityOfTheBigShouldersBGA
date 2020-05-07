@@ -40,7 +40,7 @@ class CityOfTheBigShoulders extends Table
             "phase" => 12,
             "priority_deal_player_id" => 13,
             "consecutive_passes" => 14,
-            "next_company_id" => 15,
+            "next_company_id" => 15, // we need this because the current company can change appeal during operation phase
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -698,7 +698,13 @@ class CityOfTheBigShoulders extends Table
         while($previous_company != null)
         {
             // add previous company to the order
-            array_unshift($order, ['id' => $previous_company['id'], 'owner_id' => $previous_company['owner_id'], 'order' => $i, 'short_name' => $previous_company['short_name'], 'appeal' => $previous_company['appeal']]);
+            array_unshift($order, [
+                'id' => $previous_company['id'], 
+                'next_company_id' => $previous_company['next_company_id'], 
+                'owner_id' => $previous_company['owner_id'], 
+                'order' => $i, 
+                'short_name' => $previous_company['short_name'], 
+                'appeal' => $previous_company['appeal']]);
 
             // find previous company
             $current_company = $previous_company;
@@ -1990,6 +1996,14 @@ class CityOfTheBigShoulders extends Table
                 // if no more partners go to playerOperationPhase
                 // Active player = player with company that is first in appeal order
                 // give extra time to player
+                $order = self::getCurrentCompanyOrder();
+                $first_company = $order[0];
+                $owner_id = $first_company['owner_id'];
+                self::giveExtraTime( $owner_id );
+                $this->gamestate->changeActivePlayer( $owner_id );
+
+                self::setGameStateValue( "next_company_id", $first_company['next_company_id']);
+
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;
             }
