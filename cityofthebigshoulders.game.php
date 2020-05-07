@@ -40,6 +40,7 @@ class CityOfTheBigShoulders extends Table
             "phase" => 12,
             "priority_deal_player_id" => 13,
             "consecutive_passes" => 14,
+            "next_company_id" => 15,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -95,6 +96,7 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'turns_this_phase', 0 );
         self::setGameStateInitialValue( 'round', 0 );
         self::setGameStateInitialValue( 'consecutive_passes', 0 );
+        self::setGameStateInitialValue( 'next_company_id', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -1302,13 +1304,13 @@ class CityOfTheBigShoulders extends Table
         $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
         
         // create partner in building location
-        $values[] = "('player','partner','${worker_id}',0,'$building_action',0)";
+        $values[] = "('player','partner','${worker_id}',$player_id,'$building_action',0)";
 
         $card_sql .= implode( $values, ',' );
         self::DbQuery($card_sql);
 
         // set state to next game state
-        
+        $this->gamestate->nextState( 'gameActionPhase' );
     }
 
     function selectBuildings($played_building_id, $discarded_building_id)
@@ -1915,6 +1917,89 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->changeActivePlayer( $player['player_id'] ); 
 
         // start action phase
+        $this->gamestate->nextState( 'playerActionPhase' );
+    }
+
+    function stGameActionPhase()
+    {
+        $new_active_player = null;
+
+        // get all players
+        $sql = "SELECT player_id, player_order, current_number_partners FROM player ORDER BY player_order ASC";
+        $players = self::getCollectionFromDB($sql);
+        $tmp = array_values($players);
+        $last_player = array_pop($tmp);
+
+        // get active player
+        $active_player_id = $this->getActivePlayerId();
+        $active_player_order = $players[$active_player_id]['player_order'];
+
+        if($last_player['player_id'] == $active_player_id)
+        {
+            // check if advertising was used and adjust turn order
+            $sql = "SELECT card_id, card_type_arg FROM card WHERE primary_type = 'partner' AND card_location = 'advertising'";
+            $advertising = self::getObjectFromDB( $sql );
+            if($advertising != null)
+            {
+                $player_id_advertising = $advertising['card_type_arg'];
+                $new_active_player = $players[$player_id_advertising];
+                $player_order = 2;
+                $order = 0;
+                foreach($players as $player_id => $player)
+                {
+                    if($player_id == $player_id_advertising)
+                    {
+                        $order = 1;
+                    }
+                    else
+                    {
+                        $order = $player_order++;
+                    }
+
+                    $sql = "UPDATE player SET player_order = $order WHERE player_id = $player_id";
+                    self::DbQuery($sql);
+                }
+            }
+        }
+
+        if($new_active_player == null)
+        {
+            foreach($players as $player)
+            {
+                if($player['player_order'] > $active_player_order && $player['current_number_partners'] > 0)
+                {
+                    $new_active_player = $player;
+                    break;
+                }    
+            }
+        }
+
+        if($new_active_player == null)
+        {
+            foreach($players as $player)
+            {
+                if($player['player_order'] <= $active_player_order && $player['current_number_partners'] > 0)
+                {
+                    $new_active_player = $player;
+                    break;
+                }    
+            }
+
+            if($new_active_player == null)
+            {
+                // if no more partners go to playerOperationPhase
+                // Active player = player with company that is first in appeal order
+                // give extra time to player
+                $this->gamestate->nextState( 'playerBuyResourcesPhase' );
+                return;
+            }
+        }
+
+        // if not last player
+        // set active player in next player order (with partners > 0) and go to player action phase
+        $new_player_id = $new_active_player['player_id'];
+        $this->gamestate->changeActivePlayer( $new_player_id );
+        self::giveExtraTime( $new_player_id );
         $this->gamestate->nextState( 'playerActionPhase' );
     }
 

@@ -150,8 +150,25 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} must choose an action'),
         "type" => "activeplayer",
         "args" => "argsPlayerActionPhase",
-        "possibleactions" => array( "buildingAction", "appealBonus" ),
+        "possibleactions" => array( "buildingAction", "appealBonus", "tradeResources", "useAsset" ),
         "transitions" => array( "gameActionPhase" => 12 )
+    ),
+
+    12 => array(
+        "name" => "gameActionPhase",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameActionPhase",
+        "transitions" => array( "playerActionPhase" => 11, "playerBuyResourcesPhase" => 13 )
+    ),
+
+    13 => array(
+        "name" => "playerBuyResourcesPhase",
+        "description" => clienttranslate('${actplayer} may purchase resources from the supply chain'),
+        "descriptionmyturn" => clienttranslate('${you} may purchase resources from the supply chain'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "buyResources", "tradeResources", "useAsset" ),
+        "transitions" => array( "produceGoods" => 14 )
     ),
     
 /*
