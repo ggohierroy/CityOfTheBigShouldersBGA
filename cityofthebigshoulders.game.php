@@ -1066,31 +1066,81 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
-    /*
-    
-    Example:
-
-    function playCard( $card_id )
+    function skipBuyResources()
     {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
-        
-        $player_id = self::getActivePlayerId();
-        
-        // Add your game logic to play a card there 
-        ...
-        
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), array(
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ) );
-          
+        self::checkAction( 'buyResources' );
+        $this->gamestate->nextState( 'produceGoods' );
     }
-    
-    */
+
+    function buyResources($resource_ids)
+    {
+        self::checkAction( 'buyResources' );
+        
+        $in_clause = "(${resource_ids})";
+        $sql = "SELECT card_id, owner_type, card_location, card_type FROM card WHERE primary_type = 'resource' AND card_id IN $in_clause";
+        $resources = self::getObjectListFromDB($sql);
+
+        $cost = 0;
+        $count = 0;
+        $resource_array = [];
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $company = self::getNonEmptyObjectFromDB("SELECT treasury, short_name FROM company WHERE id = $company_id");
+        $company_short_name = $company['short_name'];
+        foreach($resources as $resource)
+        {
+            if($resource['owner_type'] != null)
+                throw new BgaVisibleSystemException("Resource is already owned");
+            
+            if($resource['card_location'] == 'haymarket')
+                throw new BgaVisibleSystemException("Cannot buy resources from Haymarket Square");
+            
+            if($resource['card_location'] == 'x')
+                throw new BgaVisibleSystemException("Cannot buy resources from X space");
+
+            if($resource['card_location'] == '30')
+                $cost += 30;
+            if($resource['card_location'] == '20')
+                $cost += 20;
+            if($resource['card_location'] == '10')
+                $cost += 10;
+            
+            $resource_array[$resource['card_id']] = [
+                'from' => $resource['card_location'], 
+                'card_location' => $company_short_name, 
+                'card_id' => $resource['card_id'],
+                'card_type' => $resource['card_type']];
+            $count++;
+        }
+        
+        $company_treasury = $company['treasury'];
+
+        if($company_treasury < $cost)
+            throw new BgaUserException( self::_("The company doesn't have enough money to buy these resources") );
+        
+        // update company treasury
+        $company_treasury -= $cost;
+        self::DbQuery("UPDATE company SET treasury = $company_treasury WHERE id = $company_id");
+
+        
+        $counters = [];
+        self::addCounter($counters, "money_${company_short_name}", $company_treasury);
+
+        // move resources to company
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN $in_clause");
+        
+        // notify all players
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} bought ${count} resources for $${cost}' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'cost' => $cost,
+            'counters' => $counters,
+            'resource_ids' => $resource_array
+        ) );
+    }
 
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
     {
@@ -1366,11 +1416,13 @@ class CityOfTheBigShoulders extends Table
 
     function skipSell()
     {
+        self::checkAction( 'skipSell' );
         $this->gamestate->nextState( 'playerSkipSellBuyPhase' );
     }
 
     function passStockAction()
     {
+        self::checkAction( 'passStockAction' );
         self::incGameStateValue( "consecutive_passes", 1 );
         $this->gamestate->nextState( 'gameStockPhase' );
     }

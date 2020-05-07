@@ -233,6 +233,20 @@ function (dojo, declare) {
                     var shortName = this.clientStateArgs.companyShortName;
                     dojo.query('#company_'+shortName+ ' .factory').addClass('active');
                     break;
+                case 'playerBuyResourcesPhase':
+                    if(this.isCurrentPlayerActive()){
+                        this.supply_10.unselectAll();
+                        this.supply_20.unselectAll();
+                        this.supply_30.unselectAll();
+                        this.supply_10.setSelectionMode(2);
+                        this.supply_20.setSelectionMode(2);
+                        this.supply_30.setSelectionMode(2);
+                    } else {
+                        this.supply_10.setSelectionMode(0);
+                        this.supply_20.setSelectionMode(0);
+                        this.supply_30.setSelectionMode(0);
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -326,6 +340,12 @@ function (dojo, declare) {
                         break;
                     case 'client_chooseFactoryRelocate':
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_playerTurnConfirmBuyResources':
+                        this.addActionButton( 'confirm_buy_resources', _('Confirm'), 'onConfirmBuyResources');
+                        break;
+                    case 'playerBuyResourcesPhase':
+                        this.addActionButton( 'skip_buy_resources', _('Skip'), 'onSkipBuyResources');
                         break;
                 }
             }
@@ -421,6 +441,8 @@ function (dojo, declare) {
             }
 
             this[stockName] = newStock;
+
+            dojo.connect( this[stockName], 'onChangeSelection', this, 'onResourceSelected' );
         },
 
         createAssetTileStock: function(capitaAssets){
@@ -460,24 +482,31 @@ function (dojo, declare) {
             }
         },
 
-        placeResource: function(item){
+        placeResource: function(item, from, fromItemDiv){
             var resourceName = item.card_type;
             var hash = this.hashString(resourceName);
             switch(item.card_location){
                 case 'haymarket':
-                    this.haymarket.addToStock(hash);
+                    this.haymarket.addToStockWithId(hash, item.card_id);
                     break;
                 case 'x':
-                    this.supply_x.addToStock(hash);
+                    this.supply_x.addToStockWithId(hash, item.card_id);
                     break;
                 case '30':
-                    this.supply_30.addToStock(hash);
+                    this.supply_30.addToStockWithId(hash, item.card_id);
                     break;
                 case '20':
-                    this.supply_20.addToStock(hash);
+                    this.supply_20.addToStockWithId(hash, item.card_id);
                     break;
                 case '10':
-                    this.supply_10.addToStock(hash);
+                    this.supply_10.addToStockWithId(hash, item.card_id);
+                    break;
+                default:
+                    // this is going in a company (card_location = company short name)
+                    this[item.card_location + '_resources'].addToStockWithId(hash, item.card_id, fromItemDiv);
+                    if(from != null){
+                        this['supply_' + from].removeFromStockById(item.card_id);
+                    }
                     break;
             }
         },
@@ -915,6 +944,11 @@ function (dojo, declare) {
             this[companyShortName + '_salesperson_holder'] = zone;
 
             // add resource stock
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: companyShortName + '_resources',
+                class: 'company-resources'
+            } ), companyId );
+            this.createResourceStock(companyShortName + '_resources');
 
             // add goods zone
             dojo.place( this.format_block( 'jstpl_generic_div', {
@@ -1461,6 +1495,34 @@ function (dojo, declare) {
             }
         },
 
+        onResourceSelected: function(control_name, item_id){
+            if(!this.checkAction('buyResources'))
+            {
+                return;
+            }
+
+            var total = 0;
+            var count = 0;
+            var items = this.supply_10.getSelectedItems();
+            count += items.length;
+            total += items.length * 10;
+
+            items = this.supply_20.getSelectedItems();
+            count += items.length;
+            total += items.length * 20;
+
+            items = this.supply_30.getSelectedItems();
+            count += items.length;
+            total += items.length * 30;
+
+            this.setClientState("client_playerTurnConfirmBuyResources", {
+                descriptionmyturn : dojo.string.substitute(_('Buy ${count} resources for $${cost}'),{
+                    count: count,
+                    cost: total
+                })
+            });
+        },
+
         onPersonalShareSelected: function(control_name, item_id){
             if(!this.checkAction('sellShares'))
             {
@@ -1475,6 +1537,42 @@ function (dojo, declare) {
                     numberOfCertificates: numberOfItems
                 })
             });
+        },
+
+        onConfirmBuyResources: function(){
+            if(!this.checkAction('buyResources'))
+            {
+                return;
+            }
+
+            var resourceIds = [];
+            var items = this.supply_10.getSelectedItems();
+            for(var index in items){
+                resourceIds.push(items[index].id);
+            }
+
+            items = this.supply_20.getSelectedItems();
+            for(var index in items){
+                resourceIds.push(items[index].id);
+            }
+
+            items = this.supply_30.getSelectedItems();
+            for(var index in items){
+                resourceIds.push(items[index].id);
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyResources.html", {
+                resourceIds: resourceIds.join(",")
+            }, this, function( result ) {} );
+        },
+
+        onSkipBuyResources: function(){
+            if(!this.checkAction('buyResources'))
+            {
+                return;
+            }
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuyResources.html", {
+            }, this, function( result ) {} );
         },
 
         onAvailableShareSelected: function(control_name, item_id){
@@ -1819,6 +1917,20 @@ function (dojo, declare) {
 
             dojo.subscribe('factoryAutomated', this, "notif_factoryAutomated");
             this.notifqueue.setSynchronous('notif_factoryAutomated', 500);
+
+            dojo.subscribe('resourcesBought', this, "notif_resourcesBought");
+            this.notifqueue.setSynchronous('notif_resourcesBought', 500);
+        },
+
+        notif_resourcesBought: function(notif){
+
+            for(var resourceId in notif.args.resource_ids){
+                var resource = notif.args.resource_ids[resourceId];
+                var from = this['supply_' + resource.from].getItemDivId(resource.card_id);
+                this.placeResource(resource, resource.from, from);
+            }
+
+            this.updateCounters(notif.args.counters);
         },
 
         notif_factoryAutomated: function(notif){

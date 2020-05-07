@@ -166,6 +166,21 @@
       self::ajaxResponse( );
     }
 
+    public function buyResources()
+    {
+      self::setAjaxMode();
+      $resource_ids = self::getArg( "resourceIds", AT_numberlist, true );
+      $this->game->buyResources($resource_ids);
+      self::ajaxResponse( );
+    }
+
+    public function skipBuyResources()
+    {
+      self::setAjaxMode();
+      $this->game->skipBuyResources();
+      self::ajaxResponse( );
+    }
+
   }
   
 

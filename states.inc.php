@@ -171,6 +171,16 @@ $machinestates = array(
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset" ),
         "transitions" => array( "produceGoods" => 14 )
     ),
+
+    14 => array(
+        "name" => "playerProduceGoodsPhase",
+        "description" => clienttranslate('${company_name} (${actplayer}) may produce goods in its factories'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may produce goods in its factories'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "produceGoods", "tradeResources", "useAsset" ),
+        "transitions" => array( "distributeGoods" => 15 )
+    ),
     
 /*
     Examples:

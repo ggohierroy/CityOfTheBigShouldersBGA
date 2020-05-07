@@ -201,6 +201,14 @@
     position: absolute;
 }
 
+.company-resources {
+    position: absolute;
+    left: 110px;
+    top: 160px;
+    width: 103px;
+    height: 68px;
+}
+
 .worker {
     background-image: url('img/tokens.png');
     background-position: -98px -29px;
