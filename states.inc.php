@@ -164,9 +164,10 @@ $machinestates = array(
 
     13 => array(
         "name" => "playerBuyResourcesPhase",
-        "description" => clienttranslate('${actplayer} may purchase resources from the supply chain'),
-        "descriptionmyturn" => clienttranslate('${you} may purchase resources from the supply chain'),
+        "description" => clienttranslate('${company_name} (${actplayer}) may purchase resources from the supply chain'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may purchase resources from the supply chain'),
         "type" => "activeplayer",
+        "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset" ),
         "transitions" => array( "produceGoods" => 14 )
     ),

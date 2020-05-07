@@ -41,6 +41,7 @@ class CityOfTheBigShoulders extends Table
             "priority_deal_player_id" => 13,
             "consecutive_passes" => 14,
             "next_company_id" => 15, // we need this because the current company can change appeal during operation phase
+            "current_company_id" => 16, // we need this to return company name in the operation phase args
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -97,6 +98,7 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'round', 0 );
         self::setGameStateInitialValue( 'consecutive_passes', 0 );
         self::setGameStateInitialValue( 'next_company_id', 0 );
+        self::setGameStateInitialValue( 'current_company_id', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -1827,6 +1829,13 @@ class CityOfTheBigShoulders extends Table
         return ["round" => $round];
     }
 
+    function argsOperationPhase()
+    {
+        $id = self::getGameStateValue( "current_company_id" );
+        $short_name = self::getUniqueValueFromDB("SELECT short_name FROM company WHERE id=$id");
+        return ['company_name' => self::getCompanyName($short_name)];
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state actions
 ////////////
@@ -2002,7 +2011,8 @@ class CityOfTheBigShoulders extends Table
                 self::giveExtraTime( $owner_id );
                 $this->gamestate->changeActivePlayer( $owner_id );
 
-                self::setGameStateValue( "next_company_id", $first_company['next_company_id']);
+                self::setGameStateValue("next_company_id", $first_company['next_company_id']);
+                self::setGameStateValue("current_company_id", $first_company["id"]);
 
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;
