@@ -248,12 +248,11 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerProduceGoodsPhase':
+                    dojo.query('.factory').removeClass('active');
                     if(this.isCurrentPlayerActive()){
-                        var currentFactory = args.args.last_factory_produced + 1;
+                        var currentFactory = Number(args.args.last_factory_produced) + 1;
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#'+companyShortName+'_factory_'+currentFactory).addClass('active');
-                    } else {
-                        dojo.query('.factory').removeClass('active');
                     }
                     break;
                 case 'dummmy':
@@ -499,7 +498,10 @@ function (dojo, declare) {
             var hash = this.hashString(resourceName);
             switch(item.card_location){
                 case 'haymarket':
-                    this.haymarket.addToStockWithId(hash, item.card_id);
+                    this.haymarket.addToStockWithId(hash, item.card_id, fromItemDiv);
+                    if(from != null){
+                        this[from].removeFromStockById(item.card_id);
+                    }
                     break;
                 case 'x':
                     this.supply_x.addToStockWithId(hash, item.card_id);
@@ -1920,14 +1922,26 @@ function (dojo, declare) {
 
             dojo.subscribe('resourcesBought', this, "notif_resourcesBought");
             this.notifqueue.setSynchronous('notif_resourcesBought', 500);
+
+            dojo.subscribe('resourcesConsumed', this, "notif_resourcesConsumed");
+            this.notifqueue.setSynchronous('notif_resourcesConsumed', 500);
+        },
+
+        notif_resourcesConsumed: function(notif){
+            for(var index in notif.args.resources){
+                var resource = notif.args.resources[index];
+                resource.card_location = 'haymarket';
+                var fromId = this[notif.args.company_short_name + '_resources'].getItemDivId(resource.card_id);
+                this.placeResource(resource, notif.args.company_short_name + '_resources', fromId)
+            }
         },
 
         notif_resourcesBought: function(notif){
 
             for(var resourceId in notif.args.resource_ids){
                 var resource = notif.args.resource_ids[resourceId];
-                var from = this['supply_' + resource.from].getItemDivId(resource.card_id);
-                this.placeResource(resource, resource.from, from);
+                var fromId = this['supply_' + resource.from].getItemDivId(resource.card_id);
+                this.placeResource(resource, resource.from, fromId);
             }
 
             this.updateCounters(notif.args.counters);

@@ -188,6 +188,13 @@
       self::ajaxResponse( );
     }
 
+    public function skipProduceGoods()
+    {
+      self::setAjaxMode();
+      $this->game->skipProduceGoods();
+      self::ajaxResponse( );
+    }
+
   }
   
 

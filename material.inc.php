@@ -47,12 +47,14 @@ $this->companies = [
         'resources'=> ['wood', 'wood', 'steel'],
         'goods'=> 1,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 2]
       ],
       2 => [
         'workers'=> 3,
         'resources'=> ['wood', 'wood', 'wood', 'coal'],
         'goods'=> 1,
         'automation'=> 3,
+        'manager_bonus' => ['resource' => 2]
       ]
     ]
   ],
@@ -70,12 +72,14 @@ $this->companies = [
         'resources'=> ['coal', 'livestock'],
         'goods'=> 2,
         'automation'=> 1,
+        'manager_bonus' => ['appeal' => 1]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['steel', 'livestock'],
         'goods'=> 3,
         'automation'=> 2,
+        'manager_bonus' => ['appeal' => 1]
       ]
     ]
   ],"swift" => [
@@ -92,12 +96,14 @@ $this->companies = [
         'resources'=> ['steel', 'livestock'],
         'goods'=> 2,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 3,
         'resources'=> ['steel', 'steel', 'livestock'],
         'goods'=> 1,
         'automation'=> 3,
+        'manager_bonus' => ['good' => 1, 'appeal' => 1]
       ]
     ]
   ],"fairbank" => [
@@ -114,12 +120,14 @@ $this->companies = [
         'resources'=> ['coal', 'coal'],
         'goods'=> 2,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 1,
         'resources'=> ['coal', 'coal', 'livestock'],
         'goods'=> 1,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ]
     ]
   ],"henderson" => [
@@ -136,18 +144,21 @@ $this->companies = [
         'resources'=> ['coal', 'livestock'],
         'goods'=> 3,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['coal', 'steel'],
         'goods'=> 2,
         'automation'=> 2,
+        'manager_bonus' => ['appeal' => 1]
       ],
       3 => [
         'workers'=> 1,
         'resources'=> ['coal', 'livestock'],
         'goods'=> 2,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 1]
       ]
     ]
   ],"libby" => [
@@ -164,12 +175,14 @@ $this->companies = [
         'resources'=> ['steel', 'livestock'],
         'goods'=> 3,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['steel', 'livestock', 'livestock'],
         'goods'=> 3,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ]
     ]
   ],"anglo" => [
@@ -186,12 +199,14 @@ $this->companies = [
         'resources'=> ['coal', 'livestock'],
         'goods'=> 2,
         'automation'=> 1,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['coal', 'coal', 'livestock', 'wood'],
         'goods'=> 3,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 2]
       ]
     ]
   ],"cracker" => [
@@ -208,12 +223,14 @@ $this->companies = [
         'resources'=> ['wood'],
         'goods'=> 2,
         'automation'=> 1,
+        'manager_bonus' => ['appeal' => 1]
       ],
       2 => [
         'workers'=> 3,
         'resources'=> ['coal', 'steel'],
         'goods'=> 2,
         'automation'=> 3,
+        'manager_bonus' => ['appeal' => 1]
       ]
     ]
   ],"doggett" => [
@@ -230,12 +247,14 @@ $this->companies = [
         'resources'=> ['coal', 'livestock'],
         'goods'=> 2,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['steel', 'livestock', 'wood', 'wood'],
         'goods'=> 1,
         'automation'=> 2,
+        'manager_bonus' => ['good' => 1]
       ]
     ]
   ],"elgin" => [
@@ -252,12 +271,14 @@ $this->companies = [
         'resources'=> ['coal', 'steel'],
         'goods'=> 2,
         'automation'=> 2,
+        'manager_bonus' => ['appeal' => 2]
       ],
       2 => [
         'workers'=> 2,
         'resources'=> ['coal', 'steel', 'steel'],
         'goods'=> 1,
         'automation'=> 2,
+        'manager_bonus' => ['resource' => 1, 'appeal' => 1]
       ]
     ]
   ],

@@ -43,6 +43,8 @@ class CityOfTheBigShoulders extends Table
             "next_company_id" => 15, // we need this because the current company can change appeal during operation phase
             "current_company_id" => 16, // we need this to return company name in the operation phase args
             "last_factory_produced" => 17,
+            "appeal_gained" => 18,
+            "resources_gained" => 19,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -1073,23 +1075,138 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'produceGoods' );
 
         // get current company and factory
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $factory_number = self::getGameStateValue( 'last_factory_produced') + 1;
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, appeal FROM company WHERE id = $company_id");
+        $short_name = $company['short_name'];
+        $company_material = $this->companies[$short_name];
+        $factory_material = $company_material['factories'][$factory_number];
 
         // check worker requirements for factory
+        $location = "${short_name}_${factory_number}";
+        $workers_in_factory = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = '$location'");
+        if($factory_material['workers'] != $workers_in_factory)
+            throw new BgaUserException( self::_("Not enough workers to produce in this factory") );
 
         // check resource requirements for factory
+        $resources = self::getObjectListFromDB(
+            "SELECT card_type, card_id FROM card WHERE primary_type = 'resource' AND card_location = '$short_name'");
+        $required_resources = $factory_material['resources'];
+        
+        if(count($required_resources) > count($resources))
+            throw new BgaUserException( self::_("Not enough resources to produce in this factory") );
+
+        $resources_check = $resources;
+        $discarded_resources = [];
+        $notify_resources = [];
+        foreach($required_resources as $required_resource)
+        {
+            $found = false;
+            foreach($resources_check as $index => $resource)
+            {
+                if($required_resource == $resource['card_type'])
+                {
+                    $discarded_resources[] = $resource['card_id'];
+                    $notify_resources[] = $resource;
+                    $resources_check[$index] = null;
+                    $found = true;
+                    break;
+                }
+            }
+
+            if($found == false)
+                throw new BgaUserException( self::_("The factory doesn't have the required resources to operate") );
+        }
 
         // send resources to haymarket
+        $resource_ids = implode( $discarded_resources, ',' );
+        self::DbQuery("UPDATE card SET 
+            card_location = 'haymarket',
+            owner_type = NULL,
+            card_location_arg = 0
+            WHERE card_id IN (${resource_ids})");
 
-        // create goods
+        self::notifyAllPlayers( "resourcesConsumed", clienttranslate( '${company_name} consumes resources and sends them to Haymarket Square'), array(
+            'company_name' => self::getCompanyName($short_name),
+            'company_short_name' => $short_name,
+            'resources' => $notify_resources
+        ) );
+
+        // get number of goods to produce
+        $goods_produced = $factory_material['goods'];
+
+        // check if factory is fully automated
+        $required_automations = $factory_material['automation'];
+        $factory_automations = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) FROM card 
+            WHERE primary_type = 'automation' AND card_location LIKE '${short_name}_worker_holder_${factory_number}%'");
+        if($required_automations == $factory_automations)
+            $goods_produced++;
+        
+        // produce goods
+        self::companyProduceGoods($short_name, $company_id, $goods_produced);
 
         // check if manager and execute action
+        $manager = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE primary_type = 'manager' AND card_location = '${short_name}_${factory_number}'");
+        if($manager != null)
+        {
+            self::notifyAllPlayers( "notifyManagerBonus", clienttranslate( '${company_name} receives manager bonus'), array(
+                'company_name' => self::getCompanyName($company_short_name)
+            ) );
 
-        // if manager bonus is to gain resources, go to state 16 => managerBonus
+            $appeal_gained = false;
+            $resources_agined = false;
+            foreach($factory['manager_bonus'] as $bonus_type => $bonus)
+            {
+                switch($bonus_type)
+                {
+                    case 'good':
+                        self::companyProduceGoods($short_name, $company_id, $bonus);
+                        break;
+                    case 'resource':
+                        self::setGameStateValue( "resources_gained", $bonus );
+                        break;
+                    case 'appeal':
+                        self::setGameStateValue( "appeal_gained", $bonus );
+                        self::increaseCompanyAppeal($company_short_name, $company['appeal'], $bonus);
+                        break;
+                }
+            }
 
-        // if last factory, go to state 15 => distributeGoods
+            if($appeal_gained)
+            {
+                // go to operation appeal bonus state
 
-        // else go to next factory, state 14 => nextFactory
-        // update last_factory_produced
+                return;
+            }
+
+            if($resources_gained)
+            {
+                // go to resource bonus state
+
+                return;
+            }
+        }
+
+        if($factory_number == count($company_material['factories']))
+        {
+            // if last factory, go to state distributeGoods
+            $this->gamestate->nextState( 'distributeGoods' );
+        }
+        else
+        {
+            // else go to next factory, state nextFactory
+            // update last_factory_produced
+            self::setGameStateValue( "last_factory_produced", $factory_number );
+            $this->gamestate->nextState( 'nextFactory' );
+        }
+    }
+
+    function skipProduceGoods()
+    {
+        self::checkAction( 'skipProduceGoods' );
+        $this->gamestate->nextState( 'distributeGoods' );
     }
 
     function skipBuyResources()

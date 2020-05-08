@@ -179,10 +179,10 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods" ),
-        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14, "managerBonus" => 16 )
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonus" => 16 )
     ),
 
-    16 => array(
+    15 => array(
         "name" => "managerBonus",
         "description" => clienttranslate('${company_name} (${actplayer}) may gain a resources from Haymarket Square (Manager bonus)'),
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain a resources from Haymarket Square (Manager bonus)'),
@@ -190,6 +190,26 @@ $machinestates = array(
         "args" => "argsOperationPhase",
         "possibleactions" => array( "managerBonusGainResources" ),
         "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14 )
+    ),
+
+    16 => array(
+        "name" => "playerDistributeGoodsPhase",
+        "description" => clienttranslate('${company_name} (${actplayer}) may distribute goods'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may distribute goods'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "distributeGoods", "skipDistributeGoods" ),
+        "transitions" => array( "dividends" => 15, "nextFactory" => 14 )
+    ),
+
+    17 => array(
+        "name" => "playerDividendsPhase",
+        "description" => clienttranslate('${company_name} (${actplayer}) may pay dividends to shareholders'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "distributeGoods", "skipDistributeGoods" ),
+        "transitions" => array( "dividends" => 15, "nextFactory" => 14 )
     ),
     
 /*
