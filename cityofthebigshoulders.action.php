@@ -181,6 +181,13 @@
       self::ajaxResponse( );
     }
 
+    public function produceGoods()
+    {
+      self::setAjaxMode();
+      $this->game->produceGoods();
+      self::ajaxResponse( );
+    }
+
   }
   
 

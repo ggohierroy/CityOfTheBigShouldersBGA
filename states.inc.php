@@ -168,8 +168,8 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may purchase resources from the supply chain'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "buyResources", "tradeResources", "useAsset" ),
-        "transitions" => array( "produceGoods" => 14 )
+        "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
+        "transitions" => array( "playerProduceGoodsPhase" => 14 )
     ),
 
     14 => array(
@@ -178,8 +178,18 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may produce goods in its factories'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "produceGoods", "tradeResources", "useAsset" ),
-        "transitions" => array( "distributeGoods" => 15 )
+        "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods" ),
+        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14, "managerBonus" => 16 )
+    ),
+
+    16 => array(
+        "name" => "managerBonus",
+        "description" => clienttranslate('${company_name} (${actplayer}) may gain a resources from Haymarket Square (Manager bonus)'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain a resources from Haymarket Square (Manager bonus)'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "managerBonusGainResources" ),
+        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14 )
     ),
     
 /*

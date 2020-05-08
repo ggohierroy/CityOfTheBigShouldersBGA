@@ -247,6 +247,15 @@ function (dojo, declare) {
                         this.supply_30.setSelectionMode(0);
                     }
                     break;
+                case 'playerProduceGoodsPhase':
+                    if(this.isCurrentPlayerActive()){
+                        var currentFactory = args.args.last_factory_produced + 1;
+                        var companyShortName = args.args.company_short_name;
+                        dojo.query('#'+companyShortName+'_factory_'+currentFactory).addClass('active');
+                    } else {
+                        dojo.query('.factory').removeClass('active');
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -346,6 +355,9 @@ function (dojo, declare) {
                         break;
                     case 'playerBuyResourcesPhase':
                         this.addActionButton( 'skip_buy_resources', _('Skip'), 'onSkipBuyResources');
+                        break;
+                    case 'playerProduceGoodsPhase':
+                        this.addActionButton( 'skip_produce_goods', _('Skip'), 'onSkipProduceGoods');
                         break;
                 }
             }
@@ -1167,40 +1179,13 @@ function (dojo, declare) {
             _ make a call to the game server
         
         */
-        
-        /* Example:
-        
-        onMyMethodToCall1: function( evt )
-        {
-            console.log( 'onMyMethodToCall1' );
-            
-            // Preventing default browser reaction
-            dojo.stopEvent( evt );
 
-            // Check that this action is possible (see "possibleactions" in states.inc.php)
-            if( ! this.checkAction( 'myAction' ) )
-            {   return; }
+        produceGoods: function(event){
+            if(!this.checkAction('produceGoods'))
+                return;
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/myAction.html", { 
-                                                                    lock: true, 
-                                                                    myArgument1: arg1, 
-                                                                    myArgument2: arg2,
-                                                                    ...
-                                                                 }, 
-                         this, function( result ) {
-                            
-                            // What to do after the server call if it succeeded
-                            // (most of the time: nothing)
-                            
-                         }, function( is_error) {
-
-                            // What to do after the server call in anyway (success or failure)
-                            // (most of the time: nothing)
-
-                         } );        
-        },        
-        
-        */
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/produceGoods.html", {}, this, function( result ) {} );
+        },
 
         onCompanyClicked: function(event){
             var state = this.gamedatas.gamestate.name;
@@ -1233,8 +1218,14 @@ function (dojo, declare) {
         },
 
         onFactoryClicked: function(event){
-
             var state = this.gamedatas.gamestate.name;
+
+            // This happens when a factory is clicked during the produce goods phase
+            if(state == 'playerProduceGoodsPhase'){
+                this.produceGoods();
+                return;
+            }
+
             if(state != 'client_actionChooseFactory' && state != 'client_chooseFactoryRelocate')
                 return;
 
@@ -1567,7 +1558,7 @@ function (dojo, declare) {
         },
 
         onSkipBuyResources: function(){
-            if(!this.checkAction('buyResources'))
+            if(!this.checkAction('skipBuyResources'))
             {
                 return;
             }
@@ -1766,6 +1757,15 @@ function (dojo, declare) {
             }
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", {}, this, function( result ) {} );
+        },
+
+        onSkipProduceGoods: function(){
+            if(!this.checkAction('skipProduceGoods'))
+            {
+                return;
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipProduceGoods.html", {}, this, function( result ) {} );
         },
 
         onConfirmBuy: function(){

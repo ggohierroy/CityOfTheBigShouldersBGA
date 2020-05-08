@@ -42,6 +42,7 @@ class CityOfTheBigShoulders extends Table
             "consecutive_passes" => 14,
             "next_company_id" => 15, // we need this because the current company can change appeal during operation phase
             "current_company_id" => 16, // we need this to return company name in the operation phase args
+            "last_factory_produced" => 17,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -99,6 +100,7 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'consecutive_passes', 0 );
         self::setGameStateInitialValue( 'next_company_id', 0 );
         self::setGameStateInitialValue( 'current_company_id', 0 );
+        self::setGameStateInitialValue( 'last_factory_produced', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -1066,9 +1068,33 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function produceGoods()
+    {
+        self::checkAction( 'produceGoods' );
+
+        // get current company and factory
+
+        // check worker requirements for factory
+
+        // check resource requirements for factory
+
+        // send resources to haymarket
+
+        // create goods
+
+        // check if manager and execute action
+
+        // if manager bonus is to gain resources, go to state 16 => managerBonus
+
+        // if last factory, go to state 15 => distributeGoods
+
+        // else go to next factory, state 14 => nextFactory
+        // update last_factory_produced
+    }
+
     function skipBuyResources()
     {
-        self::checkAction( 'buyResources' );
+        self::checkAction( 'skipBuyResources' );
         $this->gamestate->nextState( 'produceGoods' );
     }
 
@@ -1140,6 +1166,8 @@ class CityOfTheBigShoulders extends Table
             'counters' => $counters,
             'resource_ids' => $resource_array
         ) );
+
+        $this->gamestate->nextState( 'playerProduceGoodsPhase' );
     }
 
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
@@ -1885,7 +1913,11 @@ class CityOfTheBigShoulders extends Table
     {
         $id = self::getGameStateValue( "current_company_id" );
         $short_name = self::getUniqueValueFromDB("SELECT short_name FROM company WHERE id=$id");
-        return ['company_name' => self::getCompanyName($short_name)];
+        return [
+            'company_name' => self::getCompanyName($short_name),
+            'last_factory_produced' => self::getGameStateValue( "last_factory_produced" ),
+            'company_short_name' => $short_name,
+        ];
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2065,6 +2097,7 @@ class CityOfTheBigShoulders extends Table
 
                 self::setGameStateValue("next_company_id", $first_company['next_company_id']);
                 self::setGameStateValue("current_company_id", $first_company["id"]);
+                self::setGameStateValue("last_factory_produced", 0);
 
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;
