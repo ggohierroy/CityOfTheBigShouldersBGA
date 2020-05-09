@@ -148,6 +148,7 @@ class CityOfTheBigShoulders extends Table
         $result['all_companies'] = $this->companies;
         $result['general_action_spaces'] = $this->general_action_spaces;
         $result['all_capital_assets'] = $this->capital_asset;
+        $result['demand'] = $this->demand;
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -1203,10 +1204,28 @@ class CityOfTheBigShoulders extends Table
         }
     }
 
+    function distributeGoods($demand_ids)
+    {
+        self::checkAction( 'distributeGoods' );
+
+        // get goods of the current company
+
+        // check that demand_ids count = company goods
+
+        // get goods already on those demand tiles
+        
+    }
+
     function skipProduceGoods()
     {
         self::checkAction( 'skipProduceGoods' );
         $this->gamestate->nextState( 'distributeGoods' );
+    }
+
+    function skipDistributeGoods()
+    {
+        self::checkAction( 'skipDistributeGoods' );
+        $this->gamestate->nextState( 'forceWithhold' );
     }
 
     function skipBuyResources()
@@ -2029,11 +2048,13 @@ class CityOfTheBigShoulders extends Table
     function argsOperationPhase()
     {
         $id = self::getGameStateValue( "current_company_id" );
-        $short_name = self::getUniqueValueFromDB("SELECT short_name FROM company WHERE id=$id");
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
         return [
             'company_name' => self::getCompanyName($short_name),
             'last_factory_produced' => self::getGameStateValue( "last_factory_produced" ),
             'company_short_name' => $short_name,
+            'income' => $company['income']
         ];
     }
 

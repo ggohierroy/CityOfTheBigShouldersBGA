@@ -199,7 +199,15 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods" ),
-        "transitions" => array( "dividends" => 15, "nextFactory" => 14 )
+        "transitions" => array( "dividends" => 15, "nextFactory" => 14, "forceWithhold" => 18 )
+    ),
+
+    18 => array(
+        "name" => "gameForceWithhold",
+        "description" => "",
+        "type" => "game",
+        "action" => "stForceWithhold",
+        "transitions" => array( "gameOperationPhase" => 19 )
     ),
 
     17 => array(
@@ -208,8 +216,16 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "distributeGoods", "skipDistributeGoods" ),
-        "transitions" => array( "dividends" => 15, "nextFactory" => 14 )
+        "possibleactions" => array( "payDividends", "withhold" ),
+        "transitions" => array( "gameOperationPhase" => 19 )
+    ),
+
+    19 => array(
+        "name" => "gameOperationPhase",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameOperationPhase",
+        "transitions" => array( "nextCompany" => 13, "nextRound" => 4, "gameEnd" => 99)
     ),
     
 /*

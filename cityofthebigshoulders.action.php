@@ -188,10 +188,25 @@
       self::ajaxResponse( );
     }
 
+    public function distributeGoods()
+    {
+      self::setAjaxMode();
+      $demand_ids = self::getArg( "demandIds", AT_numberlist, true );
+      $this->game->distributeGoods($demand_ids);
+      self::ajaxResponse( );
+    }
+
     public function skipProduceGoods()
     {
       self::setAjaxMode();
       $this->game->skipProduceGoods();
+      self::ajaxResponse( );
+    }
+
+    public function skipDistributeGoods()
+    {
+      self::setAjaxMode();
+      $this->game->skipDistributeGoods();
       self::ajaxResponse( );
     }
 

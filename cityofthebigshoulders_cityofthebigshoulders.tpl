@@ -41,6 +41,18 @@
         <div id="supply_20" class="supply"></div>
         <div id="supply_10" class="supply"></div>
         <div id="job_market" class="supply"></div>
+        <div id="dry_goods_50" class="demand dry_goods"></div>
+        <div id="dry_goods_20" class="demand dry_goods"></div>
+        <div id="dry_goods_0" class="demand dry_goods"></div>
+        <div id="meat_packing_50" class="demand meat_packing"></div>
+        <div id="meat_packing_20" class="demand meat_packing"></div>
+        <div id="meat_packing_0" class="demand meat_packing"></div>
+        <div id="food_and_dairy_50" class="demand food_and_dairy"></div>
+        <div id="food_and_dairy_20" class="demand food_and_dairy"></div>
+        <div id="food_and_dairy_0" class="demand food_and_dairy"></div>
+        <div id="shoes_50" class="demand shoes"> </div>
+        <div id="shoes_20" class="demand shoes"></div>
+        <div id="shoes_0" class="demand shoes"></div>
         <div id="advertising" class="worker_spot general-action">
             <div id="advertising_holder"></div>
         </div>

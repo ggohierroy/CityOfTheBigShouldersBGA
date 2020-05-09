@@ -209,6 +209,93 @@
     height: 68px;
 }
 
+.demand {
+    width: 61px;
+    height: 94.5px;
+    position: absolute;
+}
+
+.demand-card{
+    background-image: url('img/demand.png');
+    width: 61px;
+    height: 94.5px;
+    position: absolute;
+}
+
+.demand1 { background-position: -0px -0px; }
+.demand2 { background-position: -61px -0px; }
+.demand3 { background-position: -122px -0px; }
+.demand4 { background-position: -305px -0px; }
+.demand5 { background-position: -244px -0px; }
+.demand6 { background-position: -183px -0px; }
+.demand7 { background-position: -0px -94.5px; }
+.demand8 { background-position: -61px -94.5px; }
+.demand9 { background-position: -122px -94.5px; }
+.demand10 { background-position: -183px -94.5px; }
+.demand11 { background-position: -244px -94.5px; }
+.demand12 { background-position: -305px -94.5px; }
+.demand13 { background-position: -0px -189px; }
+.demand14 { background-position: -61px -189px; }
+.demand15 { background-position: -122px -189px; }
+.demand16 { background-position: -183px -189px; }
+.demand17 { background-position: -244px -189px; }
+.demand18 { background-position: -305px -189px; }
+.demand19 { background-position: -0px -283.5px; }
+.demand20 { background-position: -61px -283.5px; }
+.demand21 { background-position: -122px -283.5px; }
+.demand22 { background-position: -183px -283.5px; }
+.demand23 { background-position: -244px -283.5px; }
+.demand24 { background-position: -305px -283.5px; }
+
+#dry_goods_50{
+    left: 242px;
+    top: 177px;
+}
+#dry_goods_20{
+    left:167px;
+    top: 177px;
+}
+#dry_goods_0{
+    left: 93px;
+    top: 177px;
+}
+#meat_packing_50{
+    left: 242px;
+    top: 288px;
+}
+#meat_packing_20{
+    left:167px;
+    top: 288px;
+}
+#meat_packing_0{
+    left: 93px;
+    top: 288px;
+}
+#food_and_dairy_50{
+    left: 242px;
+    top: 65px;
+}
+#food_and_dairy_20{
+    left:167px;
+    top: 65px;
+}
+#food_and_dairy_0{
+    top: 65px;
+    left: 93px;
+}
+#shoes_50{
+    top: 400px;
+    left: 242px;
+}
+#shoes_20{
+    top: 400px;
+    left:167px;
+}
+#shoes_0{
+    top: 400px;
+    left: 93px;
+}
+
 .worker {
     background-image: url('img/tokens.png');
     background-position: -98px -29px;

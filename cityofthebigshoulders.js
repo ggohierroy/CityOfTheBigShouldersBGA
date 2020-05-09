@@ -96,6 +96,7 @@ function (dojo, declare) {
             this.player_color = gamedatas.players[this.player_id].color;
             this.clientStateArgs = {};
             this.clientStateArgs.actionArgs = {};
+            this.clientStateArgs.goods = [];
 
             // create zones and stocks
             this.createShareValueZones();
@@ -255,6 +256,16 @@ function (dojo, declare) {
                         dojo.query('#'+companyShortName+'_factory_'+currentFactory).addClass('active');
                     }
                     break;
+                case 'playerDistributeGoodsPhase':
+                    this.clientStateArgs.goods = [];
+                    dojo.query('.demand').removeClass('active');
+                    if(this.isCurrentPlayerActive()){
+                        var companyShortName = args.args.company_short_name;
+                        var companyType = this.gamedatas.all_companies[companyShortName].type;
+                        dojo.query('.'+companyType).addClass('active');
+                        this.clientStateArgs.income = Number(args.args.income);
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -357,6 +368,13 @@ function (dojo, declare) {
                         break;
                     case 'playerProduceGoodsPhase':
                         this.addActionButton( 'skip_produce_goods', _('Skip'), 'onSkipProduceGoods');
+                        break;
+                    case 'playerDistributeGoodsPhase':
+                        this.addActionButton( 'skip_distribute_goods', _('Skip'), 'onSkipDistributeGoods');
+                        break;
+                    case 'client_playerTurnConfirmDistributeGoods':
+                        this.addActionButton( 'cancel_distribute_goods', _('Cancel'), 'onCancelDistributeGoods');
+                        this.addActionButton( 'confirm_distribute_goods', _('Confirm'), 'onConfirmDistributeGoods');
                         break;
                 }
             }
@@ -543,7 +561,7 @@ function (dojo, declare) {
 
             dojo.place( this.format_block( 'jstpl_token', {
                 token_id: tokenId, 
-                token_class: 'moveable-token meeple meeple-black'
+                token_class: 'moveable-token meeple meeple-black salesperson'
             } ), originalSpot);
             
             this[companyShortName + '_salesperson_holder'].placeInZone(tokenId);
@@ -804,6 +822,9 @@ function (dojo, declare) {
                     case 'good':
                         this.placeGood(item);
                         break;
+                    case 'demand':
+                        this.placeDemand(item);
+                        break;
                 }
             }
 
@@ -975,7 +996,25 @@ function (dojo, declare) {
             this[companyShortName + '_goods'] = zone;
         },
 
-        placeGood: function(good, from){
+        placeDemand(demand){
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: demand.card_type, 
+                class: demand.card_type + " demand-card"
+            } ), demand.card_location );
+
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: demand.card_type + '_goods', 
+                class: ""
+            } ), demand.card_type );
+
+            var zone = new ebg.zone();
+            zone.create( this, demand.card_type + '_goods', 13, 22 );
+            this[demand.card_type + '_goods'] = zone;
+
+            dojo.connect( $(demand.card_type), 'onclick', this, 'onDemandClick' );
+        },
+
+        placeGood: function(good, from, fromZone){
 
             var companyShortName = good.card_location.split('_')[0]; // brunswick_goods
             if(from == 'supply'){
@@ -989,6 +1028,8 @@ function (dojo, declare) {
 
             } else if (from == 'company'){
                 // good exists -> move it
+                this[good.card_location].placeInZone('good_' + good.card_id);
+                this[fromZone].removeFromZone('good_' + good.card_id);
             } else {
                 // page refresh -> create good
                 dojo.place( this.format_block( 'jstpl_generic_div', {
@@ -1389,6 +1430,72 @@ function (dojo, declare) {
             return numberOfWorkers - workerHolderChilds.length;
         },
 
+        onDemandClick: function(event){
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('distributeGoods'))
+                return;
+
+            // check if there are goods to distribute
+            var shortName = this.gamedatas.gamestate.args.company_short_name;
+            var goods = this[shortName + '_goods'].getAllItems();
+
+            if(goods.length == 0){
+                this.showMessage(_('No goods to distribute'), 'info');
+                return;
+            }
+
+            var targetId = event.currentTarget.id;
+
+            // make sure there is still space on demand tile
+            var demandMaterial = this.gamedatas.demand[targetId];
+            var demandGoods = this[targetId + '_goods'].getAllItems();
+            if(demandMaterial.demand <= demandGoods.length)
+            {
+                this.showMessage(_('Cannot distribute anymore goods on this demand tile'), 'info');
+                return;
+            }
+
+            // place good on demand tile
+            var good = goods[0];
+            var card_id = good.split('_')[1]; // good_159
+            this.placeGood({
+                card_location: targetId + '_goods',
+                card_id: card_id
+            }, 'company', shortName + '_goods')
+
+            // if there is one spot left => add bonus
+            var income = this.clientStateArgs.income;
+            if(demandMaterial.demand - 1 == demandGoods.length)
+            {
+                var parentId = event.currentTarget.parentNode.id;
+                var split = parentId.split('_'); // dry_goods_50 or food_and_dairy_50...
+                var bonus = Number(split[split.length - 1]);
+                income += bonus;
+            }
+
+            // get salespeople and price of goods
+            var numberOfSalespeople = dojo.query('#company_' + shortName + ' .salesperson').length;
+            var pricePerGood = Number(this.gamedatas.all_companies[shortName].salesperson[numberOfSalespeople]);
+            income += pricePerGood;
+
+            // save the demand tile id for when the player confirms
+            // save also good ids if a player cancels
+            var regex = /\d+$/;
+            var demandIdentifier = Number(regex.exec(targetId)[0]);
+            this.clientStateArgs.income = income;
+            this.clientStateArgs.goods.push({'demandId': demandIdentifier, 'goodId': card_id});
+            var count = this.clientStateArgs.goods.length;
+
+            // calculate operating income and switch to client state that displays it
+            this.setClientState("client_playerTurnConfirmDistributeGoods", {
+                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods for $${income}'),{
+                    count: count,
+                    income: income
+                })
+            });
+        },
+
         onWorkerSpotClicked: function(event){
             dojo.stopEvent(event);
 
@@ -1759,6 +1866,34 @@ function (dojo, declare) {
             }
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", {}, this, function( result ) {} );
+        },
+
+        onConfirmDistributeGoods: function(){
+            var goods = this.clientStateArgs.goods;
+            var demandIds = [];
+            for(var i = 0; i < goods.length; i++){
+                demandIds.push(good.demandId);
+            }
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/distributeGoods.html", {
+                demandIds: demandIds.join(',')
+            }, this, function( result ) {} );
+        },
+
+        onCancelDistributeGoods: function(){
+            //this.clientStateArgs.goods.push({'demandId': demandIdentifier, 'goodId': card_id});
+            var goods = this.clientStateArgs.goods;
+            var companyShortName = this.gamedatas.gamestate.args.company_short_name;
+            for(var i = 0; i < goods.length; i++){
+                var good = goods[i];
+                this[companyShortName + '_goods'].placeInZone('good_' + good.goodId);
+                this['demand' + good.demandId + '_goods'].placeInZone('good_' + good.goodId);
+            }
+
+            this.restoreServerGameState();
+        },
+
+        onSkipDistributeGoods: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipDistributeGoods.html", {}, this, function( result ) {} );
         },
 
         onSkipProduceGoods: function(){
