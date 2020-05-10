@@ -159,6 +159,7 @@ class CityOfTheBigShoulders extends Table
                 card_location <> 'era_2' AND
                 card_location <> 'era_3' AND
                 card_location <> 'resource_bag' AND
+                card_location <> 'discard' AND
                 primary_type <> 'building')
             OR
                 ((card_location LIKE 'player_$current_player_id%' OR card_location LIKE 'building_track_%') AND
@@ -1208,12 +1209,122 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'distributeGoods' );
 
+        $demand_ids = explode(',', $demand_ids); // tranform string into array
+
+        $goods_to_distribute_by_location = [];
+        $unique_demand_tiles = [];
+        foreach($demand_ids as $demand_id)
+        {
+            if(!isset($goods_to_distribute_by_location[$demand_id]))
+            {
+                $unique_demand_tiles[] = "'demand${demand_id}'";
+                $goods_to_distribute_by_location[$demand_id] = 1;
+            }
+            else
+            {
+                $goods_to_distribute_by_location[$demand_id] += 1;
+            }
+        }
+
         // get goods of the current company
+        $company_id = self::getGameStateValue('current_company_id');
+        $company = self::getNonEmptyObjectFromDb("SELECT id, short_name, income FROM company WHERE id = $company_id");
+        $short_name = $company['short_name'];
+        $goods = self::getObjectListFromDb("SELECT card_id FROM card WHERE primary_type = 'good' AND card_location = '$short_name'");
+        $income = $company['income'];
+        $company_material = $this->companies[$short_name];
+        $company_type = $company_material['type']; // dry_goods
+        $first_type = explode('_', $company_type)[0]; // dry
 
         // check that demand_ids count = company goods
+        if(count($goods) < count($demand_ids))
+            throw new BgaVisibleSystemException("Not enough goods to distribute");
 
         // get goods already on those demand tiles
+        $goods_by_location = self::getCollectionFromDB(
+            "SELECT card_location, COUNT(card_id) AS total_goods  
+            FROM card 
+            WHERE primary_type = 'good' AND card_location LIKE 'demand%'
+            GROUP BY card_location");
         
+        // get the demand tiles to know their locations
+        $in_clause = implode(',', $unique_demand_tiles);
+        $demand_tiles = self::getCollectionFromDB(
+            "SELECT card_type, card_location
+            FROM card
+            WHERE card_type IN ($in_clause)");
+
+        foreach($demand_tiles as $demand_tile)
+        {
+            $demand_type = explode('_', $demand_tile['card_location'])[0];
+            if($demand_type != $first_type)
+                throw new BgaVisibleSystemException("Company type does not match demand type");
+        }
+
+        // get value of goods
+        $number_salespeople = self::getUniqueValueFromDb(
+            "SELECT COUNT(card_id) FROM card
+            WHERE primary_type = 'salesperson' AND card_location = '$short_name'");
+        
+        $value_of_goods = $company_material['salesperson'][$number_salespeople];
+
+        $notify_goods = [];
+        // check that is enough space on demand tiles for distributed goods
+        foreach($goods_to_distribute_by_location as $demand_id => $number_of_goods_to_distribute)
+        {
+            $demand_material = $this->demand["demand${demand_id}"];
+            $total_demand = $demand_material['demand'];
+
+            $current_goods = 0;
+            if(isset($goods_by_location["demand${demand_id}"]))
+            {
+                $current_goods = $goods_by_location["demand${demand_id}"]['total_goods'];
+            }
+
+            if($current_goods + $number_of_goods_to_distribute > $total_demand)
+                throw new BgaVisibleSystemException("Not enough space to distribute all goods");
+            
+            if($current_goods + $number_of_goods_to_distribute == $total_demand)
+            {
+                // add bonus to income
+                $demand_tile = $demand_tiles["demand${demand_id}"];
+                $location = $demand_tile['card_location'];
+                $split = explode('_', $location);
+                $bonus = $split[count($split) - 1];
+                $income += $bonus;
+            }
+
+            // add value of goods to income
+            $income += $number_of_goods_to_distribute * $value_of_goods;
+
+            // update goods location
+            $values = [];
+            for($i = 0; $i < $number_of_goods_to_distribute; $i++)
+            {
+                $good = array_pop($goods);
+                $values[] = $good['card_id'];
+                $notify_goods[] = ['good_id' => $good['card_id'], 'demand_id' => $demand_id];
+            }
+
+            $good_ids = implode(',', $values);
+            self::DbQuery(
+                "UPDATE card SET
+                owner_type = NULL,
+                card_location = 'demand${demand_id}'
+                WHERE card_id IN ($good_ids)");
+        }
+
+        // update income of company
+        self::DbQuery("UPDATE company SET income = $income WHERE id = '$company_id'");
+
+        // notify players
+        $count = count($demand_ids);
+        self::notifyAllPlayers( "goodsDistributed", clienttranslate( '${company_name} distributed ${count} goods for an operating revenue of $${income}' ), array(
+            'company_name' => self::getCompanyName($short_name),
+            'count' => $count,
+            'income' => $income,
+            'good_ids' => $notify_goods
+        ) );
     }
 
     function skipProduceGoods()
@@ -1225,7 +1336,10 @@ class CityOfTheBigShoulders extends Table
     function skipDistributeGoods()
     {
         self::checkAction( 'skipDistributeGoods' );
-        $this->gamestate->nextState( 'forceWithhold' );
+
+        // TODO: withhold operational income
+
+        $this->gamestate->nextState( 'gameOperationPhase' );
     }
 
     function skipBuyResources()

@@ -373,8 +373,8 @@ function (dojo, declare) {
                         this.addActionButton( 'skip_distribute_goods', _('Skip'), 'onSkipDistributeGoods');
                         break;
                     case 'client_playerTurnConfirmDistributeGoods':
-                        this.addActionButton( 'cancel_distribute_goods', _('Cancel'), 'onCancelDistributeGoods');
                         this.addActionButton( 'confirm_distribute_goods', _('Confirm'), 'onConfirmDistributeGoods');
+                        this.addActionButton( 'cancel_distribute_goods', _('Cancel'), 'onCancelDistributeGoods');
                         break;
                 }
             }
@@ -1872,6 +1872,7 @@ function (dojo, declare) {
             var goods = this.clientStateArgs.goods;
             var demandIds = [];
             for(var i = 0; i < goods.length; i++){
+                var good = goods[i];
                 demandIds.push(good.demandId);
             }
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/distributeGoods.html", {
@@ -1886,7 +1887,7 @@ function (dojo, declare) {
             for(var i = 0; i < goods.length; i++){
                 var good = goods[i];
                 this[companyShortName + '_goods'].placeInZone('good_' + good.goodId);
-                this['demand' + good.demandId + '_goods'].placeInZone('good_' + good.goodId);
+                this['demand' + good.demandId + '_goods'].removeFromZone('good_' + good.goodId);
             }
 
             this.restoreServerGameState();

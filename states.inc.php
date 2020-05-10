@@ -199,15 +199,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods" ),
-        "transitions" => array( "dividends" => 15, "nextFactory" => 14, "forceWithhold" => 18 )
-    ),
-
-    18 => array(
-        "name" => "gameForceWithhold",
-        "description" => "",
-        "type" => "game",
-        "action" => "stForceWithhold",
-        "transitions" => array( "gameOperationPhase" => 19 )
+        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19 )
     ),
 
     17 => array(
