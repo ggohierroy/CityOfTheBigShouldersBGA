@@ -1072,6 +1072,20 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function payDividends()
+    {
+        self::checkAction( 'payDividends' );
+
+        // get current company and factory
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income FROM company WHERE id = $company_id");
+        $short_name = $company['short_name'];
+
+        self::distributeDividends($short_name, $company['income']);
+
+        self::DbQuery("UPDATE company SET income = 0 WHERE id = $company_id");
+    }
+
     function produceGoods()
     {
         self::checkAction( 'produceGoods' );

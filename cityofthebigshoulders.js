@@ -376,6 +376,10 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_distribute_goods', _('Confirm'), 'onConfirmDistributeGoods');
                         this.addActionButton( 'cancel_distribute_goods', _('Cancel'), 'onCancelDistributeGoods');
                         break;
+                    case 'playerDividendsPhase':
+                        this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
+                        this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
+                        break;
                 }
             }
         },        
@@ -1558,6 +1562,14 @@ function (dojo, declare) {
                     this.chooseCompany();
                     break;
             }
+        },
+
+        onConfirmPayDividends: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/payDividends.html", {}, this, function( result ) {} );
+        },
+
+        onWithhold: function(){
+
         },
 
         onCancelSelectBuildings: function(event){

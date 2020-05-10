@@ -210,6 +210,13 @@
       self::ajaxResponse( );
     }
 
+    public function payDividends()
+    {
+      self::setAjaxMode();
+      $this->game->payDividends();
+      self::ajaxResponse( );
+    }
+
   }
   
 

@@ -204,8 +204,8 @@ $machinestates = array(
 
     17 => array(
         "name" => "playerDividendsPhase",
-        "description" => clienttranslate('${company_name} (${actplayer}) may pay dividends to shareholders'),
-        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders'),
+        "description" => clienttranslate('${company_name} (${actplayer}) may pay dividends to shareholders with its earnings ($${income})'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders with its earnings ($${income})'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "payDividends", "withhold" ),
