@@ -2061,6 +2061,32 @@ function (dojo, declare) {
 
             dojo.subscribe('resourcesConsumed', this, "notif_resourcesConsumed");
             this.notifqueue.setSynchronous('notif_resourcesConsumed', 500);
+
+            dojo.subscribe('goodsDistributed', this, "notif_goodsDistributed");
+            this.notifqueue.setSynchronous('notif_goodsDistributed', 500);
+        },
+
+        notif_goodsDistributed: function(notif){
+            if(this.isCurrentPlayerActive())
+                return; // goods have already been moved
+            
+                debugger;
+            // check if there are goods to distribute
+            var shortName = notif.args.short_name;
+            var goods = this[shortName + '_goods'].getAllItems();
+
+            for(var index in notif.args.demand_ids){
+                var demandId = notif.args.demand_ids[index];
+                var targetId = 'demand' + demandId;
+
+                // place good on demand tile
+                var good = goods.pop();
+                var card_id = good.split('_')[1]; // good_159
+                this.placeGood({
+                    card_location: targetId + '_goods',
+                    card_id: card_id
+                }, 'company', shortName + '_goods')
+            }
         },
 
         notif_resourcesConsumed: function(notif){

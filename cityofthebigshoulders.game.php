@@ -1210,6 +1210,8 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'distributeGoods' );
 
         $demand_ids = explode(',', $demand_ids); // tranform string into array
+        if(count($demand_ids) == 0)
+            throw new BgaVisibleSystemException("Cannot distribute 0 goods");
 
         $goods_to_distribute_by_location = [];
         $unique_demand_tiles = [];
@@ -1268,7 +1270,6 @@ class CityOfTheBigShoulders extends Table
         
         $value_of_goods = $company_material['salesperson'][$number_salespeople];
 
-        $notify_goods = [];
         // check that is enough space on demand tiles for distributed goods
         foreach($goods_to_distribute_by_location as $demand_id => $number_of_goods_to_distribute)
         {
@@ -1303,7 +1304,6 @@ class CityOfTheBigShoulders extends Table
             {
                 $good = array_pop($goods);
                 $values[] = $good['card_id'];
-                $notify_goods[] = ['good_id' => $good['card_id'], 'demand_id' => $demand_id];
             }
 
             $good_ids = implode(',', $values);
@@ -1321,10 +1321,13 @@ class CityOfTheBigShoulders extends Table
         $count = count($demand_ids);
         self::notifyAllPlayers( "goodsDistributed", clienttranslate( '${company_name} distributed ${count} goods for an operating revenue of $${income}' ), array(
             'company_name' => self::getCompanyName($short_name),
+            'short_name' => $short_name,
             'count' => $count,
             'income' => $income,
-            'good_ids' => $notify_goods
+            'demand_ids' => $demand_ids
         ) );
+
+        $this->gamestate->nextState('dividends');
     }
 
     function skipProduceGoods()
