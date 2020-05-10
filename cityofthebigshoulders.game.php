@@ -220,6 +220,11 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function refillSupply($discard_rightmost = false)
+    {
+
+    }
+
     function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
     {
         // get the automations in the whole company
@@ -1115,6 +1120,8 @@ class CityOfTheBigShoulders extends Table
         self::distributeDividends($short_name, $company['income']);
 
         self::DbQuery("UPDATE company SET income = 0 WHERE id = $company_id");
+
+        $this->gamestate->nextState( 'gameOperationPhase' );
     }
 
     function withhold()
@@ -2186,23 +2193,6 @@ class CityOfTheBigShoulders extends Table
         game state.
     */
 
-    /*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
-    {
-        // Get some values from the current game situation in database...
-    
-        // return values:
-        return array(
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
-        );
-    }    
-    */
-
     // need the round to not show start company action during first round
     function argPlayerBuyPhase()
     {
@@ -2238,18 +2228,39 @@ class CityOfTheBigShoulders extends Table
         The action method of state X is called everytime the current game state is set to X.
     */
     
-    /*
-    
-    Example for game state "MyGameState":
-
-    function stMyGameState()
+    function stGameOperationPhase()
     {
-        // Do some stuff ...
+        // refill supply
+        self::refillSupply();
+
+        // if next company == null, go to cleanup phase
+        $next_company_id = self::getGameStateValue( "next_company_id" );
+        if($next_company_id == -1)
+        {
+            $this->gamestate->nextState( 'cleanup' );
+            return;
+        }
+
+        // else update current company and next company, then go back to beginning of operation phase
+        $order = self::getCurrentCompanyOrder();
+
+        foreach($order as $company)
+        {
+            if($company['id'] != $next_company_id)
+                continue;
+            
+            $owner_id = $company['owner_id'];
+            self::giveExtraTime( $owner_id );
+            $this->gamestate->changeActivePlayer( $owner_id );
+    
+            self::setGameStateValue("next_company_id", $company['next_company_id'] == NULL ? -1 : $company['next_company_id']);
+            self::setGameStateValue("current_company_id", $company["id"]);
+            self::setGameStateValue("last_factory_produced", 0);
+            break;
+        }
         
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
+        $this->gamestate->nextState( 'nextCompany' );
+    }
 
     function stGameActionPhaseSetup()
     {
