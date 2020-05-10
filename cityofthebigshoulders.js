@@ -1569,7 +1569,7 @@ function (dojo, declare) {
         },
 
         onWithhold: function(){
-
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withhold.html", {}, this, function( result ) {} );
         },
 
         onCancelSelectBuildings: function(event){
@@ -2076,13 +2076,23 @@ function (dojo, declare) {
 
             dojo.subscribe('goodsDistributed', this, "notif_goodsDistributed");
             this.notifqueue.setSynchronous('notif_goodsDistributed', 500);
+
+            dojo.subscribe('earningsWithhold', this, "notif_earningsWithhold");
+            this.notifqueue.setSynchronous('notif_earningsWithhold', 500);
+        },
+
+        notif_earningsWithhold: function(notif){
+            var shortName = notif.args.company_short_name;
+            this['share_zone_'+notif.args.previous_share_value_step].removeFromZone('share_token_'+shortName);
+            this['share_zone_'+notif.args.share_value_step].placeInZone('share_token_'+shortName);
+
+            this.updateCounters(notif.args.counters);
         },
 
         notif_goodsDistributed: function(notif){
             if(this.isCurrentPlayerActive())
                 return; // goods have already been moved
             
-                debugger;
             // check if there are goods to distribute
             var shortName = notif.args.short_name;
             var goods = this[shortName + '_goods'].getAllItems();

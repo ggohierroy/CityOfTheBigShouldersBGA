@@ -1072,6 +1072,37 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function withholdEarnings($company_id)
+    {
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income, treasury, share_value_step FROM company WHERE id = $company_id");
+        $short_name = $company['short_name'];
+        $income = $company['income'];
+        $treasury = $company['treasury'];
+        $newTreasury = $treasury + $income;
+        $share_value_step = $company['share_value_step'];
+        $previous_share_value_step = $share_value_step;
+        if($share_value_step > 0)
+            $share_value_step--;
+        self::DbQuery("UPDATE company SET treasury = $newTreasury, income = 0, share_value_step = $share_value_step WHERE id = $company_id");
+
+        $counters = [];
+        self::addCounter($counters, "money_${short_name}", $newTreasury);
+
+        $share_value = self::getShareValue($share_value_step);
+
+        self::notifyAllPlayers( "earningsWithhold", clienttranslate( '${company_name} withholds earnings ($${income}), share value drops to $${share_value}'), array(
+            'company_name' => self::getCompanyName($short_name),
+            'company_short_name' => $short_name,
+            'income' => $income,
+            'share_value_step' => $share_value_step,
+            'previous_share_value_step' => $previous_share_value_step,
+            'share_value' => $share_value,
+            'counters' => $counters
+        ) );
+
+        $this->gamestate->nextState( 'gameOperationPhase' );
+    }
+
     function payDividends()
     {
         self::checkAction( 'payDividends' );
@@ -1084,6 +1115,15 @@ class CityOfTheBigShoulders extends Table
         self::distributeDividends($short_name, $company['income']);
 
         self::DbQuery("UPDATE company SET income = 0 WHERE id = $company_id");
+    }
+
+    function withhold()
+    {
+        self::checkAction( 'withhold' );
+
+        $company_id = self::getGameStateValue( 'current_company_id');
+        
+        self::withholdEarnings($company_id);
     }
 
     function produceGoods()
@@ -1354,9 +1394,9 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'skipDistributeGoods' );
 
-        // TODO: withhold operational income
-
-        $this->gamestate->nextState( 'gameOperationPhase' );
+        $company_id = self::getGameStateValue( 'current_company_id');
+        
+        self::withholdEarnings($company_id);
     }
 
     function skipBuyResources()

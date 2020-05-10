@@ -217,6 +217,13 @@
       self::ajaxResponse( );
     }
 
+    public function withhold()
+    {
+      self::setAjaxMode();
+      $this->game->withhold();
+      self::ajaxResponse( );
+    }
+
   }
   
 
