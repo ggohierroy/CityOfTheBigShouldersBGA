@@ -2079,6 +2079,37 @@ function (dojo, declare) {
 
             dojo.subscribe('earningsWithhold', this, "notif_earningsWithhold");
             this.notifqueue.setSynchronous('notif_earningsWithhold', 500);
+
+            dojo.subscribe('resourcesShifted', this, "notif_resourcesShifted");
+            this.notifqueue.setSynchronous('notif_resourcesShifted', 500);
+
+            dojo.subscribe('resourcesDrawn', this, "notif_resourcesDrawn");
+            this.notifqueue.setSynchronous('notif_resourcesDrawn', 500);
+        },
+
+        notif_resourcesDrawn: function(notif){
+            var location = notif.args.location;
+            for(var index in notif.args.resource_ids_types){
+                var resource = notif.args.resource_ids_types[index];
+                var resourceId = resource.id;
+                var resourceType = resource.type;
+                var hash = this.hashString(resourceType);
+                this['supply_' + location].addToStockWithId(hash, resourceId, 'player_boards');
+            }
+        },
+
+        notif_resourcesShifted: function(notif){
+            var from = notif.args.from;
+            var location = notif.args.location;
+            for(var index in notif.args.resource_ids_types){
+                var resource = notif.args.resource_ids_types[index];
+                var resourceId = resource.id;
+                var resourceType = resource.type;
+                var hash = this.hashString(resourceType);
+                var fromItemDiv = 'supply_' + from + '_item_' + resourceId;
+                this['supply_' + location].addToStockWithId(hash, resourceId, fromItemDiv);
+                this['supply_' + from].removeFromStockById(resourceId);
+            }
         },
 
         notif_earningsWithhold: function(notif){

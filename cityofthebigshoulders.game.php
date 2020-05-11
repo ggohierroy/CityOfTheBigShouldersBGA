@@ -23,6 +23,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 class CityOfTheBigShoulders extends Table
 {
     const STEP_TO_VALUE = [0=>10, 1=>15, 2=>20, 3=>25, 4=>35, 5=>40, 6=>50, 7=>60, 8=>80, 9=>100, 10=>120, 11=>140, 12=>160, 13=>190, 14=>220, 15=>250, 16=>280, 17=>320, 18=>360, 19=>400, 20=>450];
+    const REFILL_AMOUNT = [0 => 3, 1 => 4, 2 => 4, 3 => 5, 5 => 6];
 
 	function __construct( )
 	{
@@ -78,6 +79,10 @@ class CityOfTheBigShoulders extends Table
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
         $default_colors = $gameinfos['player_colors'];
+
+        // initialize card object
+        $this->cards = self::getNew( "module.common.deck" );
+        $this->cards->init( "card" );
 
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
@@ -222,7 +227,226 @@ class CityOfTheBigShoulders extends Table
 
     function refillSupply($discard_rightmost = false)
     {
+        // get all resources from supply chain
+        $resources = self::getObjectListFromDB(
+            "SELECT card_id, card_location, card_type FROM card WHERE
+                card_location = 'x' OR
+                card_location = '30' OR
+                card_location = '20' OR
+                card_location = '10'");
+        
+        // this is needed to notify players where the resource is coming from
+        foreach($resources as $index => $resource)
+        {
+            $resources[$index]['original_location'] = $resource['card_location'];
+        }
+        
+        $supply_locations = ['10', '20', '30', 'x'];
+        $number_empty_locations = 0;
+        
+        // during cleanup, discard all resources in 10 spot
+        if($discard_rightmost == true)
+        {
+            $resource_ids = [];
 
+            foreach($resources as $resource_index => $resource)
+            {
+                if($resource['card_location'] == '10')
+                {
+                    $resource_ids[] = $resource['card_id'];
+                    $resources[$resource_index]['card_location'] = 'haymarket';
+                }
+            }
+
+            $in_condition = implode(',', $resource_ids);
+            self::DbQuery("UPDATE card SET card_location = 'haymartket' WHERE card_id IN ($in_condition)");
+
+            // TODO: notify resources discarded
+            self::notifyAllPlayers( "resourcesDiscarded", "", array(
+
+            ));
+        }
+
+        // then check each location if empty
+        foreach($supply_locations as $index => $supply_location)
+        {
+            self::trace("Check supply location ${supply_location}");
+
+            $empty = true;
+            // check if empty
+            foreach($resources as $resource)
+            {
+                if($resource['card_location'] == $supply_location)
+                {
+                    $empty = false;
+                    break;
+                }
+            }
+
+            $resource_ids = [];
+            $resource_ids_types = [];
+            if($empty)
+            {
+                self::trace("${supply_location} is empty => shift resources right until not empty");
+            }
+
+            $i = $index;
+            $from = "";
+            while($empty && $i < 3)
+            {
+                // shift all resources
+                foreach($resources as $resource_index => $resource)
+                {
+                    if($resource['card_location'] == '20' && $index < 1)
+                    {
+                        // move all 20 -> 10 when refilling 10 spot
+                        $resources[$resource_index]['card_location'] = 10;
+                        if($supply_location == '10')
+                        {
+                            // if refilling 10 and there is a resource on 20 => 10 is no longer empty
+                            $from = $resource['original_location'];
+                            $resource_ids[] = $resource['card_id'];
+                            $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+                            $empty = false;
+                        }
+                    }
+                    else if ($resource['card_location'] == '30' && $index < 2)
+                    {
+                        // move all 30 -> 20 when refilling 10 and 20 spot
+                        $resources[$resource_index]['card_location'] = 20;
+                        if($supply_location == '20')
+                        {
+                            // if refilling 20 and there is a resource on 30 => 20 is no longer empty
+                            $from = $resource['original_location'];
+                            $resource_ids[] = $resource['card_id'];
+                            $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+                            $empty = false;
+                        }
+                    }
+                    else if ($resource['card_location'] == 'x' && $index < 3)
+                    {
+                        // move all x -> 30 when refilling 10, 20, and 30 spot
+                        $resources[$resource_index]['card_location'] = 30;
+                        if($supply_location == '30')
+                        {
+                            // if refilling 30 and there is a resource on x => 30 is no longer empty
+                            $from = $resource['original_location'];
+                            $resource_ids[] = $resource['card_id'];
+                            $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+                            $empty = false;
+                        }
+                    }
+                }
+
+                $i++;
+            }
+
+            if($empty)
+            {
+                $number_empty_locations++;
+                self::trace("Supply location still empty");
+            }
+
+            if(!$empty && count($resource_ids) > 0)
+            {
+                // update current location
+                $in_condition = implode(',', $resource_ids);
+                self::DbQuery("UPDATE card SET card_location = $supply_location WHERE card_id IN ($in_condition)");
+
+                self::notifyAllPlayers( "resourcesShifted", "", array(
+                    'resource_ids_types' => $resource_ids_types,
+                    'location' => $supply_location,
+                    'from' => $from
+                ));
+            }
+        }
+
+        $round = self::getGameStateValue( "round" );
+        $refill_amount = self::REFILL_AMOUNT[$round];
+
+        // try to get the right amount of resources to refill
+        $resources_to_draw = $refill_amount * $number_empty_locations;
+        $drawn_resources = self::getObjectListFromDB(
+            "SELECT card_id, card_location, card_location_arg, card_type FROM card
+            WHERE card_location = 'resource_bag'
+            ORDER BY card_location_arg ASC
+            LIMIT $resources_to_draw");
+
+        //self::dump('drawn_resources', $drawn_resources);
+
+        // if not enough, need to reshuffle everything
+        $drawn_resources_count = count($drawn_resources);
+        $missing_resources_count = $resources_to_draw - $drawn_resources_count;
+        if($missing_resources_count != 0)
+        {
+            $this->cards->shuffle('haymarket');
+
+            // get missing resources if any
+            $missing_resources = self::getObjectListFromDB(
+                "SELECT TOP $missing_resources_count card_id, card_location, card_type FROM card
+                WHERE card_location = 'haymarket'
+                ORDER BY card_location_arg ASC");
+
+            $drawn_resources = array_merge($drawn_resources, $missing_resources);
+
+            // move haymarket to resource bag
+            $this->cards ->moveAllCardsInLocation( 'haymarket', 'resource_bag' );
+
+            // move 2 of each resource if any to haymarket
+            self::DbQuery(
+                "UPDATE  card
+                SET card_location = 'haymarket'
+                WHERE card_location = 'resource_bag' AND card_type = 'livestock'
+                LIMIT 2");
+            
+            self::DbQuery(
+                "UPDATE  card
+                SET card_location = 'haymarket'
+                WHERE card_location = 'resource_bag' AND card_type = 'steel'
+                LIMIT 2");
+
+            self::DbQuery(
+                "UPDATE  card
+                SET card_location = 'haymarket'
+                WHERE card_location = 'resource_bag' AND card_type = 'wood'
+                LIMIT 2");
+            
+            self::DbQuery(
+                "UPDATE  card
+                SET card_location = 'haymarket'
+                WHERE card_location = 'resource_bag' AND card_type = 'coal'
+                LIMIT 2");
+
+            // shuffle resource bag again
+            $this->cards->shuffle('resource_bag');
+        }
+
+        // then update location of drawn resources for each empty location
+        for($i = 0; $i < $number_empty_locations; $i++)
+        {
+            $resource_ids_types = [];
+            $location = $supply_locations[3 - $i];
+            $resource_ids = [];
+            for($j = 0; $j < $refill_amount; $j++)
+            {
+                $resource = array_pop($drawn_resources);
+                $resource_ids[] = $resource['card_id'];
+                $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+            }
+
+            $in_condition = implode(',', $resource_ids);
+            self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
+
+            self::notifyAllPlayers( "resourcesDrawn", "", array(
+                'resource_ids_types' => $resource_ids_types,
+                'location' => $location
+            ));
+        }
+
+        if(count($drawn_resources) != 0)
+            throw new BgaVisibleSystemException("Didn't process all drawn resources");
+
+        // notify players
     }
 
     function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
@@ -2237,6 +2461,13 @@ class CityOfTheBigShoulders extends Table
         $next_company_id = self::getGameStateValue( "next_company_id" );
         if($next_company_id == -1)
         {
+            $round = self::getGameStateValue("round");
+            if($round == 4)
+            {
+                $this->gamestate->nextState( 'gameEnd' );
+                return;
+            }
+
             $this->gamestate->nextState( 'cleanup' );
             return;
         }
@@ -2260,6 +2491,11 @@ class CityOfTheBigShoulders extends Table
         }
         
         $this->gamestate->nextState( 'nextCompany' );
+    }
+
+    function stGameCleanup()
+    {
+        $this->gamestate->nextState( 'nextRound' );
     }
 
     function stGameActionPhaseSetup()
