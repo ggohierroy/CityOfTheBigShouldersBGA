@@ -2081,13 +2081,41 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous('earningsWithhold', 500);
 
             dojo.subscribe('resourcesShifted', this, "notif_resourcesShifted");
-            this.notifqueue.setSynchronous('resourcesShifted', 500);
+            this.notifqueue.setSynchronous('resourcesShifted', 200);
 
             dojo.subscribe('resourcesDrawn', this, "notif_resourcesDrawn");
-            this.notifqueue.setSynchronous('resourcesDrawn', 500);
+            this.notifqueue.setSynchronous('resourcesDrawn', 200);
 
             dojo.subscribe('resourcesDiscarded', this, "notif_resourcesDiscarded");
-            this.notifqueue.setSynchronous('resourcesDiscarded', 500);
+            this.notifqueue.setSynchronous('resourcesDiscarded', 200);
+
+            dojo.subscribe('assetDiscarded', this, "notif_assetDiscarded");
+            this.notifqueue.setSynchronous('assetDiscarded', 200);
+
+            dojo.subscribe('assetsShifted', this, "notif_assetsShifted");
+            this.notifqueue.setSynchronous('assetsShifted', 200);
+        },
+
+        notif_assetsShifted: function(notif){
+            var newAsset = notif.args.new_asset;
+            var hash = this.hashString(newAsset.card_type);
+            var newWeights = {};
+            newWeights[hash] = 0;
+
+            for(var index in notif.args.assets){
+                var asset = notif.args.assets[index];
+                hash = this.hashString(asset.card_type);
+                newWeights[hash] = 80-Number(asset.card_location);
+            }
+
+            this.capital_assets.changeItemsWeight( newWeights );
+
+            this.placeAsset(newAsset);
+        },
+
+        notif_assetDiscarded: function(notif){
+            var assetName = notif.args.asset_name;
+            this.capital_assets.removeFromStockById(assetName);
         },
 
         notif_resourcesDiscarded: function(notif){

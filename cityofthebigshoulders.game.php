@@ -225,6 +225,95 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function refillAssets()
+    {
+        $assets = self::getObjectListFromDB("SELECT card_id, card_type, card_location FROM card 
+            WHERE primary_type = 'asset' AND 
+                (card_location = '80' OR 
+                card_location = '70' OR 
+                card_location = '60' OR 
+                card_location = '50' OR
+                card_location = '40')");
+
+        $spots = ['40', '50', '60', '70', '80'];
+        $empty_spot = '';
+
+        // There's only one spot empty, find it
+        foreach($spots as $index => $spot)
+        {
+            $found = false;
+            foreach($assets as $asset)
+            {
+                if($asset['card_location'] == $spot)
+                {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if(!$found)
+            {
+                $empty_spot = $index;
+                break;
+            }
+        }
+
+        // shift all assets once
+        foreach($assets as $index => $asset)
+        {
+            $card_id = $asset['card_id'];
+            switch($asset['card_location'])
+            {
+                case '80':
+                    if($empty_spot <= 4)
+                    {
+                        $assets[$index]['card_location'] = '70';
+                        self::DbQuery("UPDATE card SET card_location = '70' WHERE card_id = $card_id");
+                    }
+                    break;
+                case '70':
+                    if($empty_spot <= 3)
+                    {
+                        $assets[$index]['card_location'] = '60';
+                        self::DbQuery("UPDATE card SET card_location = '60' WHERE card_id = $card_id");
+                    }
+                    break;
+                case '60':
+                    if($empty_spot <= 2)
+                    {
+                        $assets[$index]['card_location'] = '50';
+                        self::DbQuery("UPDATE card SET card_location = '50' WHERE card_id = $card_id");
+                    }
+                    break;
+                case '50':
+                    if($empty_spot <= 1)
+                    {
+                        $assets[$index]['card_location'] = '40';
+                        self::DbQuery("UPDATE card SET card_location = '40' WHERE card_id = $card_id");
+                    }
+                    break;
+            }
+        }
+
+        // draw new asset
+        $new_asset = self::getObjectFromDB(
+            "SELECT card_id, card_type, card_location FROM card
+            WHERE primary_type = 'asset' AND card_location = 'asset_deck'
+            ORDER BY card_location_arg ASC
+            LIMIT 1");
+        
+        if($new_asset != null)
+        {
+            $id = $new_asset['card_id'];
+            self::DbQuery("UPDATE card SET card_location = '80' WHERE card_id = $id");
+        }
+
+        self::notifyAllPlayers( "assetsShifted", "", array(
+            'assets' => $assets,
+            'new_asset' => $new_asset
+        ));
+    }
+
     function refillSupply($discard_rightmost = false)
     {
         // get all resources from supply chain
@@ -2505,8 +2594,27 @@ class CityOfTheBigShoulders extends Table
 
     function stGameCleanup()
     {
+        self::notifyAllPlayers( "assetDiscarded", clienttranslate("Cleanup phase"), array(
+        ) );
+
         // refill supply
         self::refillSupply(true);
+
+        // discard and refill asset tiles
+        $asset_name = self::getUniqueValueFromDB("SELECT card_type FROM card WHERE primary_type = 'asset' AND card_location = '40'");
+        self::DbQuery("UPDATE card SET card_location = 'discard' WHERE primary_type = 'asset' AND card_location = '40'");
+        self::notifyAllPlayers( "assetDiscarded", "", array(
+            'asset_name' => $asset_name
+        ) );
+
+        // discard and refill demand tiles
+        self::refillAssets();
+
+        // change round
+
+        // change phase
+
+        // set active player as player with priority deal marker
 
         $this->gamestate->nextState( 'nextRound' );
     }
