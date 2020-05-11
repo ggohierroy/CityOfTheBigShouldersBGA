@@ -248,6 +248,7 @@ class CityOfTheBigShoulders extends Table
         if($discard_rightmost == true)
         {
             $resource_ids = [];
+            $resource_ids_types = [];
 
             foreach($resources as $resource_index => $resource)
             {
@@ -255,17 +256,20 @@ class CityOfTheBigShoulders extends Table
                 {
                     $resource_ids[] = $resource['card_id'];
                     $resources[$resource_index]['card_location'] = 'haymarket';
+                    $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
                 }
             }
 
             $in_condition = implode(',', $resource_ids);
-            self::DbQuery("UPDATE card SET card_location = 'haymartket' WHERE card_id IN ($in_condition)");
+            self::DbQuery("UPDATE card SET card_location = 'haymarket' WHERE card_id IN ($in_condition)");
 
-            // TODO: notify resources discarded
-            self::notifyAllPlayers( "resourcesDiscarded", "", array(
-
+            // notify resources discarded
+            self::notifyAllPlayers( "resourcesDiscarded", "Discard rightmost supply chain space to Haymarket Square", array(
+                'resource_ids_types' => $resource_ids_types
             ));
         }
+
+        self::notifyAllPlayers( "supplyChainRefill", clienttranslate( 'Supply chain refill'), array());
 
         // then check each location if empty
         foreach($supply_locations as $index => $supply_location)
@@ -273,25 +277,33 @@ class CityOfTheBigShoulders extends Table
             self::trace("Check supply location ${supply_location}");
 
             $empty = true;
+            $resource_ids = [];
+            $resource_ids_types = [];
+            $from = "";
+
             // check if empty
             foreach($resources as $resource)
             {
                 if($resource['card_location'] == $supply_location)
                 {
+                    // if it's not empty but the resource has been moved, we need to update its location
+                    if($resource['card_location'] != $resource['original_location'])
+                    {
+                        $from = $resource['original_location'];
+                        $resource_ids[] = $resource['card_id'];
+                        $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+                    }
+
                     $empty = false;
-                    break;
                 }
             }
 
-            $resource_ids = [];
-            $resource_ids_types = [];
             if($empty)
             {
                 self::trace("${supply_location} is empty => shift resources right until not empty");
             }
 
             $i = $index;
-            $from = "";
             while($empty && $i < 3)
             {
                 // shift all resources
@@ -300,7 +312,7 @@ class CityOfTheBigShoulders extends Table
                     if($resource['card_location'] == '20' && $index < 1)
                     {
                         // move all 20 -> 10 when refilling 10 spot
-                        $resources[$resource_index]['card_location'] = 10;
+                        $resources[$resource_index]['card_location'] = '10';
                         if($supply_location == '10')
                         {
                             // if refilling 10 and there is a resource on 20 => 10 is no longer empty
@@ -313,7 +325,7 @@ class CityOfTheBigShoulders extends Table
                     else if ($resource['card_location'] == '30' && $index < 2)
                     {
                         // move all 30 -> 20 when refilling 10 and 20 spot
-                        $resources[$resource_index]['card_location'] = 20;
+                        $resources[$resource_index]['card_location'] = '20';
                         if($supply_location == '20')
                         {
                             // if refilling 20 and there is a resource on 30 => 20 is no longer empty
@@ -326,7 +338,7 @@ class CityOfTheBigShoulders extends Table
                     else if ($resource['card_location'] == 'x' && $index < 3)
                     {
                         // move all x -> 30 when refilling 10, 20, and 30 spot
-                        $resources[$resource_index]['card_location'] = 30;
+                        $resources[$resource_index]['card_location'] = '30';
                         if($supply_location == '30')
                         {
                             // if refilling 30 and there is a resource on x => 30 is no longer empty
@@ -390,7 +402,7 @@ class CityOfTheBigShoulders extends Table
             $drawn_resources = array_merge($drawn_resources, $missing_resources);
 
             // move haymarket to resource bag
-            $this->cards ->moveAllCardsInLocation( 'haymarket', 'resource_bag' );
+            $this->cards->moveAllCardsInLocation( 'haymarket', 'resource_bag' );
 
             // move 2 of each resource if any to haymarket
             self::DbQuery(
@@ -445,8 +457,6 @@ class CityOfTheBigShoulders extends Table
 
         if(count($drawn_resources) != 0)
             throw new BgaVisibleSystemException("Didn't process all drawn resources");
-
-        // notify players
     }
 
     function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
@@ -2495,6 +2505,9 @@ class CityOfTheBigShoulders extends Table
 
     function stGameCleanup()
     {
+        // refill supply
+        self::refillSupply(true);
+
         $this->gamestate->nextState( 'nextRound' );
     }
 

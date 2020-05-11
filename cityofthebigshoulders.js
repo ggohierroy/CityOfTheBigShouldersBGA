@@ -2033,58 +2033,73 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'certificateBought', 500 );
 
             dojo.subscribe ('buildingsSelected', this, "notif_buildingsSelected");
-            this.notifqueue.setSynchronous( 'notif_buildingsSelected', 500 );
+            this.notifqueue.setSynchronous( 'buildingsSelected', 500 );
 
             dojo.subscribe ('workersAdded', this, "notif_workersAdded");
-            this.notifqueue.setSynchronous( 'notif_workersAdded', 500 );
+            this.notifqueue.setSynchronous( 'workersAdded', 500 );
 
             dojo.subscribe('workersHired', this, "notif_workersHired");
-            this.notifqueue.setSynchronous('notif_workersHired', 500);
+            this.notifqueue.setSynchronous('workersHired', 500);
 
             dojo.subscribe('actionUsed', this, "notif_actionUsed");
-            this.notifqueue.setSynchronous('notif_actionUsed', 500);
+            this.notifqueue.setSynchronous('actionUsed', 500);
 
             dojo.subscribe('countersUpdated', this, "notif_countersUpdated");
-            this.notifqueue.setSynchronous('notif_countersUpdated', 500);
+            this.notifqueue.setSynchronous('countersUpdated', 500);
 
             dojo.subscribe('appealIncreased', this, "notif_appealIncreased");
-            this.notifqueue.setSynchronous('notif_appealIncreased', 500);
+            this.notifqueue.setSynchronous('appealIncreased', 500);
 
             dojo.subscribe('managerHired', this, "notif_managerHired");
-            this.notifqueue.setSynchronous('notif_managerHired', 500);
+            this.notifqueue.setSynchronous('managerHired', 500);
 
             dojo.subscribe('salespersonHired', this, "notif_salespersonHired");
-            this.notifqueue.setSynchronous('notif_salespersonHired', 500);
+            this.notifqueue.setSynchronous('salespersonHired', 500);
 
             dojo.subscribe('dividendEarned', this, "notif_dividendEarned");
-            this.notifqueue.setSynchronous('notif_dividendEarned', 500);
+            this.notifqueue.setSynchronous('dividendEarned', 500);
 
             dojo.subscribe('shareValueChange', this, "notif_shareValueChange");
-            this.notifqueue.setSynchronous('notif_shareValueChange', 500);
+            this.notifqueue.setSynchronous('shareValueChange', 500);
 
             dojo.subscribe('goodsProduced', this, "notif_goodsProduced");
-            this.notifqueue.setSynchronous('notif_goodsProduced', 500);
+            this.notifqueue.setSynchronous('goodsProduced', 500);
 
             dojo.subscribe('factoryAutomated', this, "notif_factoryAutomated");
-            this.notifqueue.setSynchronous('notif_factoryAutomated', 500);
+            this.notifqueue.setSynchronous('factoryAutomated', 500);
 
             dojo.subscribe('resourcesBought', this, "notif_resourcesBought");
-            this.notifqueue.setSynchronous('notif_resourcesBought', 500);
+            this.notifqueue.setSynchronous('resourcesBought', 500);
 
             dojo.subscribe('resourcesConsumed', this, "notif_resourcesConsumed");
-            this.notifqueue.setSynchronous('notif_resourcesConsumed', 500);
+            this.notifqueue.setSynchronous('resourcesConsumed', 500);
 
             dojo.subscribe('goodsDistributed', this, "notif_goodsDistributed");
-            this.notifqueue.setSynchronous('notif_goodsDistributed', 500);
+            this.notifqueue.setSynchronous('goodsDistributed', 500);
 
             dojo.subscribe('earningsWithhold', this, "notif_earningsWithhold");
-            this.notifqueue.setSynchronous('notif_earningsWithhold', 500);
+            this.notifqueue.setSynchronous('earningsWithhold', 500);
 
             dojo.subscribe('resourcesShifted', this, "notif_resourcesShifted");
-            this.notifqueue.setSynchronous('notif_resourcesShifted', 500);
+            this.notifqueue.setSynchronous('resourcesShifted', 500);
 
             dojo.subscribe('resourcesDrawn', this, "notif_resourcesDrawn");
-            this.notifqueue.setSynchronous('notif_resourcesDrawn', 500);
+            this.notifqueue.setSynchronous('resourcesDrawn', 500);
+
+            dojo.subscribe('resourcesDiscarded', this, "notif_resourcesDiscarded");
+            this.notifqueue.setSynchronous('resourcesDiscarded', 500);
+        },
+
+        notif_resourcesDiscarded: function(notif){
+            for(var index in notif.args.resource_ids_types){
+                var resource = notif.args.resource_ids_types[index];
+                var resourceId = resource.id;
+                var resourceType = resource.type;
+                var hash = this.hashString(resourceType);
+                var fromItemDiv = 'supply_10_item_' + resourceId;
+                this.haymarket.addToStockWithId(hash, resourceId, fromItemDiv);
+                this.supply_10.removeFromStockById(resourceId);
+            }
         },
 
         notif_resourcesDrawn: function(notif){
