@@ -3080,8 +3080,6 @@ class CityOfTheBigShoulders extends Table
                         WHERE primary_type = 'building' AND card_location = 'era_${era}'
                         ORDER BY card_location_arg ASC
                         LIMIT $limit");
-
-                //self::dump('buildings', $buildings);
                 
                 $players = self::loadPlayersBasicInfos();
                 foreach($players as $player_id => $player)
@@ -3099,6 +3097,35 @@ class CityOfTheBigShoulders extends Table
 
                     self::notifyPlayer($player_id, "buildingsDealt", clienttranslate( 'Deal new buildings' ), array(
                         'dealt_buildings' => $dealt_buildings));
+                }
+            }
+
+            // check if stock in company is completely owned by players
+            $stocks_by_company = self::getObectListFromDB(
+                "SELECT COUNT(card_id) AS number_stocks, card_typ_arg FROM card WHERE primary_type = 'stock'
+                WHERE owner_type = 'player'
+                GROUP BY card_type_arg");
+            $companies = self::getCollectionFromDB("SELECT id, short_name, share_value_step FROM company");
+            foreach($stocks_by_company as $stock)
+            {
+                $count = $stock['number_stocks'];
+                if($count == 7) // there are 7 certificates for each company
+                {
+                    $company_id = $stock['card_type_arg'];
+                    $company = $companies[$company_id];
+                    $company_short_name = $company['short_name'];
+                    $previous_share_value_step = $company['share_value_step'];
+                    $new_share_value_step = $previous_share_value_step;
+                    if($new_share_value_step < 20)
+                        $new_share_value_step++;
+                    $new_share_value = self::getShareValue($new_share_value_step);
+                    self::notifyAllPlayers( "shareValueChange", clienttranslate( '${company_name} is completely owned by players, the share value increases to $${share_value}' ), array(
+                        'company_short_name' => $company_short_name,
+                        'company_name' => self::getCompanyName($company_short_name),
+                        'share_value' => $new_share_value,
+                        'share_value_step' => $new_share_value_step,
+                        'previous_share_value_step' => $share_value_step
+                    ));
                 }
             }
 
