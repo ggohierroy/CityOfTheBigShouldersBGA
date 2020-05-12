@@ -91,7 +91,7 @@
             <!-- END appeal_track -->
         </div>
     </div>
-    <div id="public_goals">public goals</div>
+    <div id="goals"></div>
 </div>
 
 <div id=player_area_wrapper>
@@ -112,8 +112,9 @@
 </div>
 
 <div class="whiteblock" >
-    <h3>Available Shares</h3>
+    <h3>Available Shares From Company</h3>
     <div id="available_shares_company"></div>
+    <h3>Available Shares From Bank</h3>
     <div id="available_shares_bank"></div>
 </div>
 

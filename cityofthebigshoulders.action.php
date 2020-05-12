@@ -101,6 +101,15 @@
       self::ajaxResponse( );
     }
 
+    public function skipBuy()
+    {
+      self::setAjaxMode();
+
+      $this->game->skipBuy();
+
+      self::ajaxResponse();
+    }
+
     public function buyCertificate()
     {
       self::setAjaxMode();

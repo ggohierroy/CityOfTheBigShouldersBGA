@@ -109,10 +109,14 @@ function (dojo, declare) {
             this.createResourceStock('supply_30');
             this.createResourceStock('supply_20');
             this.createResourceStock('supply_10');
+            this.createGoalStock(gamedatas.goals);
 
             // create available shares stock
             this.createShareStock(gamedatas.all_companies, 'available_shares_company');
             dojo.connect( this.available_shares_company, 'onChangeSelection', this, 'onAvailableShareSelected' );
+
+            this.createShareStock(gamedatas.all_companies, 'available_shares_bank');
+            dojo.connect( this.available_shares_bank, 'onChangeSelection', this, 'onAvailableShareSelected' );
 
             // create available companies stock
             this.createCompaniesStock(gamedatas.all_companies);
@@ -193,12 +197,16 @@ function (dojo, declare) {
                     this.available_companies.unselectAll();
                     this.available_shares_company.setSelectionMode(1);
                     this.available_shares_company.unselectAll();
+                    this.available_shares_bank.setSelectionMode(1);
+                    this.available_shares_bank.unselectAll();
                     break;
                 case 'playerBuyPhase':
                     this.available_companies.setSelectionMode(1);
                     this.available_companies.unselectAll();
                     this.available_shares_company.setSelectionMode(1);
                     this.available_shares_company.unselectAll();
+                    this.available_shares_bank.setSelectionMode(1);
+                    this.available_shares_bank.unselectAll();
                     break;
                 case 'playerBuildingPhase':
                     
@@ -452,6 +460,38 @@ function (dojo, declare) {
             var workerHolder = dojo.byId(holderId.join('_')); // spalding_2_worker_holder_0
 
             return workerHolder != null && workerHolder.childNodes.length > 0;
+        },
+
+        createGoalStock: function(goals){
+            var newStock = new ebg.stock();
+
+            newStock.create( this, $('goals'), 50, 50);
+
+            // Specify that there are 5 buildings per row
+            newStock.image_items_per_row = 5;
+            newStock.setSelectionMode(0);
+            //newStock.item_margin = 1;
+            newStock.centerItems = true;
+
+            var i = 0;
+            var goalPositions = {
+                'goal1': 65, 
+                'goal2': 67, 
+                'goal3': 69, 
+                'goal4': 71,  
+                'goal5': 73,  
+                'goal6': 66,  
+                'goal7': 68,  
+                'goal8': 70,  
+                'goal9': 72,  
+                'goal10': 74};
+            for(var goalId in goals){
+                var hash = this.hashString(goalId);
+                var imagePosition = goalPositions[goalId];
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+            }
+
+            this.goals = newStock;
         },
 
         createResourceStock: function(stockName){
@@ -829,6 +869,9 @@ function (dojo, declare) {
                     case 'demand':
                         this.placeDemand(item);
                         break;
+                    case 'goal':
+                        this.placeGoal(item);
+                        break;
                 }
             }
 
@@ -889,6 +932,9 @@ function (dojo, declare) {
             } else if (stock.owner_type == 'company') {
                 var hashStockType = this.hashString(stockType);
                 this.available_shares_company.addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
+            } else if (stock.owner_type == 'bank'){
+                var hashStockType = this.hashString(stockType);
+                this.available_shares_bank.addToStockWithId(hashStockType, stockType+'_'+stock.card_id, from);
             }
         },
 
@@ -998,6 +1044,11 @@ function (dojo, declare) {
             var zone = new ebg.zone();
             zone.create( this, companyShortName + '_goods', 13, 22 );
             this[companyShortName + '_goods'] = zone;
+        },
+
+        placeGoal(goal){
+            var hash = this.hashString(goal.card_type);
+            this.goals.addToStock(hash);
         },
 
         placeDemand(demand){
@@ -1687,17 +1738,30 @@ function (dojo, declare) {
             }, this, function( result ) {} );
         },
 
+        // control_name = available_shares_company (or bank)
+        // item_id = brunswick_common_134
         onAvailableShareSelected: function(control_name, item_id){
             if(!this.checkAction('buyCertificate'))
             {
                 return;
             }
 
-            var items = this.available_shares_company.getSelectedItems();
+            //debugger;
+            var bankItems = this.available_shares_bank.getSelectedItems();
+            var companyItems = this.available_shares_company.getSelectedItems();
 
-            if(items.length == 0){
+            if(bankItems.length + companyItems.length == 0){
                 this.restoreServerGameState();
                 return;
+            }
+
+            var items = [];
+            if(control_name == 'available_shares_company' && companyItems.length != 0){
+                items = companyItems;
+                this.available_shares_bank.unselectAll();
+            } else if (control_name == 'available_shares_bank' && bankItems.length != 0){
+                items = bankItems;
+                this.available_shares_company.unselectAll();
             }
 
             if(items.length == 1){
@@ -1861,13 +1925,12 @@ function (dojo, declare) {
         },
 
         onSkipBuy: function(){
-            if(!this.checkAction('buyCertificate'))
+            if(!this.checkAction('skipBuy'))
             {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", {
-                certificate: ''
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuy.html", {
             }, this, function( result ) {} );
         },
 
@@ -1924,11 +1987,15 @@ function (dojo, declare) {
                 return;
             }
 
-            var selectedShares = this['available_shares_company'].getSelectedItems();
+            var selectedShares = this.available_shares_company.getSelectedItems();
             if(selectedShares.length == 0)
             {
-                this.showMessage( _('You must select at least one certificate to buy'), 'info' );
-                return;
+                selectedShares = this.available_shares_bank.getSelectedItems();
+
+                if(selectedShares.length == 0){
+                    this.showMessage( _('You must select at least one certificate to buy'), 'info' );
+                    return;
+                }
             }
 
             var item = selectedShares[0];
@@ -2106,6 +2173,19 @@ function (dojo, declare) {
 
             dojo.subscribe('partnersReturned', this, "notif_partnersReturned");
             this.notifqueue.setSynchronous('partnersReturned', 200);
+
+            dojo.subscribe('shareSold', this, "notif_shareSold");
+            this.notifqueue.setSynchronous('shareSold', 200);
+        },
+
+        notif_shareSold: function(notif){
+            var stockId = notif.args.id;
+            var playerId = notif.args.player_id;
+            var stockType = notif.args.type;
+            var hashStockType = this.hashString(stockType);
+            var from = 'personal_area_' + playerId + '_item_' + stockType + '_' + stockId; //personal_area_2319929_item_brunswick_common_133
+            this.available_shares_bank.addToStockWithId(hashStockType, stockType+'_'+stockId, from);
+            this['personal_area_' + playerId].removeFromStockById(stockType+'_'+stockId);
         },
 
         notif_partnersReturned: function(notif){

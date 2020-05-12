@@ -156,6 +156,7 @@ class CityOfTheBigShoulders extends Table
         $result['general_action_spaces'] = $this->general_action_spaces;
         $result['all_capital_assets'] = $this->capital_asset;
         $result['demand'] = $this->demand;
+        $result['goals'] = $this->goal;
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -1527,6 +1528,18 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "(NULL,'resource','$resource','$location','0')";
         }
 
+        // insert 5 random goals
+        $goals = array_keys($this->goal);
+        shuffle($goals);
+        $i = 0;
+        foreach($goals as $goal)
+        {
+            if($i == 5)
+                break;
+            $cards[] = "(NULL,'goal','$goal','goals','0')";
+            $i++;
+        }
+
         // insert rest of resources in the resource bag
         $number_of_items = count($resource_bag);
         for($i = 0; $i < $number_of_items; $i++)
@@ -2261,6 +2274,12 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->setPlayerNonMultiactive($player_id, 'gameActionPhaseSetup'); // deactivate player; if none left, transition to 'next' state
     }
 
+    function skipBuy()
+    {
+        self::checkAction( 'skipBuy' );
+        $this->gamestate->nextState( 'gameStockPhase' );
+    }
+
     function skipSell()
     {
         self::checkAction( 'skipSell' );
@@ -2427,7 +2446,7 @@ class CityOfTheBigShoulders extends Table
         // company and player treasury changed
         // share certificate added to player area
         $string_stock_type = $stock_type;
-        if($stock_type = 'director')
+        if($stock_type == 'director')
             $string_stock_type = "director's";
         $company_material = $this->companies[$short_name];
 
@@ -2453,10 +2472,7 @@ class CityOfTheBigShoulders extends Table
         $player_id = self::getActivePlayerId();
 
         if(count($selected_shares) == 0)
-        {
-            $this->gamestate->nextState( 'playerBuyPhase' );
-            return;
-        }
+            throw new BgaVisibleSystemException("Cannot sell zero shares");
 
         $in_clause = "(".implode(",", $selected_shares).")";
 
@@ -2468,6 +2484,9 @@ class CityOfTheBigShoulders extends Table
         // check that shares can be sold
         foreach($stocks as $stock)
         {
+            if($stock['primary_type'] != 'stock')
+                throw new BgaVisibleSystemException("This is not a stock");
+
             $card_type = $stock['card_type'];
             if($stock['owner_type'] != 'player')
                 throw new BgaVisibleSystemException("${card_type} does not belong to any player");
@@ -2503,28 +2522,6 @@ class CityOfTheBigShoulders extends Table
             // TODO -> advanced game condition for selling director's share
         }
 
-        // insert in sold companies table, this player can't buy shares from this company this decade
-        $round = self::getGameStateValue( "round" );
-        $sql = "INSERT INTO sold_shares (player_id, round, company_short_name) VALUES ";
-        $values = [];
-        foreach($companies_selling as $company)
-        {
-            $short_name = $company['short_name'];
-            $values[] = "($player_id, $round, $short_name)";
-
-            // also update companies to reflect new share value
-            // make sure value is not less than 0
-            $company_id = $companies_selling['company_id'];
-            $lost_value = $companies_selling['lost_value'];
-            $sql_company = "UPDATE company SET share_value_step =
-                CASE
-                    WHEN share_value_step - $lost_value >= 0 THEN share_value_step - $lost_value
-                    ELSE 0
-                END
-            WHERE id = $company_id";
-            self::DbQuery( $sql_company );
-        }
-
         // sell shares
         $share_values = self::getShareValues();
         $money_gained = 0;
@@ -2547,21 +2544,58 @@ class CityOfTheBigShoulders extends Table
             $money_gained += $share_value*$multiplier;
 
             // update card location to bank
-            $sql = "UPDATE card SET card_location=bank, owner_type=bank, card_location_arg=NULL WHERE card_id=$card_id";
+            $sql = "UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$card_id";
             self::DbQuery( $sql );
+
+            self::notifyAllPlayers( "shareSold", clienttranslate( '${player_name} sells share to the bank' ), array(
+                'player_name' => self::getActivePlayerName(),
+                'type' => $card_type,
+                'id' => $card_id,
+                'player_id' => $player_id
+            ) );
+        }
+
+        // insert in sold companies table, this player can't buy shares from this company this decade
+        $round = self::getGameStateValue( "round" );
+        $sql = "INSERT INTO sold_shares (player_id, round, company_short_name) VALUES ";
+        $values = [];
+        foreach($companies_selling as $company)
+        {
+            $short_name = $company['short_name'];
+            $values[] = "($player_id, $round, $short_name)";
+
+            // also update companies to reflect new share value
+            // make sure value is not less than 0
+            $company_id = $company['company_id'];
+            $lost_value = $company['lost_value'];
+            $company = self::getNonEmptyObjectFromDB("SELECT share_value_step, id FROM company WHERE id = $company_id");
+            $share_value_step = $company['share_value_step'];
+
+            $new_share_value_step = 0;
+            if($share_value_step - $lost_value > 0)
+                $new_share_value_step = $share_value_step - $lost_value;
+
+            self::DbQuery( "UPDATE company SET share_value_step = $new_share_value_step WHERE id = $company_id" );
+
+            $new_share_value = self::getShareValue($new_share_value_step);
+            self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} decreases to $${share_value}' ), array(
+                'company_short_name' => $short_name,
+                'company_name' => self::getCompanyName($short_name),
+                'share_value' => $new_share_value,
+                'share_value_step' => $new_share_value_step,
+                'previous_share_value_step' => $share_value_step
+            ));
         }
 
         // update player treasury
-        $sql = "UPDATE player 
-            SET treasury=treasury+$money_gained
-            WHERE player_id='$player_id'";
-        self::DbQuery( $sql );
+        $player = self::getNonEmptyObjectFromDB("SELECT player_id, treasury FROM player WHERE player_id = ${player_id}");
+        $new_treasury = $player['treasury'] + $money_gained;
+        self::DbQuery("UPDATE player SET treasury=$new_treasury WHERE player_id='$player_id'");
 
-        // TODO notify players
-        // -> change in player treasury
-        // -> stocks moving from player area to bank
-        // -> share value drop
-        self::notifyAllPlayers( "sellShares", clienttranslate( '${player_name} has sold shares' ), array(
+        $counters = [];
+        self::addCounter($counters, "money_${player_id}", $new_treasury);
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $counters,
         ) );
 
         self::setGameStateValue( "consecutive_passes", 0 );
