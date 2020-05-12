@@ -108,6 +108,8 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'next_company_id', 0 );
         self::setGameStateInitialValue( 'current_company_id', 0 );
         self::setGameStateInitialValue( 'last_factory_produced', 0 );
+        self::setGameStateInitialValue( 'phase', 0 );
+        self::setGameStateInitialValue( 'priority_deal_player_id', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -224,6 +226,186 @@ class CityOfTheBigShoulders extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
+
+    function refillDemand()
+    {
+        // get goods on demand
+        $goods = self::getObjectListFromDB(
+            "SELECT card_id, card_location FROM card WHERE primary_type = 'good' AND card_location LIKE 'demand%'");
+        
+        $goods_by_location = [];
+        foreach($goods as $good)
+        {
+            $location = $good['card_location'];
+            if(!isset($goods_by_location[$location]))
+            {
+                $goods_by_location[$location] = [];
+                $goods_by_location[$location][] = $good['card_id'];
+            }
+            else
+            {
+                $goods_by_location[$location][] = $good['card_id'];
+            }
+        }
+
+        // get demand tiles
+        $demands = self::getObjectListFromDB(
+            "SELECT card_id, card_type, card_location FROM card 
+            WHERE primary_type = 'demand' AND (card_location <> 'demand_deck' AND card_location <> 'discard')");
+        
+        $demand_by_location = [];
+        // check if demand fulfilled, if it is, discard it
+        foreach($demands as $index => $demand)
+        {
+            $demand_number = $demand['card_type'];
+            $demand_material = $this->demand[$demand_number];
+            $required_demand = $demand_material['demand'];
+            $goods_on_demand = 0;
+            if(isset($goods_by_location[$demand_number]))
+                $goods_on_demand = count($goods_by_location[$demand_number]);
+            
+            if($goods_on_demand == $required_demand)
+            {
+                if($goods_on_demand > 0)
+                {
+                    // delete goods
+                    $good_ids = implode(',', $goods_by_location[$demand_number]);
+                    self::DbQuery("DELETE FROM card WHERE card_id IN ($good_ids)");
+                }
+
+                // discard tile
+                $demand_by_location[$demand['card_location']] = null;
+                $demand_id = $demand['card_id'];
+                $demands[$index]['card_location'] = 'discard';
+                self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $demand_id");
+
+                // notify
+                self::notifyAllPlayers( "demandDiscarded", "", array(
+                    'demand_number' => $demand_number
+                ));
+            }
+            else
+            {
+                $demand_by_location[$demand['card_location']] = $demand;
+            }
+        }
+
+        // shift demand right
+        $rows = ['food_and_dairy', 'dry_goods', 'meat_packing', 'shoes'];
+        $bonuses = ['50', '20', '0'];
+        foreach($rows as $row)
+        {
+            foreach($bonuses as $bonus)
+            {
+                $demand = $demand_by_location["${row}_${bonus}"];
+                if($demand != null)
+                    break;
+                
+                // when location empty, shift tiles to the left
+                if($bonus == '50')
+                {
+                    if($demand_by_location["${row}_20"] != null)
+                    {
+                        // check if 20 not empty => shift
+                        $demand = $demand_by_location["${row}_20"];
+                        $demand_by_location["${row}_50"] = $demand;
+                        $demand_by_location["${row}_20"] = null;
+                        $demand_id = $demand['card_id'];
+                        $demand['card_location'] = "${row}_50";
+                        self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
+                        self::notifyAllPlayers( "demandShifted", "", array(
+                            'demand' => $demand,
+                            'from' => "${row}_20"
+                        ));
+                    }
+                    else if($demand_by_location["${row}_0"] != null)
+                    {
+                        // else check if 0 not empty => shift
+                        $demand = $demand_by_location["${row}_0"];
+                        $demand_by_location["${row}_50"] = $demand;
+                        $demand_by_location["${row}_0"] = null;
+                        $demand_id = $demand['card_id'];
+                        $demand['card_location'] = "${row}_50";
+                        self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
+                        self::notifyAllPlayers( "demandShifted", "", array(
+                            'demand' => $demand,
+                            'from' => "${row}_0"
+                        ));
+                    }
+                    else
+                    {
+                        // draw a card
+                        $demand = self::getObjectFromDB(
+                            "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
+                            ORDER BY card_location_arg ASC
+                            LIMIT 1");
+                        
+                        if($demand != null)
+                        {
+                            $demand_id = $demand['card_id'];
+                            $demand['card_location'] = "${row}_50";
+                            self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
+                            self::notifyAllPlayers( "demandDrawn", "", array(
+                                'demand' => $demand
+                            ));
+                        }
+                    }
+                }
+                else if ($bonus == '20')
+                {
+                    if($demand_by_location["${row}_0"] != null)
+                    {
+                        // else check if 0 not empty => shift
+                        $demand = $demand_by_location["${row}_0"];
+                        $demand_by_location["${row}_20"] = $demand;
+                        $demand_by_location["${row}_0"] = null;
+                        $demand_id = $demand['card_id'];
+                        $demand['card_location'] = "${row}_20";
+                        self::DbQuery("UPDATE card SET card_location = '${row}_20' WHERE card_id = $demand_id");
+                        self::notifyAllPlayers( "demandShifted", "", array(
+                            'demand' => $demand,
+                            'from' => "${row}_0"
+                        ));
+                    }
+                    else
+                    {
+                        $demand = self::getObjectFromDB(
+                            "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
+                            ORDER BY card_location_arg ASC
+                            LIMIT 1");
+                        
+                        if($demand != null)
+                        {
+                            $demand_id = $demand['card_id'];
+                            $demand['card_location'] = "${row}_20";
+                            self::DbQuery("UPDATE card SET card_location = '${row}_20' WHERE card_id = $demand_id");
+                            self::notifyAllPlayers( "demandDrawn", "", array(
+                                'demand' => $demand
+                            ));
+                        }
+                    }
+                }
+                else if($bonus == '0')
+                {
+                    // draw a card
+                    $demand = self::getObjectFromDB(
+                        "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
+                        ORDER BY card_location_arg ASC
+                        LIMIT 1");
+                    
+                    if($demand != null)
+                    {
+                        $demand_id = $demand['card_id'];
+                        $demand['card_location'] = "${row}_0";
+                        self::DbQuery("UPDATE card SET card_location = '${row}_0' WHERE card_id = $demand_id");
+                        self::notifyAllPlayers( "demandDrawn", "", array(
+                            'demand' => $demand
+                        ));
+                    }
+                }
+            }
+        }
+    }
 
     function refillAssets()
     {
@@ -1538,7 +1720,7 @@ class CityOfTheBigShoulders extends Table
         if($manager != null)
         {
             self::notifyAllPlayers( "notifyManagerBonus", clienttranslate( '${company_name} receives manager bonus'), array(
-                'company_name' => self::getCompanyName($company_short_name)
+                'company_name' => self::getCompanyName($short_name)
             ) );
 
             $appeal_gained = false;
@@ -2594,8 +2776,7 @@ class CityOfTheBigShoulders extends Table
 
     function stGameCleanup()
     {
-        self::notifyAllPlayers( "assetDiscarded", clienttranslate("Cleanup phase"), array(
-        ) );
+        self::notifyAllPlayers( "cleanupPhase", clienttranslate("Cleanup phase"), array() );
 
         // refill supply
         self::refillSupply(true);
@@ -2606,15 +2787,37 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers( "assetDiscarded", "", array(
             'asset_name' => $asset_name
         ) );
-
-        // discard and refill demand tiles
         self::refillAssets();
 
+        // discard and refill demand tiles
+        self::refillDemand();
+
+        // return partners to inventory
+        $players = self::getObjectListFromDB("SELECT player_id, number_partners FROM player");
+        self::DbQuery("UPDATE player SET current_number_partners = number_partners");
+        self::DbQuery("DELETE FROM card WHERE primary_type = 'partner'");
+
+        $counters = [];
+        foreach($players as $player)
+        {
+            $player_id = $player['player_id'];
+            self::addCounter($counters, "partner_current_${player_id}", $player['number_partners']);
+        }
+        self::notifyAllPlayers( "partnersReturned", "", array(
+            'counters' => $counters
+        ) );
+
         // change round
+        self::incGameStateValue( "round", 1 );
+        self::notifyAllPlayers( "newRound", clienttranslate("New round"), array() );
 
         // change phase
+        self::setGameStateValue( "phase", 0 );
 
         // set active player as player with priority deal marker
+        $player_id = self::getGameStateValue("priority_deal_player_id");
+        self::giveExtraTime( $player_id );
+        $this->gamestate->changeActivePlayer( $player_id );
 
         $this->gamestate->nextState( 'nextRound' );
     }
@@ -2799,8 +3002,13 @@ class CityOfTheBigShoulders extends Table
             self::setGameStateValue( "consecutive_passes", 0 );
             self::setGameStateValue( "turns_this_phase", 0 );
 
+            
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );
+
+            // if everyone passes, the last player that did an action is necessarily the active player
+            $next_player_id = self::getPlayerAfter( $player_id );
+            self::setGameStateValue('priority_deal_player_id', $next_player_id);
 
             $this->gamestate->nextState('playerBuildingPhase');
         }

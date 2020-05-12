@@ -1088,7 +1088,7 @@ function (dojo, declare) {
                 }
             }
             else{
-                // TODO: fill from right to left and disregard location
+                // fill from right to left and disregard location
                 var automationSpotId = this.getNextAvailableAutomationSpot(companyShortName, factoryNumber);
                 dojo.place( this.format_block( 'jstpl_token', {
                     token_id: 'automation_' + automation.card_id,
@@ -2094,6 +2094,54 @@ function (dojo, declare) {
 
             dojo.subscribe('assetsShifted', this, "notif_assetsShifted");
             this.notifqueue.setSynchronous('assetsShifted', 200);
+
+            dojo.subscribe('demandDiscarded', this, "notif_demandDiscarded");
+            this.notifqueue.setSynchronous('demandDiscarded', 200);
+
+            dojo.subscribe('demandShifted', this, "notif_demandShifted");
+            this.notifqueue.setSynchronous('demandShifted', 200);
+
+            dojo.subscribe('demandDrawn', this, "notif_demandDrawn");
+            this.notifqueue.setSynchronous('demandDrawn', 200);
+
+            dojo.subscribe('partnersReturned', this, "notif_partnersReturned");
+            this.notifqueue.setSynchronous('partnersReturned', 200);
+        },
+
+        notif_partnersReturned: function(notif){
+            var workerSpots = dojo.query('.worker_spot');
+            for(var i = 0; i < workerSpots.length; i++){
+                var workerSpot = workerSpots[i];
+                this[workerSpot.id + '_holder'].removeAll();
+            }
+
+            this.updateCounters(notif.args.counters);
+        },
+
+        notif_demandDrawn: function(notif){
+            var demand = notif.args.demand;
+
+            this.placeDemand(demand);
+            this.placeOnObject(demand.card_type, 'main_board');
+            this.slideToObject(demand.card_type, demand.card_location).play();
+        },
+
+        notif_demandShifted: function(notif){
+            var demand = notif.args.demand;
+            var from = notif.args.from;
+
+            dojo.place(demand.card_type, demand.card_location);
+            this.placeOnObject(demand.card_type, from);
+            this.slideToObject(demand.card_type, demand.card_location).play();
+        },
+
+        notif_demandDiscarded: function(notif){
+            var demandNumber = notif.args.demand_number;
+
+            // remove all goods from card
+            this[demandNumber + '_goods'].removeAll();
+
+            this.fadeOutAndDestroy( demandNumber, 200);
         },
 
         notif_assetsShifted: function(notif){
