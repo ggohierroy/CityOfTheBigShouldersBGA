@@ -2932,7 +2932,25 @@ class CityOfTheBigShoulders extends Table
         $player = self::getNonEmptyObjectFromDB($sql);
         $this->gamestate->changeActivePlayer( $player['player_id'] ); 
 
-        // TODO: if round = 2 => add partner to player inventory
+        // if round = 2 => add partner to player inventory
+        $round = self::getGameStateValue("round");
+        if($round == 2)
+        {
+            $players = self::getObjectListFromDB("SELECT player_id, number_partners FROM player");
+            $counters = [];
+
+            foreach($players as $player)
+            {
+                $player_id = $player['player_id'];
+                self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
+            }
+
+            self::DbQuery("UPDATE player SET number_partners = number_partners + 1");
+
+            self::notifyAllPlayers("countersUpdated", clienttranslate("All players receive a new partner"), [
+                'counters' => $counters
+            ]);
+        }
 
         // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
