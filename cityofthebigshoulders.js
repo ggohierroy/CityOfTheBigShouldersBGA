@@ -662,11 +662,24 @@ function (dojo, declare) {
             }
         },
 
-        placeAsset: function(item){
+        placeAsset: function(item, from, fromItemDiv){
             var assetName = item.card_type;
             var hash = this.hashString(assetName);
-            this.capital_assets.addToStockWithId(hash, assetName + '_' + item.card_id);
-            return hash;
+
+            if(item.card_location == '80' || 
+                item.card_location == '70' || 
+                item.card_location == '60' || 
+                item.card_location == '50' || 
+                item.card_location == '40') {
+                // place on board
+                this.capital_assets.addToStockWithId(hash, assetName + '_' + item.card_id);
+                return hash;
+            } else {
+                // place on company
+                this[item.card_location + '_asset'].addToStockWithId(hash, assetName + '_' + item.card_id, fromItemDiv);
+                if(from)
+                    this.capital_assets.removeFromStockById(assetName + '_' + item.card_id);
+            }
         },
 
         placeSalesperson: function(salesperson, slideFromSupply = false){
@@ -1848,6 +1861,7 @@ function (dojo, declare) {
                         descriptionmyturn : _("Choose to keep or replace the company's current asset")
                     });
                 } else {
+                    this.clientStateArgs.actionArgs.replace = 1;
                     this.onConfirmAction();
                 }
             }
@@ -2343,6 +2357,16 @@ function (dojo, declare) {
 
             dojo.subscribe('buildingsDealt', this, "notif_buildingsDealt");
             this.notifqueue.setSynchronous('buildingsDealt', 200);
+
+            dojo.subscribe('assetGained', this, "notif_assetGained");
+            this.notifqueue.setSynchronous('assetGained', 200);
+        },
+
+        notif_assetGained: function(notif){
+            var assetName = notif.args.asset.card_type;
+            var assetId = notif.args.asset.card_id;
+            var fromItemDiv = this.capital_assets.getItemDivId(assetName + '_' + assetId);
+            this.placeAsset(notif.args.asset, 'capital_assets', fromItemDiv);
         },
 
         notif_buildingsDealt: function(notif){

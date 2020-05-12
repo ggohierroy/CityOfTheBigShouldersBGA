@@ -46,6 +46,7 @@ class CityOfTheBigShoulders extends Table
             "last_factory_produced" => 17,
             "appeal_gained" => 18,
             "resources_gained" => 19,
+            "bonus_company_id" => 20,
             //"round_marker" => 10,
             //"phase_marker" => 11,
             //"workers_in_market" => 12,
@@ -110,6 +111,7 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'last_factory_produced', 0 );
         self::setGameStateInitialValue( 'phase', 0 );
         self::setGameStateInitialValue( 'priority_deal_player_id', 0 );
+        self::setGameStateInitialValue( 'bonus_company_id', 0 );
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -531,6 +533,7 @@ class CityOfTheBigShoulders extends Table
         if($new_asset != null)
         {
             $id = $new_asset['card_id'];
+            $new_asset['card_location'] = '80';
             self::DbQuery("UPDATE card SET card_location = '80' WHERE card_id = $id");
         }
 
@@ -772,6 +775,66 @@ class CityOfTheBigShoulders extends Table
 
         if(count($drawn_resources) != 0)
             throw new BgaVisibleSystemException("Didn't process all drawn resources");
+    }
+
+    function gainAsset($company_name, $company, $asset, $should_replace)
+    {
+        $company_short_name = $company['short_name'];
+        $company_id = $company['id'];
+        $asset_material = $this->capital_asset[$asset['card_type']];
+        
+        // save current company since we're going in a transit state and we'll need it
+        self::setGameStateValue('bonus_company_id', $company_id);
+
+        $asset_id = $asset['card_id'];
+        if($should_replace)
+        {
+            $current_asset = self::getUniqueValueFromDB("SELECT card_id, card_type FROM card WHERE primary_type = 'asset' AND card_location = '$company_short_name'");
+            if($current_asset != null)
+            {
+                $current_asset_id = $current_asset['card_id'];
+                self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $current_asset_id");
+
+                self::notifyAllPlayers( "companyAssetDiscarded", clienttranslate('${company_name} discards current Capital Asset'), array(
+                    'asset' => $current_asset,
+                    'company_name' => $company_name,
+                    'short_name' => $company_short_name
+                ) );
+            }
+
+            self::DbQuery("UPDATE card SET card_location = '$company_short_name' WHERE card_id = $asset_id");
+            $asset['card_location'] = $company_short_name;
+            self::notifyAllPlayers( "assetGained", clienttranslate('${company_name} gains Capital Asset'), array(
+                'asset' => $asset,
+                'company_name' => $company_name,
+                'short_name' => $company_short_name
+            ) );
+        }
+        else
+        {
+            self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $asset_id");
+
+            self::notifyAllPlayers( "assetDiscarded", clienttranslate('${company_name} discards Capital Asset'), array(
+                'asset_name' => $asset['card_type'],
+                'asset_id' => $asset['card_id']
+            ) );
+        }
+
+        self::refillAssets();
+        
+        switch($asset_material['bonus'])
+        {
+            case 'worker':
+                $this->gamestate->nextState( 'workerBonus' );
+                return;
+            case 'automation':
+                $this->gamestate->nextState( 'automationBonus' );
+                return;
+            case 'appeal':
+                self::increaseCompanyAppeal($company_short_name, $company['appeal'], 2);
+                $this->gamestate->nextState( 'gameActionPhase' );
+                break;
+        }
     }
 
     function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
@@ -2083,7 +2146,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // check if company owned by player
-        $sql = "SELECT id AS id, owner_id AS owner_id, treasury AS treasury, appeal AS appeal FROM company WHERE short_name = '$company_short_name' AND owner_id = '$player_id'";
+        $sql = "SELECT id, owner_id, treasury, appeal, short_name FROM company WHERE short_name = '$company_short_name' AND owner_id = '$player_id'";
         $company = self::getObjectFromDB($sql);
         if($company == null)
             throw new BgaVisibleSystemException("The selected company is not owned by current player");
@@ -2120,12 +2183,54 @@ class CityOfTheBigShoulders extends Table
         // check if cost can be payed
         $cost = 0;
         $new_company_treasury = $company['treasury'];
-        if($building_action == 'job_market_worker'){
+        $asset = null;
+        if($building_action == 'job_market_worker')
+        {
             $number_of_workers = intval($action_args);
             $cost = self::getCostToHireWorkers($number_of_workers);
-        } else if ($building_action == 'capital_investment'){
-            // TODO: implement this
-        } else {
+        } 
+        else if ($building_action == 'capital_investment' || 
+            $building_action == 'building1' ||
+            $building_action == 'building19' ||
+            $building_action == 'building40')
+        {
+            $asset_args = explode(',', $action_args);
+            $asset_id = intval($asset_args[0]);
+            $asset = self::getObjectFromDB(
+                "SELECT card_location, card_type, card_id FROM card 
+                WHERE primary_type = 'asset' AND card_location <> 'discard' AND card_location <> 'asset_deck' AND card_id = $asset_id");
+            
+            if($asset == null)
+                throw new BgaVisibleSystemException("Could not find selected asset");
+            
+            $asset_location = $asset['card_location'];
+            $asset['card_location'] = $company_short_name; // change asset location
+            $asset_cost = intval($asset_location);
+            if($building_action == 'capital_investment')
+                $cost = $asset_cost;
+            
+            if($building_action != 'capital_investment')
+            {
+                $cost = $building_material['cost'];
+
+                // for the buildings, the bank pays the player for the building (dealt with normal logic)
+                // and additionally the company pays the bank for the asset
+                if($building_action == 'building1')
+                    $asset_cost -= 10;
+                if($building_action == 'building19')
+                    $asset_cost -= 20;
+                if($building_action == 'building40')
+                    $asset_cost -= 30;
+                
+                $new_company_treasury -= $asset_cost;
+                self::notifyAllPlayers( "additionalCost", clienttranslate('${company_name} pays the bank $${cost}'), array(
+                    'cost' => $asset_cost,
+                    'company_name' => $company_name,
+                ) );
+            }
+        } 
+        else 
+        {
             $cost = $building_material['cost'];
         }
 
@@ -2189,6 +2294,15 @@ class CityOfTheBigShoulders extends Table
             'counters' => $counters,
             'player_name' => $player_name
         ) );
+
+        $values = [];
+        $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+        
+        // create partner in building location
+        $values[] = "('player','partner','${worker_id}',$player_id,'$building_action',0)";
+
+        $card_sql .= implode( $values, ',' );
+        self::DbQuery($card_sql);
 
         // execute action
         switch($building_action){
@@ -2262,6 +2376,13 @@ class CityOfTheBigShoulders extends Table
                 $relocateFactoryNumber = intval($action_args);
                 self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
                 break;
+            case "capital_investment":
+            case "building1":
+            case "building19":
+            case "building40":
+                $should_replace = boolval($action_args[1]);
+                self::gainAsset($company_name, $company, $asset, $should_replace);
+                return;
             case 'building15':
             case "building3":
             case "building5":
@@ -2276,15 +2397,6 @@ class CityOfTheBigShoulders extends Table
                 self::gainResources($company_short_name, $company_id, $resources_gained, $action_args);
             break;
         }
-
-        $values = [];
-        $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
-        
-        // create partner in building location
-        $values[] = "('player','partner','${worker_id}',$player_id,'$building_action',0)";
-
-        $card_sql .= implode( $values, ',' );
-        self::DbQuery($card_sql);
 
         // set state to next game state
         $this->gamestate->nextState( 'gameActionPhase' );

@@ -560,7 +560,7 @@ $this->building = [
     "min_players" => 2,
     "number_of_workers" => 2,
     "cost" => 20,
-    "payment" => "companytoplayer",
+    "payment" => "banktoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $10 discount.")
   ],
   "building2" => [ //salesperson
