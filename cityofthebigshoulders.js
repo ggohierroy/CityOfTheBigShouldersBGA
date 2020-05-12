@@ -2176,6 +2176,19 @@ function (dojo, declare) {
 
             dojo.subscribe('shareSold', this, "notif_shareSold");
             this.notifqueue.setSynchronous('shareSold', 200);
+
+            dojo.subscribe('buildingsDealt', this, "notif_buildingsDealt");
+            this.notifqueue.setSynchronous('buildingsDealt', 200);
+        },
+
+        notif_buildingsDealt: function(notif){
+            for(var index in notif.args.dealt_buildings){
+                var dealtBuilding = notif.args.dealt_buildings[index];
+                var hashBuildingType = this.hashString(dealtBuilding.card_type);
+                var itemId = dealtBuilding.card_type+'_'+dealtBuilding.card_id;
+
+                this.buildings.addToStockWithId(hashBuildingType, itemId, 'main_board');
+            }
         },
 
         notif_shareSold: function(notif){

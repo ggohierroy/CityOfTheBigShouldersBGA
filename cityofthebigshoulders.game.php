@@ -2859,7 +2859,10 @@ class CityOfTheBigShoulders extends Table
     function stGameActionPhaseSetup()
     {
         // get buildings that should be played or discarded
-        $sql = "SELECT card_id AS card_id, card_type AS card_type, card_location AS card_location FROM card WHERE primary_type = 'building' AND (card_location LIKE '%_play' OR card_location LIKE '%_discard')";
+        $sql = "SELECT card_id AS card_id, card_type AS card_type, card_location AS card_location FROM card 
+            WHERE primary_type = 'building' AND 
+                (card_location LIKE '%_play' OR card_location LIKE '%_discard')
+                AND card_location <> 'building_discard'";
         $buildings = self::getCollectionFromDB($sql);
 
         $player_number = self::getPlayersNumber();
@@ -2928,6 +2931,8 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT player_id FROM player WHERE player_order = 1";
         $player = self::getNonEmptyObjectFromDB($sql);
         $this->gamestate->changeActivePlayer( $player['player_id'] ); 
+
+        // TODO: if round = 2 => add partner to player inventory
 
         // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
@@ -3043,6 +3048,41 @@ class CityOfTheBigShoulders extends Table
             // if everyone passes, the last player that did an action is necessarily the active player
             $next_player_id = self::getPlayerAfter( $player_id );
             self::setGameStateValue('priority_deal_player_id', $next_player_id);
+
+            // deal buildings
+            $round = self::getGameStateValue('round');
+            if($round > 0)
+            {
+                $era = 2;
+                if($round == 3 || $round == 4)
+                    $era = 3;
+
+                $limit = 2 * $player_number;
+                $buildings = self::getObjectListFromDB("SELECT card_id, card_type FROM card 
+                        WHERE primary_type = 'building' AND card_location = 'era_${era}'
+                        ORDER BY card_location_arg ASC
+                        LIMIT $limit");
+
+                //self::dump('buildings', $buildings);
+                
+                $players = self::loadPlayersBasicInfos();
+                foreach($players as $player_id => $player)
+                {
+                    $building1 = array_pop($buildings);
+                    $building1_id = $building1['card_id'];
+                    $building2 = array_pop($buildings);
+                    $building2_id = $building2['card_id'];
+                    $dealt_buildings = [$building1, $building2];
+                    
+                    self::DbQuery("UPDATE card SET 
+                        owner_type = 'player',
+                        card_location = 'player_${player_id}'
+                        WHERE card_id = ${building1_id} OR card_id = ${building2_id}");
+
+                    self::notifyPlayer($player_id, "buildingsDealt", clienttranslate( 'Deal new buildings' ), array(
+                        'dealt_buildings' => $dealt_buildings));
+                }
+            }
 
             $this->gamestate->nextState('playerBuildingPhase');
         }
