@@ -133,11 +133,19 @@
 .meeple-tan { background-position-x: -30px }
 .meeple-black { background-position-x: -77px }
 
-#asset_track{
+#capital_assets{
     left: 408px;
     top: 423px;
     height: 50px;
     width: 278px;
+    position: absolute;
+}
+
+.company-asset{
+    left: 277px;
+    top: 61px;
+    height: 50px;
+    width: 50px;
     position: absolute;
 }
 
@@ -340,6 +348,18 @@
     /* background-color: white;
     opacity: 50%; */
     position: absolute;
+}
+
+.livestock-item { background-position: -1100% 0%; }
+.coal-item { background-position: -800% 0%; }
+.steel-item { background-position: -300% 0%; }
+.wood-item { background-position: -900% 0%; }
+ 
+.resource {
+    width: 14px;
+    height: 14px;
+    background-image: url("img/tokens.png");
+    display: inline-block
 }
 
 .worker_spot {

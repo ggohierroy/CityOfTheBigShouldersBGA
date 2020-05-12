@@ -228,6 +228,49 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function gainResources($company_short_name, $company_id, $resources_gained, $resource_ids)
+    {
+        // get the resources and make sure they are in haymarket
+        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
+        foreach($resources as $index => $resource)
+        {
+            // check that resource is in haymarket
+            if($resource['card_location'] != 'haymarket')
+                throw new BgaVisibleSystemException("Resource is not in haymarket");
+            
+            $found = false;
+            foreach($resources_gained as $index => $resource_gained)
+            {
+                if($resource['card_type'] == $resource_gained)
+                {
+                    $found = true;
+                    $resources_gained[$index] == null;
+                    break;
+                }
+            }
+
+            if(!$found)
+                throw new BgaVisibleSystemException("Not a resource that can be gained from this building");
+
+            $resources[$index]['from'] = $resources[$index]['card_location'];
+            $resources[$index]['card_location'] = $company_short_name;
+        }
+
+        // update resources location
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN ($resource_ids)");
+
+        $count = count($resources);
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'resource_ids' => $resources
+        ) );
+    }
+
     function refillDemand()
     {
         // get goods on demand
@@ -2116,6 +2159,9 @@ class CityOfTheBigShoulders extends Table
             case 'companytoplayer':
                 $message = clienttranslate('${company_name} pays ${player_name} $${cost}');
                 break;
+            case 'banktoplayer':
+                $message = clienttranslate('Bank pays ${player_name} $${cost}');
+                break;
         }
 
         if($payment_method == 'companytoplayer' || $payment_method == 'banktoplayer')
@@ -2216,6 +2262,19 @@ class CityOfTheBigShoulders extends Table
                 $relocateFactoryNumber = intval($action_args);
                 self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
                 break;
+            case 'building15':
+            case "building3":
+            case "building5":
+            case "building7":
+            case "building13":
+            case "building17":
+            case "building34":
+            case "building36":
+            case "building37":
+            case "building38":
+                $resources_gained = $building_material['resources'];
+                self::gainResources($company_short_name, $company_id, $resources_gained, $action_args);
+            break;
         }
 
         $values = [];
@@ -2816,10 +2875,11 @@ class CityOfTheBigShoulders extends Table
         self::refillSupply(true);
 
         // discard and refill asset tiles
-        $asset_name = self::getUniqueValueFromDB("SELECT card_type FROM card WHERE primary_type = 'asset' AND card_location = '40'");
+        $asset = self::getNonEmptyObjectFromDB("SELECT card_type, card_id FROM card WHERE primary_type = 'asset' AND card_location = '40'");
         self::DbQuery("UPDATE card SET card_location = 'discard' WHERE primary_type = 'asset' AND card_location = '40'");
         self::notifyAllPlayers( "assetDiscarded", "", array(
-            'asset_name' => $asset_name
+            'asset_name' => $asset['card_type'],
+            'asset_id' => $asset['card_id']
         ) );
         self::refillAssets();
 
@@ -3109,7 +3169,7 @@ class CityOfTheBigShoulders extends Table
             foreach($stocks_by_company as $stock)
             {
                 $count = $stock['number_stocks'];
-                if($count == 7) // there are 7 certificates for each company
+                if($count == 7) // there are 7 certificates for each company increase share value one step
                 {
                     $company_id = $stock['card_type_arg'];
                     $company = $companies[$company_id];

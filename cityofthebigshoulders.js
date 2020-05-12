@@ -103,7 +103,8 @@ function (dojo, declare) {
             this.createAppealZones();
             this.createJobMarketZone();
             this.createWorkerZones(gamedatas.general_action_spaces);
-            this.createAssetTileStock(gamedatas.all_capital_assets);
+            this.createAssetTileStock('capital_assets', gamedatas.all_capital_assets);
+            dojo.connect( this.capital_assets, 'onChangeSelection', this, 'onAssetSelected' );
             this.createResourceStock('haymarket');
             this.createResourceStock('supply_x');
             this.createResourceStock('supply_30');
@@ -274,6 +275,10 @@ function (dojo, declare) {
                         this.clientStateArgs.income = Number(args.args.income);
                     }
                     break;
+                case 'client_chooseAsset':
+                    this.clientStateArgs.actionArgs = {};
+                    this.capital_assets.setSelectionMode(1);
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -388,6 +393,19 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
                         this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
                         break;
+                    case 'client_confirmGainLessResources':
+                        this.addActionButton( 'confirm_gain_resource', _('Confirm'), 'onConfirmAction');
+                        this.addActionButton( 'cancel_gain_less', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_chooseAsset':
+                        this.addActionButton( 'cancel_choose_asset', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_chooseKeepOrReplace':
+                        this.addActionButton( 'replace_asset', _('Replace'), 'onReplaceAsset');
+                        this.addActionButton( 'keep_asset', _('Keep'), 'onKeepAsset');
+                        this.addActionButton( 'cancel_choose_asset', _('Cancel'), 'onCancelAction');
+                        break;
+
                 }
             }
         },        
@@ -401,6 +419,59 @@ function (dojo, declare) {
             script.
         
         */
+
+        gainResources:function(resourceList){
+            var coal = dojo.query('#haymarket>.coal');
+            var livestock = dojo.query('#haymarket>.livestock');
+            var steel = dojo.query('#haymarket>.steel');
+            var wood = dojo.query('#haymarket>.wood');
+            var options = [];
+            var gotEverything = true;
+            for(var index in resourceList){
+                var resource = resourceList[index];
+                var list = null;
+                switch(resource){
+                    case 'wood':
+                        list = wood;
+                        break;
+                    case 'steel':
+                        list = steel;
+                        break;
+                    case 'coal':
+                        list = coal;
+                        break;
+                    case 'livestock':
+                        list = livestock;
+                        break;
+                }
+
+                if(list.length > 0){
+                    var item = list.pop(); 
+                    var id = item.id.split('_')[2]; //haymarket_item_60
+                    options.push({id: id, type: resource});
+                } else {
+                    gotEverything = false;
+                }
+            }
+
+            for(var i = 0; i < options.length; i++){
+                this.clientStateArgs.actionArgs['resource'+i] = options[i].id;
+            }
+
+            if(gotEverything){
+                this.onConfirmAction();
+            } else {
+                // go to client state and ask user to confirm
+                var items = "";
+                for(var i = 0; i < options.length; i++){
+                    items += '<div class="' + options[i].type + '-item resource"></div>'
+                }
+                this.setClientState("client_confirmGainLessResources", {
+                    descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
+                        items: items })
+                });
+            }
+        },
 
         automateWorker: function(companyShortName, factoryNumber){
             // check if there is at least one spot to put the worker, otherwise confirm action
@@ -518,10 +589,10 @@ function (dojo, declare) {
             dojo.connect( this[stockName], 'onChangeSelection', this, 'onResourceSelected' );
         },
 
-        createAssetTileStock: function(capitaAssets){
+        createAssetTileStock: function(stockName, capitaAssets){
             var newStock = new ebg.stock();
 
-            newStock.create( this, $('asset_track'), 50, 50);
+            newStock.create( this, $(stockName), 50, 50);
 
             // Specify that there are 5 buildings per row
             newStock.image_items_per_row = 5;
@@ -538,7 +609,7 @@ function (dojo, declare) {
                 i++;
             }
 
-            this.capital_assets = newStock;
+            this[stockName] = newStock;
         },
 
         placeManager: function(manager, slideFromSupply = false){
@@ -561,6 +632,8 @@ function (dojo, declare) {
             switch(item.card_location){
                 case 'haymarket':
                     this.haymarket.addToStockWithId(hash, item.card_id, fromItemDiv);
+                    var div = this.haymarket.getItemDivId(item.card_id);
+                    dojo.addClass(div, resourceName);
                     if(from != null){
                         this[from].removeFromStockById(item.card_id);
                     }
@@ -580,7 +653,9 @@ function (dojo, declare) {
                 default:
                     // this is going in a company (card_location = company short name)
                     this[item.card_location + '_resources'].addToStockWithId(hash, item.card_id, fromItemDiv);
-                    if(from != null){
+                    if(from == 'haymarket'){
+                        this.haymarket.removeFromStockById(item.card_id);
+                    } else if(from != null){
                         this['supply_' + from].removeFromStockById(item.card_id);
                     }
                     break;
@@ -590,7 +665,7 @@ function (dojo, declare) {
         placeAsset: function(item){
             var assetName = item.card_type;
             var hash = this.hashString(assetName);
-            this.capital_assets.addToStockWithId(hash, assetName);
+            this.capital_assets.addToStockWithId(hash, assetName + '_' + item.card_id);
             return hash;
         },
 
@@ -1044,6 +1119,16 @@ function (dojo, declare) {
             var zone = new ebg.zone();
             zone.create( this, companyShortName + '_goods', 13, 22 );
             this[companyShortName + '_goods'] = zone;
+
+            // add stock for asset if any
+            if(company.has_asset){
+                dojo.place( this.format_block( 'jstpl_generic_div', {
+                    id: companyShortName + '_asset',
+                    class: 'company-asset'
+                } ), companyId );
+
+                this.createAssetTileStock(companyShortName + '_asset', this.gamedatas.all_capital_assets);
+            }
         },
 
         placeGoal(goal){
@@ -1371,6 +1456,7 @@ function (dojo, declare) {
                 this.gamedatas.general_action_spaces[this.clientStateArgs.buildingAction];
             if(!buildingMaterial){
                 this.showMessage( _("Could not find associated building"), 'error' );
+                return;
             }
 
             var cost = buildingMaterial.cost;
@@ -1388,7 +1474,14 @@ function (dojo, declare) {
                     }
                     cost = this.getCostOfWorkers(1);
                     break;
-                case "capital_investment":
+                case "building1":
+                    cost -= 10; // discount
+                    break;
+                case "building19":
+                    cost -= 20; // discount
+                    break;
+                case "building40":
+                    cost -= 30; // discount
                     break;
                 case "hire_manager":
                 case "building11":
@@ -1440,6 +1533,27 @@ function (dojo, declare) {
                                 cost: cost,
                             })
                         });
+                        break;
+                    case "capital_investment":
+                    case "building1":
+                    case "building19":
+                    case "building40":
+                        this.setClientState("client_chooseAsset", {
+                            descriptionmyturn : _('Choose an asset to buy')
+                        });
+                        break;
+                    case "building15":
+                    case "building3":
+                    case "building5":
+                    case "building7":
+                    case "building13":
+                    case "building17":
+                    case "building34":
+                    case "building36":
+                    case "building37":
+                    case "building38":
+                        var material = this.gamedatas.all_buildings[buildingAction];
+                        this.gainResources(material.resources);
                         break;
                     case 'building6':
                     case "building24":
@@ -1574,13 +1688,25 @@ function (dojo, declare) {
             
             var workerId = 'worker_'+playerId+'_'+workerNumber;
 
-            // TODO: check if spot can be used multiple times
+            // check if spot can be used multiple times
+            var playerLimit = true;
+            if(!this.gamedatas.all_buildings[targetId]){
+                var buildingMaterial = this.gamedatas.general_action_spaces[targetId];
+                playerLimit = buildingMaterial.player_limit;
+            }
+
+            if(playerLimit){
+                var workers = this[targetId + '_holder'].getItemNumber();
+                if(workers > 0){
+                    this.showMessage( _("This action space can't accomodate more than one partner"), 'info' );
+                    return;
+                }
+            }
             
             // create worker
-            var target = event.currentTarget;
             this.placePartner({
                 card_type: workerId,
-                card_location: target.id
+                card_location: targetId
             });
 
             // update meeple counter for current player (not reflected on the server yet)
@@ -1589,10 +1715,10 @@ function (dojo, declare) {
             // remove highlight from worker spots
             dojo.query('.worker_spot').removeClass('active');
 
-            this.clientStateArgs.buildingAction = target.id;
+            this.clientStateArgs.buildingAction = targetId;
             this.clientStateArgs.workerId = workerId;
             
-            switch(target.id){
+            switch(targetId){
                 case "job_market_worker":
                 case "hire_manager":
                 case "building6":
@@ -1630,6 +1756,16 @@ function (dojo, declare) {
             this.restoreServerGameState();
         },
 
+        onReplaceAsset: function(){
+            this.clientStateArgs.actionArgs.replace = 1;
+            this.onConfirmAction();
+        },
+
+        onKeepAsset: function(){
+            this.clientStateArgs.actionArgs.replace = 0;
+            this.onConfirmAction();
+        },
+
         onCancelAction: function(event){
             // destroy meeple
             var workerId = this.clientStateArgs.workerId;
@@ -1642,6 +1778,8 @@ function (dojo, declare) {
             // make factories and companies inactive
             dojo.query('.factory').removeClass('active');
             dojo.query('.company').removeClass('active');
+
+            this.capital_assets.setSelectionMode(0);
 
             // execute undo
             if (typeof this.undo === "function") { this.undo(); this.undo = undefined; }
@@ -1686,11 +1824,38 @@ function (dojo, declare) {
             });
         },
 
-        onPersonalShareSelected: function(control_name, item_id){
-            if(!this.checkAction('sellShares'))
-            {
+        onAssetSelected: function(control_name, item_id){
+            if(!this.checkAction('buildingAction'))
+                return;
+
+            var assets = this.capital_assets.getSelectedItems();
+
+            if(assets.length == 0){
+                this.setClientState("client_chooseAsset", {
+                    descriptionmyturn : _('Choose an asset to buy')
+                });
                 return;
             }
+
+            var split = item_id.split('_'); // union_stockyards_18
+            this.clientStateArgs.actionArgs.assetId = split[split.length - 1];
+            var shortName = this.clientStateArgs.companyShortName;
+            if(this[shortName + '_asset'] != null){
+                var items = this[shortName + '_asset'].getAllItems();
+                if(items.length > 0){
+                    // need to choose to replace or keep current asset
+                    this.setClientState("client_chooseKeepOrReplace", {
+                        descriptionmyturn : _("Choose to keep or replace the company's current asset")
+                    });
+                } else {
+                    this.onConfirmAction();
+                }
+            }
+        },
+
+        onPersonalShareSelected: function(control_name, item_id){
+            if(!this.checkAction('sellShares'))
+                return;
             
             var playerId = this.player_id;
             var numberOfItems = this['personal_area_'+playerId].getSelectedItems().length;
@@ -1746,7 +1911,6 @@ function (dojo, declare) {
                 return;
             }
 
-            //debugger;
             var bankItems = this.available_shares_bank.getSelectedItems();
             var companyItems = this.available_shares_company.getSelectedItems();
 
@@ -2256,18 +2420,19 @@ function (dojo, declare) {
 
         notif_assetDiscarded: function(notif){
             var assetName = notif.args.asset_name;
-            this.capital_assets.removeFromStockById(assetName);
+            var assetId = notif.args.asset_id;
+            this.capital_assets.removeFromStockById(assetName + '_' + assetId);
         },
 
         notif_resourcesDiscarded: function(notif){
             for(var index in notif.args.resource_ids_types){
                 var resource = notif.args.resource_ids_types[index];
-                var resourceId = resource.id;
-                var resourceType = resource.type;
-                var hash = this.hashString(resourceType);
-                var fromItemDiv = 'supply_10_item_' + resourceId;
-                this.haymarket.addToStockWithId(hash, resourceId, fromItemDiv);
-                this.supply_10.removeFromStockById(resourceId);
+                var fromItemDiv = 'supply_10_item_' + resource.id;
+                this.placeResource({
+                    card_id: resource.id,
+                    card_type: resource.type,
+                    card_location: 'haymarket'
+                }, 'supply_10', fromItemDiv);
             }
         },
 
@@ -2339,7 +2504,12 @@ function (dojo, declare) {
 
             for(var resourceId in notif.args.resource_ids){
                 var resource = notif.args.resource_ids[resourceId];
-                var fromId = this['supply_' + resource.from].getItemDivId(resource.card_id);
+                var fromId = null;
+                if(resource.from == 'haymarket'){
+                    fromId = this.haymarket.getItemDivId(resource.card_id);
+                } else {
+                    fromId = this['supply_' + resource.from].getItemDivId(resource.card_id);
+                }
                 this.placeResource(resource, resource.from, fromId);
             }
 
