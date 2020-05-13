@@ -151,7 +151,16 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerActionPhase",
         "possibleactions" => array( "buildingAction", "appealBonus", "tradeResources", "useAsset" ),
-        "transitions" => array( "gameActionPhase" => 12, "workerBonus" => 21, "automationBonus" => 22)
+        "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "loopback" => 11)
+    ),
+
+    23 => array(
+        "name" => "playerFreeActionPhase",
+        "description" => clienttranslate('${actplayer} may trade with Haymarket Square or use Capital Assets'),
+        "descriptionmyturn" => clienttranslate('${you} may trade with Haymarket Square or use Capital Assets'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "tradeResources", "useAsset", "passFreeActions" ),
+        "transitions" => array( "pass" => 12, "loopback" => 23)
     ),
 
     12 => array(
@@ -169,7 +178,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
         "possibleactions" => array( "hireWorker", "skipAssetBonus" ),
-        "transitions" => array( "gameActionPhase" => 12 )
+        "transitions" => array( "freeActions" => 23 )
     ),
 
     22 => array(
@@ -179,7 +188,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
         "possibleactions" => array( "automateFactory", "skipAssetBonus" ),
-        "transitions" => array( "gameActionPhase" => 12 )
+        "transitions" => array( "freeActions" => 23 )
     ),
 
     13 => array(

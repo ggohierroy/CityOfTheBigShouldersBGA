@@ -112,7 +112,7 @@
 </div>
 
 <div class="whiteblock" >
-    <h3>Available Shares From Company</h3>
+    <h3>Available Shares From Companies</h3>
     <div id="available_shares_company"></div>
     <h3>Available Shares From Bank</h3>
     <div id="available_shares_bank"></div>

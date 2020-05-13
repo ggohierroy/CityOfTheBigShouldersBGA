@@ -201,6 +201,15 @@
       self::ajaxResponse( );
     }
 
+    public function passFreeActions()
+    {
+      self::setAjaxMode();
+
+      $this->game->passFreeActions();
+
+      self::ajaxResponse( );
+    }
+
     public function hireWorker()
     {
       self::setAjaxMode();

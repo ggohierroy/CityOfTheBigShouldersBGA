@@ -822,6 +822,10 @@ class CityOfTheBigShoulders extends Table
 
         self::refillAssets();
         
+        // TODO: rework this because it's not gonna be possible once appeal bonuses are implemented
+        if($asset['card_type'] == 'price_protection')
+            self::increaseCompanyAppeal($company_short_name, $company['appeal'], 2);
+
         switch($asset_material['bonus'])
         {
             case 'worker':
@@ -1743,6 +1747,13 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function passFreeActions()
+    {
+        self::checkAction( 'passFreeActions' );
+
+        $this->gamestate->nextState( 'pass' );
+    }
+
     function tradeResources( $haymarket_resource_id, $company_resource_id1, $company_resource_id2 )
     {
         self::checkAction( 'tradeResources' );
@@ -1789,6 +1800,8 @@ class CityOfTheBigShoulders extends Table
             'to_haymarket2' => $company_resource2,
             'to_company' => $haymarket_resource
         ) );
+
+        $this->gamestate->nextState( 'loopback' );
     }
 
     function withholdEarnings($company_id)
@@ -2205,7 +2218,7 @@ class CityOfTheBigShoulders extends Table
         self::automateWorker($company_short_name, $factory_number, $relocate_number);
 
         // set state to next game state
-        $this->gamestate->nextState( 'gameActionPhase' );
+        $this->gamestate->nextState( 'freeActions' );
     }
 
     function hireWorker( $company_short_name, $factory_number)
@@ -2215,7 +2228,7 @@ class CityOfTheBigShoulders extends Table
         self::hireWorkerFromSupply($company_short_name, $factory_number);
 
         // set state to next game state
-        $this->gamestate->nextState( 'gameActionPhase' );
+        $this->gamestate->nextState( 'freeActions' );
     }
 
     function skipAssetBonus()
@@ -2517,7 +2530,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // set state to next game state
-        $this->gamestate->nextState( 'gameActionPhase' );
+        $this->gamestate->nextState( 'freeActions' );
     }
 
     function selectBuildings($played_building_id, $discarded_building_id)

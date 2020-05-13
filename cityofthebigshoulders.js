@@ -44,7 +44,7 @@ function (dojo, declare) {
                 'building41':40, 'building42':41, 'building43':42, 'building44':43  };
             this.assetNameToImagePosition = {
                 'color_catalog': 45, 'brand_recognition': 46, 'catalogue_empire': 47, 'mail_order_catalogue': 48, 'popular_partners': 49,
-                'price_protection': 50, 'backroom_deals': 51, 'union_stockyards': 52, 'regrigeration': 53, 'foundry': 54, 
+                'price_protection': 50, 'backroom_deals': 51, 'union_stockyards': 52, 'refrigeration': 53, 'foundry': 54, 
                 'workshop': 55, 'michigan_lumber': 56, 'abattoir': 57, 'pennsylvania_coal': 58, 'cincinnati_steel': 59,
                 'brilliant_marketing': 60
             };
@@ -288,6 +288,22 @@ function (dojo, declare) {
                     var companyShortName = args.args.company_short_name;
                     dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
                     break;
+                case 'playerFreeActionPhase':
+                    this.clientStateArgs.actionArgs = {};
+                    
+                    if(this.isCurrentPlayerActive()){
+                        var assetTiles = dojo.query('#player_'+this.player_id+' .asset-tile');
+                        for(var i = 0; i<assetTiles.length; i++){
+                            var assetTile = assetTiles[i];
+                            if(!dojo.hasClass(assetTile, 'exhausted'))
+                                dojo.addClass(assetTile, 'active');
+                        }
+                        dojo.query('#haymarket_square').addClass('active');
+                    } else {
+                        dojo.query('#player_'+this.player_id+' .asset-tile').removeClass('active');
+                        dojo.query('#haymarket_square').removeClass('active');
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -441,6 +457,9 @@ function (dojo, declare) {
                             this.addActionButton( 'choose_' + type, div, 'onChooseHaymarketResource');
                         }
                         this.addActionButton( 'cancel_trade', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'playerFreeActionPhase':
+                        this.addActionButton( 'pass_free_action', _('Pass'), 'onPassFreeAction');
                         break;
                 }
             }
@@ -769,6 +788,9 @@ function (dojo, declare) {
             } else {
                 // place on company
                 this[item.card_location + '_asset'].addToStockWithId(hash, assetName + '_' + item.card_id, fromItemDiv);
+                var itemDivId = this[item.card_location + '_asset'].getItemDivId(assetName + '_' + item.card_id);
+                dojo.query('#' + itemDivId).removeClass('stockitem_unselectable');
+                dojo.attr(itemDivId, 'asset-name', assetName);
                 if(from)
                     this.capital_assets.removeFromStockById(assetName + '_' + item.card_id);
             }
@@ -1130,6 +1152,11 @@ function (dojo, declare) {
             }
         },
 
+        onAssetCreated: function(item_div, asset_type_id, item_id){
+            dojo.addClass($(item_div), "asset-tile");
+            dojo.connect( $(item_div), 'onclick', this, 'onAssetClicked' );
+        },
+
         setupCompany: function(company_div, company_type_id, item_id){
             // Add some custom HTML content INSIDE the Stock item:
             // company_div_id looks like this : company_area_2319930_item_libby or available_companies_item_libby
@@ -1233,6 +1260,7 @@ function (dojo, declare) {
                 } ), companyId );
 
                 this.createAssetTileStock(companyShortName + '_asset', this.gamedatas.all_capital_assets);
+                this[companyShortName + '_asset'].onItemCreate = dojo.hitch( this, 'onAssetCreated' ); 
             }
         },
 
@@ -1836,6 +1864,60 @@ function (dojo, declare) {
             });
         },
 
+        onAssetClicked: function(event){
+            if(!this.checkAction('useAsset'))
+                return;
+
+            dojo.stopEvent(event);
+
+            var targetId = event.currentTarget.id;
+            if(!dojo.hasClass(targetId, "active"))
+                return;
+
+            if(dojo.hasClass(targetId, "exhausted"))
+                return;
+            
+            var assetName = dojo.attr(event.currentTarget, "asset-name");
+            
+            switch(assetName)
+            {
+                case 'color_catalog':
+                case 'brand_recognition':
+                case 'catalogue_empire':
+                case 'mail_order_catalogue':
+                case 'popular_partners':
+                case 'backroom_deals':
+                case 'brilliant_marketing':
+                    this.confirmAssetUse(assetName);
+                    break;
+                case 'union_stockyards':
+                case 'michigan_lumber':
+                case 'pennsylvania_coal':
+                case 'cincinnati_steel':
+                    // check enough money
+                    // check gain less
+                    // if yes, have user confirm
+                    break;
+                case 'refrigeration':
+                case 'foundry':
+                case 'workshop':
+                case 'abattoir':
+                    // check gain less
+                    // if yes, have user confirm
+                    break;
+                case 'price_protection':
+                    // show message that this is triggered automatically
+                    this.showMessage( _("This asset is triggered automatically"), 'info' );
+                    break;
+            }
+        },
+
+        confirmAssetUse: function(assetName){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/useAsset.html", {
+                assetName: assetName,
+            }, this, function( result ) {} );
+        },
+
         onWorkerSpotClicked: function(event){
             dojo.stopEvent(event);
 
@@ -2007,6 +2089,10 @@ function (dojo, declare) {
 
         onSkipAssetBonus: function(){
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipAssetBonus.html", {}, this, function( result ) {} );
+        },
+
+        onPassFreeAction: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passFreeActions.html", {}, this, function( result ) {} );
         },
 
         onCancelAction: function(event){
