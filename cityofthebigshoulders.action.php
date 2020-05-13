@@ -175,6 +175,40 @@
       self::ajaxResponse( );
     }
 
+    public function automateFactory()
+    {
+      self::setAjaxMode();
+
+      $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
+      $factory_number = self::getArg( "factoryNumber", AT_posint, true );
+      $relocate_number = self::getArg( "relocateNumber", AT_posint, false );
+
+      $this->game->automateFactory( $company_short_name, $factory_number, $relocate_number );
+
+      self::ajaxResponse( );
+    }
+
+    public function hireWorker()
+    {
+      self::setAjaxMode();
+
+      $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
+      $factory_number = self::getArg( "factoryNumber", AT_posint, true );
+
+      $this->game->hireWorker( $company_short_name, $factory_number);
+
+      self::ajaxResponse( );
+    }
+
+    public function skipAssetBonus()
+    {
+      self::setAjaxMode();
+
+      $this->game->skipAssetBonus();
+
+      self::ajaxResponse( );
+    }
+
     public function buyResources()
     {
       self::setAjaxMode();

@@ -826,10 +826,10 @@ class CityOfTheBigShoulders extends Table
         {
             case 'worker':
                 $this->gamestate->nextState( 'workerBonus' );
-                return;
+                break;
             case 'automation':
                 $this->gamestate->nextState( 'automationBonus' );
-                return;
+                break;
             case 'appeal':
                 self::increaseCompanyAppeal($company_short_name, $company['appeal'], 2);
                 $this->gamestate->nextState( 'gameActionPhase' );
@@ -839,6 +839,8 @@ class CityOfTheBigShoulders extends Table
 
     function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
     {
+        self::dump('relocateFactoryNumber', $relocateFactoryNumber);
+
         // get the automations in the whole company
         // => location = spalding_automation_holder_{factory_number}_{spot_number}
         // some of the might be in worker spots => location = spalding_worker_holder_{factory_number}
@@ -851,7 +853,7 @@ class CityOfTheBigShoulders extends Table
         // get the one automation that is not automated in the current factory
         foreach($automations as $automation)
         {
-            $values = explode('_', $automation['card_location']);
+            $values = explode('_', $automation['card_location']); // brunswick_automation_holder_{factory_number}_0
             if($values[1] == 'automation')
             {
                 if($values[3] == $factory_number)
@@ -865,6 +867,8 @@ class CityOfTheBigShoulders extends Table
                 $total_automated++;
             }
         }
+
+        self::dump('automated_in_relocate_factory', $automated_in_relocate_factory);
 
         // check that not all automations have been automated in this factory
         if($to_automate == null)
@@ -880,12 +884,17 @@ class CityOfTheBigShoulders extends Table
         {
             $total_workers++;
             $values = explode('_', $worker['card_location']);
+            
             if($values[1] == $factory_number){
                 $to_automate_worker = $worker;
-            } else if ($values[1] == $relocateFactoryNumber){
+            }
+            
+            if ($values[1] == $relocateFactoryNumber){
                 $workers_in_relocate_factory++;
             }
         }
+
+        self::dump('workers_in_relocate_factory', $workers_in_relocate_factory);
 
         // check that there are enough workers in that factory to automate it
         if($to_automate_worker == null)
@@ -919,12 +928,13 @@ class CityOfTheBigShoulders extends Table
         else
         {
             // otherwise check that $relocateFactoryNumber has an empty spot and send it there
+            $automation_in_relocate_factory = $this->companies[$company_short_name]['factories'][$relocateFactoryNumber]['automation'];  
+            if($automated_in_relocate_factory + $workers_in_relocate_factory == $automation_in_relocate_factory)
+                throw new BgaUserException( self::_("The automated worker cannot be relocated to this factory") );
+
+            // only if relocate factory is different than current factory, move the worker to new factory
             if($relocateFactoryNumber != $factory_number)
             {
-                $automation_in_relocate_factory = $this->companies[$company_short_name]['factories'][$relocateFactoryNumber]['automation'];  
-                if($automated_in_relocate_factory + $workers_in_relocate_factory == $automation_in_relocate_factory)
-                    throw new BgaUserException( self::_("The automated worker cannot be relocated to this factory") );
-                
                 $worker_id = $to_automate_worker['card_id'];
                 $sql = "UPDATE card SET card_location = '${company_short_name}_${relocateFactoryNumber}' WHERE card_id = '$worker_id'";
                 self::DbQuery($sql);
@@ -1215,6 +1225,38 @@ class CityOfTheBigShoulders extends Table
         }
 
         return $cost;
+    }
+
+    function hireWorkerFromSupply($company_short_name, $factory_number)
+    {
+        if(!$factory_number)
+            throw new BgaVisibleSystemException("Unknown factory number");
+
+        $total_spots = $this->companies[$company_short_name]['factories'][$factory_number]['workers'];
+        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location LIKE '$condition%'";
+        $number_of_workers_in_factory = self::getUniqueValueFromDB($sql);
+        
+        $available_spots = $total_spots - $number_of_workers_in_factory;
+        if($available_spots < 0)
+            throw new BgaVisibleSystemException("Negative spots available in factory");
+        
+        if($available_spots == 0)
+            throw new BgaUserException( self::_("No more available spaces in this factory") );
+        
+        // create a new worker since it's coming from the supply
+        $location = "${company_short_name}_${factory_number}";
+        self::DbQuery("INSERT INTO card (owner_type, primary_type, card_type,card_location,card_location_arg) VALUES
+            ('company', 'worker', 'worker', '$location', 0)");
+        $worker_id = self::DbGetLastId();
+
+        $company_material = $this->companies[$company_short_name];
+        $company_name = $company_material['name'];
+
+        self::notifyAllPlayers( "workerReceived", clienttranslate( '${company_name} receives a worker from the supply' ), array(
+            'factory_id' => $location,
+            'company_name' => $company_name,
+            'worker_id' => $worker_id
+        ) );
     }
 
     // $factory_id -> 'brunswick_factory_1'
@@ -2108,6 +2150,34 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'playerProduceGoodsPhase' );
     }
 
+    function automateFactory( $company_short_name, $factory_number, $relocate_number )
+    {
+        self::checkAction( 'automateFactory' );
+
+        self::automateWorker($company_short_name, $factory_number, $relocate_number);
+
+        // set state to next game state
+        $this->gamestate->nextState( 'gameActionPhase' );
+    }
+
+    function hireWorker( $company_short_name, $factory_number)
+    {
+        self::checkAction( 'hireWorker' );
+
+        self::hireWorkerFromSupply($company_short_name, $factory_number);
+
+        // set state to next game state
+        $this->gamestate->nextState( 'gameActionPhase' );
+    }
+
+    function skipAssetBonus()
+    {
+        self::checkAction( 'skipAssetBonus' );
+
+        // set state to next game state
+        $this->gamestate->nextState( 'gameActionPhase' );
+    }
+
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
     {
         self::checkAction( 'buildingAction' );
@@ -2914,6 +2984,17 @@ class CityOfTheBigShoulders extends Table
     {
         $round = self::getGameStateValue( "round" );
         return ["round" => $round];
+    }
+
+    function argsPlayerAssetBonus()
+    {
+        $id = self::getGameStateValue( "bonus_company_id" );
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
+        return [
+            'company_name' => self::getCompanyName($short_name),
+            'company_short_name' => $short_name
+        ];
     }
 
     function argsOperationPhase()

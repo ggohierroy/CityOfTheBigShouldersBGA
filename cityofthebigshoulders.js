@@ -279,6 +279,11 @@ function (dojo, declare) {
                     this.clientStateArgs.actionArgs = {};
                     this.capital_assets.setSelectionMode(1);
                     break;
+                case 'playerAssetAutomationBonus':
+                case 'playerAssetWorkerBonus':
+                    var companyShortName = args.args.company_short_name;
+                    dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -371,7 +376,10 @@ function (dojo, declare) {
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_chooseFactoryRelocate':
-                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
+                        this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
+                        break;
+                    case "client_chooseFactoryRelocateBonus":
+                        this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_playerTurnConfirmBuyResources':
                         this.addActionButton( 'confirm_buy_resources', _('Confirm'), 'onConfirmBuyResources');
@@ -405,7 +413,10 @@ function (dojo, declare) {
                         this.addActionButton( 'keep_asset', _('Keep'), 'onKeepAsset');
                         this.addActionButton( 'cancel_choose_asset', _('Cancel'), 'onCancelAction');
                         break;
-
+                    case 'playerAssetWorkerBonus':
+                    case 'playerAssetAutomationBonus':
+                        this.addActionButton( 'skip_bonus', _('Skip'), 'onSkipAssetBonus');
+                        break;
                 }
             }
         },        
@@ -473,13 +484,14 @@ function (dojo, declare) {
             }
         },
 
+        // returns whether a worker should be relocated
         automateWorker: function(companyShortName, factoryNumber){
+
             // check if there is at least one spot to put the worker, otherwise confirm action
             var companySelector = '#company_' + companyShortName;
             var workerHolders = dojo.query(companySelector + ' .worker-holder:empty');
             if(workerHolders.length == 0){
-                this.onConfirmAction();
-                return;
+                return false;
             }
 
             // if there is a choice between multiple factories,
@@ -507,10 +519,7 @@ function (dojo, declare) {
             };
 
             // then change client state to choose where to put worker
-            this.setClientState("client_chooseFactoryRelocate", {
-                descriptionmyturn : dojo.string.substitute(_('Choose a factory in which to relocate the automated worker'),{
-                })
-            });
+            return true;
         },
        
         canAutomateFactory: function(companyShortName, factoryNumber){
@@ -1259,6 +1268,12 @@ function (dojo, declare) {
                 this.slideToObject( tokenId, workerSpotId ).play();
             } else if (from == 'supply'){
                 // some buildings allow hiring workers from the supply
+                dojo.place( this.format_block( 'jstpl_token', {
+                    token_id: tokenId,
+                    token_class: 'worker'
+                } ), workerSpotId );
+                this.placeOnObject(tokenId, 'main_board');
+                this.slideToObject(tokenId, workerSpotId).play();
             } else if (from == 'factory'){
                 // happens when a worker is relocated (it already exists)
                 dojo.place(tokenId, workerSpotId);
@@ -1414,29 +1429,18 @@ function (dojo, declare) {
         },
 
         onFactoryClicked: function(event){
-            var state = this.gamedatas.gamestate.name;
 
-            // This happens when a factory is clicked during the produce goods phase
+            var state = this.gamedatas.gamestate.name;
+            var factoryTargetId = event.currentTarget.id;
+            var split = factoryTargetId.split('_'); // brunswick_factory_2
+            var companyShortName = split[0];
+            var factoryNumber = split[2];
+
+            // This happens when a factory is clicked during the produce goods phase (operation phase)
             if(state == 'playerProduceGoodsPhase'){
                 this.produceGoods();
                 return;
             }
-
-            if(state != 'client_actionChooseFactory' && state != 'client_chooseFactoryRelocate')
-                return;
-
-            dojo.stopEvent(event);
-
-            if(!this.checkAction('buildingAction'))
-                return;
-
-            var factoryTargetId = event.currentTarget.id;
-            if(!dojo.hasClass(factoryTargetId, "active"))
-                return;
-            
-            var split = factoryTargetId.split('_'); // brunswick_factory_2
-            var companyShortName = split[0];
-            var factoryNumber = split[2];
 
             // this is a special state that only happens when workers are automated
             // once we know where to put the automated worker, we can confirm the action
@@ -1446,17 +1450,73 @@ function (dojo, declare) {
                 return;
             }
 
-            // deselect factories other than the current one
-            var factorySelector = '#'+factoryTargetId;
-            dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
-            dojo.query(factorySelector).addClass('active');
-            
-            var actionOk = this.executeActionForCompany(companyShortName, factoryNumber);
-
-            if(!actionOk){
-                // reactivate all factories
-                dojo.query('#player_'+this.player_id+' .factory').addClass('active');
+            // this is a special state that happens when a worker is automated because of an asset tile immediate bonus
+            if(state == 'client_chooseFactoryRelocateBonus'){
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", {
+                    companyShortName: companyShortName,
+                    factoryNumber: this.clientStateArgs.factoryNumber,
+                    relocateNumber: factoryNumber
+                }, this, function( result ) {} );
                 return;
+            }
+
+            // this is a special state that happens when a player gains a free worker from an asset tile bonus
+            if(state == 'playerAssetWorkerBonus'){
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/hireWorker.html", {
+                    companyShortName: companyShortName,
+                    factoryNumber: factoryNumber
+                }, this, function( result ) {} );
+                return;
+            }
+
+            if(!dojo.hasClass(factoryTargetId, "active"))
+                return;
+
+            //dojo.stopEvent(event);
+
+            //if(!this.checkAction('buildingAction'))
+            //    return;
+
+            switch(state){
+                case 'client_actionChooseFactory':
+                    // deselect factories other than the current one
+                    var factorySelector = '#'+factoryTargetId;
+                    dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
+                    dojo.query(factorySelector).addClass('active');
+                    
+                    var actionOk = this.executeActionForCompany(companyShortName, factoryNumber);
+
+                    if(!actionOk){
+                        // reactivate all factories
+                        dojo.query('#player_'+this.player_id+' .factory').addClass('active');
+                        return;
+                    }
+                    break;
+                case 'playerAssetAutomationBonus':
+                    if(!this.canAutomateFactory(companyShortName, factoryNumber)){
+                        this.showMessage( _("This factory can't be automated"), 'info' );
+                        return;
+                    }
+
+                    // deselect factories other than the current one
+                    var factorySelector = '#'+factoryTargetId;
+                    dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
+                    dojo.query(factorySelector).addClass('active');
+
+                    var relocate = this.automateWorker(companyShortName, factoryNumber);
+                    if(relocate){
+                        this.clientStateArgs.factoryNumber = factoryNumber;
+                        this.setClientState("client_chooseFactoryRelocateBonus", {
+                            descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+                        });
+                    } else {
+                        this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", {
+                            companyShortName: companyShortName,
+                            factoryNumber: factoryNumber,
+                            relocateNumber: null
+                        }, this, function( result ) {} );
+                    }
+                    break;
             }
         },
 
@@ -1570,7 +1630,14 @@ function (dojo, declare) {
                         break;
                     case 'building6':
                     case "building24":
-                        this.automateWorker(companyShortName, factoryNumber);
+                        var relocate = this.automateWorker(companyShortName, factoryNumber);
+                        if(relocate){
+                            this.setClientState("client_chooseFactoryRelocate", {
+                                descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+                            });
+                        } else {
+                            this.onConfirmAction();
+                        }
                         break;
                     default:
                         this.onConfirmAction();
@@ -1779,11 +1846,17 @@ function (dojo, declare) {
             this.onConfirmAction();
         },
 
+        onSkipAssetBonus: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipAssetBonus.html", {}, this, function( result ) {} );
+        },
+
         onCancelAction: function(event){
             // destroy meeple
             var workerId = this.clientStateArgs.workerId;
             var buildingAction = this.clientStateArgs.buildingAction;
-            this[buildingAction + '_holder'].removeFromZone(workerId, true);
+
+            if(workerId && buildingAction)
+                this[buildingAction + '_holder'].removeFromZone(workerId, true);
 
             // reset counters with server-side counters
             this.updateCounters(this.gamedatas.counters);
@@ -2624,6 +2697,14 @@ function (dojo, declare) {
             }, null, notif.args.previous_appeal);
 
             this.updateAppealTokens(notif.args.appeal, notif.args.order);
+        },
+
+        notif_workerReceived: function(notif){
+            workerId = notif.args.worker_id;
+            this.placeWorkerInFactory({
+                card_id: workerId,
+                card_location: notif.args.factory_id
+            }, 'supply');
         },
 
         notif_workersHired: function(notif){

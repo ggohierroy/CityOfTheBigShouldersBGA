@@ -151,7 +151,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerActionPhase",
         "possibleactions" => array( "buildingAction", "appealBonus", "tradeResources", "useAsset" ),
-        "transitions" => array( "gameActionPhase" => 12 )
+        "transitions" => array( "gameActionPhase" => 12, "workerBonus" => 21, "automationBonus" => 22)
     ),
 
     12 => array(
@@ -159,7 +159,27 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameActionPhase",
-        "transitions" => array( "playerActionPhase" => 11, "playerBuyResourcesPhase" => 13 )
+        "transitions" => array( "playerActionPhase" => 11, "playerBuyResourcesPhase" => 13)
+    ),
+
+    21 => array(
+        "name" => "playerAssetWorkerBonus",
+        "description" => clienttranslate('${company_name} (${actplayer}) may choose a factory in which to hire a worker for free'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may choose a factory in which to hire a worker for free'),
+        "type" => "activeplayer",
+        "args" => "argsPlayerAssetBonus",
+        "possibleactions" => array( "hireWorker", "skipAssetBonus" ),
+        "transitions" => array( "gameActionPhase" => 12 )
+    ),
+
+    22 => array(
+        "name" => "playerAssetAutomationBonus",
+        "description" => clienttranslate('${company_name} (${actplayer}) may automate a factory'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may automate a factory'),
+        "type" => "activeplayer",
+        "args" => "argsPlayerAssetBonus",
+        "possibleactions" => array( "automateFactory", "skipAssetBonus" ),
+        "transitions" => array( "gameActionPhase" => 12 )
     ),
 
     13 => array(
