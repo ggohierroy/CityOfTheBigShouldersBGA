@@ -188,6 +188,19 @@
       self::ajaxResponse( );
     }
 
+    public function tradeResources()
+    {
+      self::setAjaxMode();
+
+      $haymarket_resource_id = self::getArg( "haymarketResourceId", AT_posint, true );
+      $company_resource_id1 = self::getArg( "companyResourceId1", AT_posint, true );
+      $company_resource_id2 = self::getArg( "companyResourceId2", AT_posint, true );
+
+      $this->game->tradeResources( $haymarket_resource_id, $company_resource_id1, $company_resource_id2 );
+
+      self::ajaxResponse( );
+    }
+
     public function hireWorker()
     {
       self::setAjaxMode();

@@ -1743,6 +1743,54 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function tradeResources( $haymarket_resource_id, $company_resource_id1, $company_resource_id2 )
+    {
+        self::checkAction( 'tradeResources' );
+
+        $resources = self::getCollectionFromDB("SELECT card_id, card_location, card_type, card_location_arg FROM card WHERE primary_type = 'resource' AND card_id IN ($haymarket_resource_id, $company_resource_id1, $company_resource_id2)");
+
+        if(count($resources) != 3)
+            throw new BgaVisibleSystemException("Missing resources to do the trade");
+
+        $haymarket_resource = $resources[$haymarket_resource_id];
+        if($haymarket_resource['card_location'] != 'haymarket')
+            throw new BgaVisibleSystemException("Selected resource does not come from haymarket");
+        
+        $company_resource1 = $resources[$company_resource_id1];
+        $company_resource2 = $resources[$company_resource_id2];
+        $company_id = $company_resource1['card_location_arg'];
+        $company = self::getNonEmptyObjectFromDB("SELECT id, short_name, owner_id FROM company WHERE id = $company_id");
+
+        $player_id = self::getActivePlayerId();
+        if($company['owner_id'] != $player_id)
+            throw new BgaVisibleSystemException("Player does not own this company");
+        
+        if($company_resource1['card_location'] != $company_resource2['card_location'])
+            throw new BgaVisibleSystemException("Resources do not come from same company");
+        
+        if($company_resource1['card_type'] != $company_resource2['card_type'])
+            throw new BgaVisibleSystemException("Resources are not the same");
+        
+        $company_location = $company_resource1['card_location'];
+        $haymarket_resource['card_location'] = $company_location;
+        self::DbQuery("UPDATE card SET card_location = '$company_location', card_location_arg = $company_id, owner_type = 'company'
+            WHERE card_id = $haymarket_resource_id");
+
+        $company_resource1['card_location'] = 'haymarket';
+        $company_resource2['card_location'] = 'haymarket';
+        self::DbQuery("UPDATE card SET card_location = 'haymarket', card_location_arg = 0, owner_type = NULL
+            WHERE card_id = $company_resource_id1 OR card_id = $company_resource_id2");
+        
+        $short_name = $company['short_name'];
+        self::notifyAllPlayers( "resourcesTraded", clienttranslate( '${company_name} trades resources with Haymarket Square'), array(
+            'company_name' => self::getCompanyName($short_name),
+            'company_short_name' => $short_name,
+            'to_haymarket1' => $company_resource1,
+            'to_haymarket2' => $company_resource2,
+            'to_company' => $haymarket_resource
+        ) );
+    }
+
     function withholdEarnings($company_id)
     {
         $company = self::getNonEmptyObjectFromDB("SELECT short_name, income, treasury, share_value_step FROM company WHERE id = $company_id");

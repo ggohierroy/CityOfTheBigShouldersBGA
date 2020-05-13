@@ -106,6 +106,7 @@ function (dojo, declare) {
             this.createAssetTileStock('capital_assets', gamedatas.all_capital_assets);
             dojo.connect( this.capital_assets, 'onChangeSelection', this, 'onAssetSelected' );
             this.createResourceStock('haymarket');
+            dojo.connect($('haymarket_square'), 'onclick', this, 'onHaymarketSquareClicked');
             this.createResourceStock('supply_x');
             this.createResourceStock('supply_30');
             this.createResourceStock('supply_20');
@@ -218,8 +219,10 @@ function (dojo, declare) {
                     
                     if(this.isCurrentPlayerActive()){
                         dojo.query('.worker_spot').addClass('active');
+                        dojo.query('#haymarket_square').addClass('active');
                     } else {
                         dojo.query('.worker_spot').removeClass('active');
+                        dojo.query('#haymarket_square').removeClass('active');
                     }
                     
                     // disable fundraise actions that only become available in later rounds
@@ -235,6 +238,7 @@ function (dojo, declare) {
                     dojo.query('#player_'+this.player_id+' .factory').addClass('active');
                     break;
                 case 'client_actionChooseCompany':
+                case 'client_tradeChooseCompany':
                     // activate all companies in player area
                     dojo.query('#player_'+this.player_id+' .company').addClass('active');
                     break;
@@ -367,6 +371,7 @@ function (dojo, declare) {
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_actionChooseCompany':
+                    case 'client_tradeChooseCompany':
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_chooseNumberOfWorkers':
@@ -417,6 +422,26 @@ function (dojo, declare) {
                     case 'playerAssetAutomationBonus':
                         this.addActionButton( 'skip_bonus', _('Skip'), 'onSkipAssetBonus');
                         break;
+                    case 'client_tradeChooseCompanyResources':
+                        var options = this.clientStateArgs.options;
+                        for(var i = 0; i < options.length; i++){
+                            var option = options[i];
+                            var type = option.type;
+                            var div = '<div class="' + type + '-item resource"></div><div class="' + type + '-item resource"></div>'
+                            this.addActionButton( 'choose_' + type, div, 'onChooseCompanyResources');
+                        }
+                        this.addActionButton( 'cancel_trade', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_tradeChooseHaymarketResource':
+                        var options = this.clientStateArgs.haymarketOptions;
+                        for(var i = 0; i < options.length; i++){
+                            var option = options[i];
+                            var type = option.type;
+                            var div = '<div class="' + type + '-item resource"></div>'
+                            this.addActionButton( 'choose_' + type, div, 'onChooseHaymarketResource');
+                        }
+                        this.addActionButton( 'cancel_trade', _('Cancel'), 'onCancelAction');
+                        break;
                 }
             }
         },        
@@ -430,6 +455,62 @@ function (dojo, declare) {
             script.
         
         */
+
+        createResourceOptions: function(shortName){
+            var coal = dojo.query('#' + shortName + '_resources>.coal');
+            var livestock = dojo.query('#' + shortName + '_resources>.livestock');
+            var steel = dojo.query('#' + shortName + '_resources>.steel');
+            var wood = dojo.query('#' + shortName + '_resources>.wood');
+
+            var options = [];
+            if(coal.length >= 2){
+                var elementId = coal[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[3];
+                var option = {type: 'coal', ids: [resourceId]};
+                options.push(option);
+                elementId = coal[1].id;
+                resourceId = elementId.split('_')[3];
+                option.ids.push(resourceId);
+            }
+            if(livestock.length >= 2){
+                var elementId = livestock[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[3];
+                var option = {type: 'livestock', ids: [resourceId]};
+                options.push(option);
+                elementId = livestock[1].id;
+                resourceId = elementId.split('_')[3];
+                option.ids.push(resourceId);
+            }
+            if(steel.length >= 2){
+                var elementId = steel[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[3];
+                var option = {type: 'steel', ids: [resourceId]};
+                options.push(option);
+                elementId = steel[1].id;
+                resourceId = elementId.split('_')[3];
+                option.ids.push(resourceId);
+            }
+            if(wood.length >= 2){
+                var elementId = wood[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[3];
+                var option = {type: 'wood', ids: [resourceId]};
+                options.push(option);
+                elementId = wood[1].id;
+                resourceId = elementId.split('_')[3];
+                option.ids.push(resourceId);
+            }
+            
+            if(options.length > 0) {
+                this.clientStateArgs.companyShortName = shortName;
+                this.clientStateArgs.options = options;
+                this.setClientState("client_tradeChooseCompanyResources", {
+                    descriptionmyturn : _('Choose resources to put in Haymarket Square')
+                });
+            } else {
+                this.showMessage( _("Company doesn't have enough resources to trade"), 'info' );
+                return;
+            }
+        },
 
         gainResources:function(resourceList){
             var coal = dojo.query('#haymarket>.coal');
@@ -662,6 +743,8 @@ function (dojo, declare) {
                 default:
                     // this is going in a company (card_location = company short name)
                     this[item.card_location + '_resources'].addToStockWithId(hash, item.card_id, fromItemDiv);
+                    var div = this[item.card_location + '_resources'].getItemDivId(item.card_id);
+                    dojo.addClass(div, resourceName);
                     if(from == 'haymarket'){
                         this.haymarket.removeFromStockById(item.card_id);
                     } else if(from != null){
@@ -1399,15 +1482,8 @@ function (dojo, declare) {
         },
 
         onCompanyClicked: function(event){
-            var state = this.gamedatas.gamestate.name;
-            if(state != 'client_actionChooseCompany')
-                return;
+            //dojo.stopEvent(event);
 
-            dojo.stopEvent(event);
-
-            if(!this.checkAction('buildingAction'))
-                return;
-            
             var companyTargetId = event.currentTarget.id; // company_area_2319930_item_swift
             if(!dojo.hasClass(companyTargetId, "active"))
                 return;
@@ -1415,17 +1491,32 @@ function (dojo, declare) {
             var split = companyTargetId.split('_');
             var companyShortName = split[4];
 
-            // deselect companies other than the current one
-            dojo.query('#player_'+this.player_id+' .company').removeClass('active');
-            dojo.addClass(companyTargetId, 'active');
+            var state = this.gamedatas.gamestate.name;
+            switch(state){
+                case 'client_tradeChooseCompany':
+                    if(!this.checkAction('tradeResources'))
+                        return;
 
-            var actionOk = this.executeActionForCompany(companyShortName);
+                    this.createResourceOptions(companyShortName);
+                    
+                    break;
+                case 'client_actionChooseCompany':
+                    if(!this.checkAction('buildingAction'))
+                        return;
 
-            if(!actionOk){
-                // reactivate all companies
-                dojo.query('#player_'+this.player_id+' .company').addClass('active');
-                return;
-            } 
+                    // deselect companies other than the current one
+                    dojo.query('#player_'+this.player_id+' .company').removeClass('active');
+                    dojo.addClass(companyTargetId, 'active');
+
+                    var actionOk = this.executeActionForCompany(companyShortName);
+
+                    if(!actionOk){
+                        // reactivate all companies
+                        dojo.query('#player_'+this.player_id+' .company').addClass('active');
+                        return;
+                    } 
+                    break;
+            }
         },
 
         onFactoryClicked: function(event){
@@ -1836,6 +1927,74 @@ function (dojo, declare) {
             this.restoreServerGameState();
         },
 
+        onChooseHaymarketResource: function(event){
+            var targetId = event.currentTarget.id;
+            var type = targetId.split('_')[1];
+
+            var options = this.clientStateArgs.haymarketOptions;
+
+            var selectedHaymarketResource = null;
+            for(var i = 0; i < options.length; i++){
+                if(options[i].type == type){
+                    selectedHaymarketResource = options[i];
+                    break;
+                }
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/tradeResources.html", {
+                haymarketResourceId: selectedHaymarketResource.id,
+                companyResourceId1: this.clientStateArgs.selectedCompanyResources.ids[0],
+                companyResourceId2: this.clientStateArgs.selectedCompanyResources.ids[1]
+            }, this, function( result ) {
+                this.restoreServerGameState();
+            } );
+        },
+
+        onChooseCompanyResources: function(event){
+
+            var targetId = event.currentTarget.id;
+            var type = targetId.split('_')[1];
+
+            var options = this.clientStateArgs.options;
+            for(var i = 0; i < options.length; i++){
+                if(options[i].type == type){
+                    this.clientStateArgs.selectedCompanyResources = options[i];
+                    break;
+                }
+            }
+            
+            var coal = dojo.query('#haymarket>.coal');
+            var livestock = dojo.query('#haymarket>.livestock');
+            var steel = dojo.query('#haymarket>.steel');
+            var wood = dojo.query('#haymarket>.wood');
+            var haymarketOptions = [];
+            if(coal.length > 0){
+                var elementId = coal[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'coal', id: resourceId});
+            }
+            if(livestock.length > 0){
+                var elementId = livestock[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'livestock', id: resourceId});
+            }
+            if(steel.length > 0){
+                var elementId = steel[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'steel', id: resourceId});
+            }
+            if(wood.length > 0){
+                var elementId = wood[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'wood', id: resourceId});
+            }
+
+            this.clientStateArgs.haymarketOptions = haymarketOptions;
+            this.setClientState("client_tradeChooseHaymarketResource", {
+                descriptionmyturn : _('Choose resource to take from Haymarket Square')
+            });
+        },
+
         onReplaceAsset: function(){
             this.clientStateArgs.actionArgs.replace = 1;
             this.onConfirmAction();
@@ -1907,6 +2066,24 @@ function (dojo, declare) {
                     count: count,
                     cost: total
                 })
+            });
+        },
+
+        onHaymarketSquareClicked: function(event){
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('tradeResources'))
+                return;
+
+            // check resources in haymarket
+            var items = this.haymarket.getAllItems();
+            if(items.length == 0){
+                this.showMessage( _('Haymarket Square is empty'), 'info' );
+                return;
+            }
+            
+            this.setClientState("client_tradeChooseCompany", {
+                descriptionmyturn : _('Choose a company'),
             });
         },
 
@@ -2433,6 +2610,9 @@ function (dojo, declare) {
 
             dojo.subscribe('assetGained', this, "notif_assetGained");
             this.notifqueue.setSynchronous('assetGained', 200);
+
+            dojo.subscribe('resourcesTraded', this, "notif_resourcesTraded");
+            this.notifqueue.setSynchronous('resourcesTraded', 200);
         },
 
         notif_assetGained: function(notif){
@@ -2450,6 +2630,16 @@ function (dojo, declare) {
 
                 this.buildings.addToStockWithId(hashBuildingType, itemId, 'main_board');
             }
+        },
+
+        notif_resourcesTraded: function(notif){
+            var toHaymarket1 = notif.args.to_haymarket1;
+            var toHaymarket2 = notif.args.to_haymarket2;
+            var toCompany = notif.args.to_company;
+
+            this.placeResource(toHaymarket1, toCompany.card_location + '_resources', toCompany.card_location + '_resources_item_' + toHaymarket1.card_id);
+            this.placeResource(toHaymarket2, toCompany.card_location + '_resources', toCompany.card_location + '_resources_item_' + toHaymarket2.card_id);
+            this.placeResource(toCompany, 'haymarket', 'haymarket_item_' + toCompany.card_id);
         },
 
         notif_shareSold: function(notif){
