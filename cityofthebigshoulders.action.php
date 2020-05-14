@@ -221,6 +221,27 @@
       self::ajaxResponse();
     }
 
+    public function gainAppealBonus()
+    {
+      self::setAjaxMode();
+
+      $factory_number = self::getArg( "factoryNumber", AT_posint, true );
+      $relocate_number = self::getArg( "relocateFactoryNumber", AT_posint, false );
+
+      $this->game->gainAppealBonus( $factory_number, $relocate_number );
+
+      self::ajaxResponse( );
+    }
+
+    public function forfeitAppealBonus()
+    {
+      self::setAjaxMode();
+
+      $this->game->forfeitAppealBonus();
+
+      self::ajaxResponse( );
+    }
+
     public function hireWorker()
     {
       self::setAjaxMode();

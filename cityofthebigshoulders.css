@@ -133,6 +133,22 @@
 .meeple-tan { background-position-x: -30px }
 .meeple-black { background-position-x: -77px }
 
+.appeal-bonus {
+    position: absolute;
+    width: 22px;
+    height: 26px;
+    left: 54px;
+}
+
+#appeal_1 { top: 115px; }
+#appeal_2 { top: 171px; }
+#appeal_3 { top: 226px; }
+#appeal_4 { top: 281px; }
+#appeal_5 { top: 336px; }
+#appeal_6 { top: 391px; }
+#appeal_7 { top: 446px; }
+#appeal_8 { top: 474px; }
+
 #capital_assets{
     left: 408px;
     top: 423px;

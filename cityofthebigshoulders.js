@@ -157,6 +157,9 @@ function (dojo, declare) {
             dojo.query(".worker_spot.general-action").connect( 'onclick', this, 'onWorkerSpotClicked' );
             dojo.connect($('job_market_worker'), 'onclick', this, 'onWorkerSpotClicked');
  
+            // connect appeal bonus spots
+            dojo.query(".appeal-bonus").connect( 'onclick', this, 'onAppealBonusClicked' );
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
@@ -285,8 +288,12 @@ function (dojo, declare) {
                     break;
                 case 'playerAssetAutomationBonus':
                 case 'playerAssetWorkerBonus':
-                    var companyShortName = args.args.company_short_name;
-                    dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
+                    if(this.isCurrentPlayerActive()){
+                        var companyShortName = args.args.company_short_name;
+                        dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
+                    } else {
+                        dojo.query('.factory').removeClass('active');
+                    }
                     break;
                 case 'playerFreeActionPhase':
                     this.clientStateArgs.actionArgs = {};
@@ -303,6 +310,18 @@ function (dojo, declare) {
                         dojo.query('#player_'+this.player_id+' .asset-tile').removeClass('active');
                         dojo.query('#haymarket_square').removeClass('active');
                     }
+                    break;
+                case 'playerAssetAppealBonus':
+                    if(this.isCurrentPlayerActive()){
+                        var nextAppealBonus = args.args.next_appeal_bonus;
+                        dojo.addClass($('appeal_' + nextAppealBonus), 'active');
+                    }
+                    break;
+                case 'client_appealBonusChooseFactory':
+                    var nextAppealBonus = args.args.next_appeal_bonus;
+                    dojo.addClass($('appeal_' + nextAppealBonus), 'active');
+                    var companyShortName = args.args.company_short_name;
+                    dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
                     break;
                 case 'dummmy':
                     break;
@@ -321,6 +340,10 @@ function (dojo, declare) {
                 case 'client_playerStockPhaseSellShares':
                     var playerId = this.getActivePlayerId();
                     this['personal_area_'+playerId].setSelectionMode(0);
+                    break;
+                case 'client_appealBonusChooseFactory':
+                case 'playerAssetAppealBonus':
+                    dojo.query('.appeal-bonus').removeClass('active');
                     break;
             
             /* Example:
@@ -464,6 +487,9 @@ function (dojo, declare) {
                         break;
                     case 'playerFreeActionPhase':
                         this.addActionButton( 'pass_free_action', _('Pass'), 'onPassFreeAction');
+                        break;
+                    case 'playerAssetAppealBonus':
+                        this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
                         break;
                 }
             }
@@ -1563,6 +1589,8 @@ function (dojo, declare) {
             var companyShortName = split[0];
             var factoryNumber = split[2];
 
+            
+
             // This happens when a factory is clicked during the produce goods phase (operation phase)
             if(state == 'playerProduceGoodsPhase'){
                 this.produceGoods();
@@ -1605,6 +1633,38 @@ function (dojo, declare) {
             //    return;
 
             switch(state){
+                case 'client_appealBonusChooseFactory':
+                    if(this.clientStateArgs.bonus == 'automation')
+                    {
+                        if(this.clientStateArgs.factoryNumber) {
+                            this.clientStateArgs.actionArgs.relocateFactoryNumber = factoryNumber;
+                            this.gainAppealBonus();
+                        } else {
+                            if(!this.canAutomateFactory(companyShortName, factoryNumber)){
+                                this.showMessage( _("This factory can't be automated"), 'info' );
+                                return;
+                            }
+                            
+                            // deselect factories other than the current one
+                            var factorySelector = '#'+factoryTargetId;
+                            dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
+                            dojo.query(factorySelector).addClass('active');
+                            
+                            this.clientStateArgs.factoryNumber = factoryNumber;
+                            var relocate = this.automateWorker(companyShortName, factoryNumber);
+                            if(relocate){
+                                this.setClientState("client_appealBonusChooseFactory", {
+                                    descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+                                });
+                            } else {
+                                this.gainAppealBonus();
+                            }
+                        }
+                    } else {
+                        this.clientStateArgs.factoryNumber = factoryNumber;
+                        this.gainAppealBonus();
+                    }
+                    break;
                 case 'client_actionChooseFactory':
                     // deselect factories other than the current one
                     var factorySelector = '#'+factoryTargetId;
@@ -1945,6 +2005,36 @@ function (dojo, declare) {
             }, this, function( result ) {} );
         },
 
+        onAppealBonusClicked: function(event){
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('gainAppealBonus'))
+                return;
+
+            var target = event.currentTarget;
+            if(!dojo.hasClass(target.id, "active"))
+                return;
+
+            var bonus = dojo.attr(target, 'bonus');
+
+            switch(bonus)
+            {
+                case 'worker':
+                case 'manager':
+                case 'automation':
+                    this.clientStateArgs.bonus = bonus;
+                    this.setClientState("client_appealBonusChooseFactory", {
+                        descriptionmyturn : _('Choose a factory for the appeal bonus')
+                    });
+                    break;
+                case 'partner':
+                case 'good':
+                case 'bump':
+                    this.gainAppealBonus();
+                    break;
+            }
+        },
+
         onWorkerSpotClicked: function(event){
             dojo.stopEvent(event);
 
@@ -2120,6 +2210,10 @@ function (dojo, declare) {
 
         onPassFreeAction: function(){
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passFreeActions.html", {}, this, function( result ) {} );
+        },
+
+        onForfeitBonus: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/forfeitAppealBonus.html", {}, this, function( result ) {} );
         },
 
         onConfirmAssetUse: function(event){
@@ -2488,6 +2582,18 @@ function (dojo, declare) {
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", {}, this, function( result ) {} );
         },
 
+        gainAppealBonus: function(){
+            if(!this.checkAction('gainAppealBonus'))
+            {
+                return;
+            }
+
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/gainAppealBonus.html", {
+                factoryNumber: this.clientStateArgs.factoryNumber,
+                relocateFactoryNumber: this.clientStateArgs.relocateFactoryNumber
+            }, this, function( result ) {} );
+        },
+
         onConfirmDistributeGoods: function(){
             var goods = this.clientStateArgs.goods;
             var demandIds = [];
@@ -2733,6 +2839,9 @@ function (dojo, declare) {
 
             dojo.subscribe('assetUsed', this, "notif_assetUsed");
             this.notifqueue.setSynchronous('assetUsed', 200);
+
+            dojo.subscribe('workerReceived', this, "notif_workerReceived");
+            this.notifqueue.setSynchronous('workerReceived', 200);
         },
 
         notif_assetUsed: function(notif){
