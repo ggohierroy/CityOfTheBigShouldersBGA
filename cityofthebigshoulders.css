@@ -141,6 +141,10 @@
     position: absolute;
 }
 
+.exhausted {
+    opacity: 50% !important;
+}
+
 .company-asset{
     left: 277px;
     top: 61px;

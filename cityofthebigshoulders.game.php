@@ -230,6 +230,78 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function increaseShareValue($short_name, $value)
+    {
+        $sql = "SELECT id, treasury, share_value_step FROM company WHERE short_name = '$short_name'";
+        $company = self::getNonEmptyObjectFromDB($sql);
+        $company_id = $company['id'];   
+        $share_value_step = $company['share_value_step'];
+
+        // change value of share
+        $new_share_value_step = $share_value_step + $value;
+        if($new_share_value_step > 20)
+            $new_share_value_step = 20;
+        if($new_share_value_step < 0)
+            $new_share_value_step = 0;
+
+        self::DbQuery("UPDATE company SET share_value_step = $new_share_value_step WHERE id = $company_id");
+
+        $new_share_value = self::getShareValue($new_share_value_step);
+        self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} increased to $${share_value}' ), array(
+            'company_short_name' => $short_name,
+            'company_name' => self::getCompanyName($short_name),
+            'share_value' => $new_share_value,
+            'share_value_step' => $new_share_value_step,
+            'previous_share_value_step' => $share_value_step
+        ));
+    }
+
+    function increaseIncome($short_name, $amount)
+    {
+        self::DbQuery("UPDATE company SET income = income + $amount WHERE short_name = '$short_name'");
+
+        // TODO: notify if income is shown
+    }
+
+    function gainResourcesAsset($company_short_name, $company_id, $resources_gained)
+    {
+        $resource_names = implode("','", $resources_gained);
+        $resources = self::getObjectListFromDB("SELECT card_id, card_type FROM card WHERE card_location = 'haymarket' AND primary_type = 'resource' AND card_type IN ('$resource_names')");
+
+        $resources_returned = [];
+        $resource_ids = [];
+        foreach($resources_gained as $resource_gained)
+        {
+            foreach($resources as $index => $resource)
+            {
+                if($resource['card_type'] == $resource_gained)
+                {
+                    $resource['from'] = 'haymarket';
+                    $resource['card_location'] = $company_short_name;
+                    $resources_returned[] = $resource;
+                    $resource_ids[] = $resource['card_id'];
+                    $resources[$index]['card_type'] = 'nothing';
+                    break;
+                }
+            }
+        }
+
+        $resource_ids = implode(',', $resource_ids);
+        // update resources location
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN ($resource_ids)");
+
+        $count = count($resources_returned);
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'resource_ids' => $resources_returned
+        ) );
+    }
+
     function gainResources($company_short_name, $company_id, $resources_gained, $resource_ids)
     {
         // get the resources and make sure they are in haymarket
@@ -793,7 +865,7 @@ class CityOfTheBigShoulders extends Table
             if($current_asset != null)
             {
                 $current_asset_id = $current_asset['card_id'];
-                self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $current_asset_id");
+                self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $current_asset_id");
 
                 self::notifyAllPlayers( "companyAssetDiscarded", clienttranslate('${company_name} discards current Capital Asset'), array(
                     'asset' => $current_asset,
@@ -802,7 +874,7 @@ class CityOfTheBigShoulders extends Table
                 ) );
             }
 
-            self::DbQuery("UPDATE card SET card_location = '$company_short_name' WHERE card_id = $asset_id");
+            self::DbQuery("UPDATE card SET card_location = '$company_short_name', owner_type = 'company' WHERE card_id = $asset_id");
             $asset['card_location'] = $company_short_name;
             self::notifyAllPlayers( "assetGained", clienttranslate('${company_name} gains Capital Asset'), array(
                 'asset' => $asset,
@@ -812,7 +884,7 @@ class CityOfTheBigShoulders extends Table
         }
         else
         {
-            self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $asset_id");
+            self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $asset_id");
 
             self::notifyAllPlayers( "assetDiscarded", clienttranslate('${company_name} discards Capital Asset'), array(
                 'asset_name' => $asset['card_type'],
@@ -1101,6 +1173,9 @@ class CityOfTheBigShoulders extends Table
             $update = true;
             $new_share_value_step += 1;
         }
+
+        if($new_share_value_step > 20)
+            $new_share_value_step = 20;
 
         if($update)
         {
@@ -1946,7 +2021,7 @@ class CityOfTheBigShoulders extends Table
             ) );
 
             $appeal_gained = false;
-            $resources_agined = false;
+            $resources_gained = false;
             foreach($factory['manager_bonus'] as $bonus_type => $bonus)
             {
                 switch($bonus_type)
@@ -2237,6 +2312,94 @@ class CityOfTheBigShoulders extends Table
 
         // set state to next game state
         $this->gamestate->nextState( 'gameActionPhase' );
+    }
+
+    function useAsset( $asset_name )
+    {
+        self::checkAction( 'useAsset' );
+
+        $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
+
+        $asset = self::getNonEmptyObjectFromDB("SELECT card_id, owner_type, card_location, card_location_arg FROM card WHERE card_type = '$asset_name' AND primary_type = 'asset'");
+
+        if($asset['owner_type'] != 'company')
+            throw new BgaVisibleSystemException("Asset is not on a company charter");
+        
+        if($asset['card_location_arg'] == 1)
+            throw new BgaVisibleSystemException("Asset has already been used this decade");
+
+        $short_name = $asset['card_location'];
+        $company = self::getNonEmptyObjectFromDB("SELECT id, owner_id, appeal, treasury FROM company WHERE short_name = '$short_name'");
+        $company_id = $company['id'];
+
+        if($company['owner_id'] != $player_id)
+            throw new BgaVisibleSystemException("Company is not owned by you");
+
+        $asset_material = $this->capital_asset[$asset_name];
+        self::notifyAllPlayers( "assetUsed", clienttranslate('${company_name} uses ${asset_name}'), array(
+            'company_name' => self::getCompanyName($short_name),
+            'asset_name' => $asset_material['name'],
+            'asset_short_name' => $asset_name
+        ) );
+        
+        switch($asset_name)
+        {
+            case 'color_catalog':
+                self::increaseIncome($short_name, 60);
+                break;
+            case 'brand_recognition':
+                self::increaseCompanyAppeal($short_name, $company['appeal'], 2);
+                break;
+            case 'catalogue_empire':
+                self::increaseIncome($short_name, 80);
+                break;
+            case 'mail_order_catalogue':
+                self::increaseIncome($short_name, 40);
+                break;
+            case 'popular_partners':
+            case 'backroom_deals':
+                $state = $this->gamestate->state();
+                if( $state['name'] != 'playerDistributeGoodsPhase' && $state['name'] != 'playerDividendsPhase' )
+                    throw new BgaUserException( self::_("Capital Asset can only be used after the production step of the Operation Phase") );
+                // increase share value one step
+                self::increaseShareValue($short_name, 1);
+                break;
+            case 'brilliant_marketing':
+                self::increaseCompanyAppeal($short_name, $company['appeal'], 1);
+                break;
+            case 'union_stockyards':
+            case 'michigan_lumber':
+            case 'pennsylvania_coal':
+            case 'cincinnati_steel':
+                // check enough money
+                $cost = 10;
+                if($company['treasury'] < $cost)
+                    throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this action");
+                $new_company_treasury = $company['treasury'] - $cost;
+                $counters = [];
+                self::DbQuery("UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id");
+                self::addCounter($counters, "money_${short_name}", $new_company_treasury);
+
+                // notify payment
+                self::notifyAllPlayers( "countersUpdated", clienttranslate('${company_name} pays the bank $${cost}'), array(
+                    'cost' => $cost,
+                    'company_name' => self::getCompanyName($short_name),
+                    'counters' => $counters
+                ) );
+            case 'refrigeration':
+            case 'foundry':
+            case 'workshop':
+            case 'abattoir':
+                $resources_gained = $asset_material['resources'];
+                self::gainResourcesAsset($short_name, $company_id, $resources_gained);
+                break;
+        }
+
+        // exhaust asset tile
+        $asset_id = $asset['card_id'];
+        self::DbQuery("UPDATE card SET card_location_arg = 1 WHERE card_id = $asset_id");
+
+        $this->gamestate->nextState( 'loopback' );
     }
 
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
@@ -3415,9 +3578,9 @@ class CityOfTheBigShoulders extends Table
             }
 
             // check if stock in company is completely owned by players
-            $stocks_by_company = self::getObectListFromDB(
-                "SELECT COUNT(card_id) AS number_stocks, card_typ_arg FROM card WHERE primary_type = 'stock'
-                WHERE owner_type = 'player'
+            $stocks_by_company = self::getObjectListFromDB(
+                "SELECT COUNT(card_id) AS number_stocks, card_type_arg FROM card
+                WHERE primary_type = 'stock' AND owner_type = 'player'
                 GROUP BY card_type_arg");
             $companies = self::getCollectionFromDB("SELECT id, short_name, share_value_step FROM company");
             foreach($stocks_by_company as $stock)

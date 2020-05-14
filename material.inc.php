@@ -453,48 +453,56 @@ $this->capital_asset = [
   "union_stockyards" => [ // 2 livestock (10$)
     "starting" => true,
     "bonus" => 'automation',
+    "resources" => ['livestock', 'livestock'],
     "name" => clienttranslate("Union Stockyards"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the bank to receive 2 livestock(pink) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "refrigeration" => [ // 2 livestock
     "starting" => false,
     "bonus" => 'appeal',
+    "resources" => ['livestock', 'livestock'],
     "name" => clienttranslate("Refrigeration"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 2 livestock(pink) resources from Haymarket Square, if available. Immediate bonus: move your company two spaces on the Appeal track. Appeal Bonuses are gained immediately.")
   ],
   "foundry" => [ // 1 steel, 1 wood
     "starting" => false,
     "bonus" => 'appeal',
+    "resources" => ['steel', 'wood'],
     "name" => clienttranslate("Foundry"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
   ],
   "workshop" => [ // 1 steel, 1 coal
     "starting" => false,
     "bonus" => 'appeal',
+    "resources" => ['steel', 'coal'],
     "name" => clienttranslate("Foundry"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 steel(blue) and 1 coal(black) resource from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
   ],
   "michigan_lumber" => [ // 2 wood (10$)
     "starting" => true,
     "bonus" => 'automation',
+    "resources" => ['wood', 'wood'],
     "name" => clienttranslate("Michigan Lumber"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 wood(brown) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "abattoir" => [ // 1 wood, 1 coal
     "starting" => false,
     "bonus" => 'appeal',
+    "resources" => ['wood', 'coal'],
     "name" => clienttranslate("Abattoir"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to receive 1 wood(brown) and 1 coal(black) resources from Haymarket Square, if available. Immediate bonus: advance your Company 2 spaces on the Appeal Track. Appeal Bonuses are gained immediately.")
   ],
   "pennsylvania_coal" => [ // 2 coal (10$)
     "starting" => true,
     "bonus" => 'automation',
+    "resources" => ['coal', 'coal'],
     "name" => clienttranslate("Pennsylvania Coal"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 coal(black) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "cincinnati_steel" => [ // 2 steel (10$)
     "starting" => true,
     "bonus" => 'automation',
+    "resources" => ['steel', 'steel'],
     "name" => clienttranslate("Cincinnati Steel"),
     "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 steel(blue) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],

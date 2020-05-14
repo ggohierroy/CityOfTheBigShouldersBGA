@@ -426,6 +426,10 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_gain_resource', _('Confirm'), 'onConfirmAction');
                         this.addActionButton( 'cancel_gain_less', _('Cancel'), 'onCancelAction');
                         break;
+                    case 'client_confirmGainLessResourcesAsset':
+                        this.addActionButton( 'confirm_gain_resource', _('Confirm'), 'onConfirmAssetUse');
+                        this.addActionButton( 'cancel_gain_less', _('Cancel'), 'onCancelAction');
+                        break;
                     case 'client_chooseAsset':
                         this.addActionButton( 'cancel_choose_asset', _('Cancel'), 'onCancelAction');
                         break;
@@ -570,17 +574,18 @@ function (dojo, declare) {
             }
 
             if(gotEverything){
-                this.onConfirmAction();
+                return { gotEverything: true };
             } else {
                 // go to client state and ask user to confirm
                 var items = "";
-                for(var i = 0; i < options.length; i++){
-                    items += '<div class="' + options[i].type + '-item resource"></div>'
+                if(options.length > 0){
+                    for(var i = 0; i < options.length; i++){
+                        items += '<div class="' + options[i].type + '-item resource"></div>'
+                    }
+                } else {
+                    items = _("nothing");
                 }
-                this.setClientState("client_confirmGainLessResources", {
-                    descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
-                        items: items })
-                });
+                return { gotEverything: false, options: options, optionsString: items };
             }
         },
 
@@ -789,8 +794,11 @@ function (dojo, declare) {
                 // place on company
                 this[item.card_location + '_asset'].addToStockWithId(hash, assetName + '_' + item.card_id, fromItemDiv);
                 var itemDivId = this[item.card_location + '_asset'].getItemDivId(assetName + '_' + item.card_id);
-                dojo.query('#' + itemDivId).removeClass('stockitem_unselectable');
+                var nodes = dojo.query('#' + itemDivId);
+                nodes.removeClass('stockitem_unselectable');
                 dojo.attr(itemDivId, 'asset-name', assetName);
+                if(item.card_location_arg == 1)
+                    nodes.addClass('exhausted');
                 if(from)
                     this.capital_assets.removeFromStockById(assetName + '_' + item.card_id);
             }
@@ -1745,7 +1753,15 @@ function (dojo, declare) {
                     case "building37":
                     case "building38":
                         var material = this.gamedatas.all_buildings[buildingAction];
-                        this.gainResources(material.resources);
+                        var result = this.gainResources(material.resources);
+                        if(result.gotEverything) {
+                            this.onConfirmAction();
+                        } else {
+                            this.setClientState("client_confirmGainLessResources", {
+                                descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
+                                    items: result.optionsString })
+                            });
+                        }
                         break;
                     case 'building6':
                     case "building24":
@@ -1878,6 +1894,7 @@ function (dojo, declare) {
                 return;
             
             var assetName = dojo.attr(event.currentTarget, "asset-name");
+            var companyShortName = targetId.split('_')[0];
             
             switch(assetName)
             {
@@ -1895,15 +1912,25 @@ function (dojo, declare) {
                 case 'pennsylvania_coal':
                 case 'cincinnati_steel':
                     // check enough money
-                    // check gain less
-                    // if yes, have user confirm
-                    break;
+                    if(!this.checkCompanyMoney(companyShortName, 10)){
+                        this.showMessage( _("Not enough money to use asset"), 'info' );
+                        return;
+                    }
                 case 'refrigeration':
                 case 'foundry':
                 case 'workshop':
                 case 'abattoir':
-                    // check gain less
-                    // if yes, have user confirm
+                    var material = this.gamedatas.all_capital_assets[assetName];
+                    var result = this.gainResources(material.resources);
+                    if(result.gotEverything) {
+                        this.confirmAssetUse(assetName);
+                    } else {
+                        this.clientStateArgs.assetName = assetName;
+                        this.setClientState("client_confirmGainLessResourcesAsset", {
+                            descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
+                                items: result.optionsString })
+                        });
+                    }
                     break;
                 case 'price_protection':
                     // show message that this is triggered automatically
@@ -2093,6 +2120,10 @@ function (dojo, declare) {
 
         onPassFreeAction: function(){
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passFreeActions.html", {}, this, function( result ) {} );
+        },
+
+        onConfirmAssetUse: function(event){
+            this.confirmAssetUse(this.clientStateArgs.assetName);
         },
 
         onCancelAction: function(event){
@@ -2699,6 +2730,16 @@ function (dojo, declare) {
 
             dojo.subscribe('resourcesTraded', this, "notif_resourcesTraded");
             this.notifqueue.setSynchronous('resourcesTraded', 200);
+
+            dojo.subscribe('assetUsed', this, "notif_assetUsed");
+            this.notifqueue.setSynchronous('assetUsed', 200);
+        },
+
+        notif_assetUsed: function(notif){
+            var assetName = notif.args.asset_short_name;
+            var asset = dojo.query('div[asset-name="' + assetName  + '"]');
+            asset.addClass('exhausted');
+            asset.removeClass('active');
         },
 
         notif_assetGained: function(notif){
@@ -2874,7 +2915,6 @@ function (dojo, declare) {
         },
 
         notif_resourcesBought: function(notif){
-
             for(var resourceId in notif.args.resource_ids){
                 var resource = notif.args.resource_ids[resourceId];
                 var fromId = null;

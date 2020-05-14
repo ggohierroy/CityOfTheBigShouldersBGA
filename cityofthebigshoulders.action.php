@@ -210,6 +210,17 @@
       self::ajaxResponse( );
     }
 
+    public function useAsset()
+    {
+      self::setAjaxMode();
+
+      $asset_name = self::getArg( "assetName", AT_alphanum, true );
+
+      $this->game->useAsset( $asset_name );
+
+      self::ajaxResponse();
+    }
+
     public function hireWorker()
     {
       self::setAjaxMode();
