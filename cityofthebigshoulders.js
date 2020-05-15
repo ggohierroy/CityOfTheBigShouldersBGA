@@ -331,6 +331,10 @@ function (dojo, declare) {
                     var companyShortName = args.args.company_short_name;
                     dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
                     break;
+                case 'managerBonusResources':
+                    this.clientStateArgs.resourcesToGet = args.args.resources_gained;
+                    this.clientStateArgs.selectedResources = [];
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -517,6 +521,17 @@ function (dojo, declare) {
                     case 'managerBonusAppeal':
                         this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
                         break;
+                    case 'client_managerBonusSelectResource':
+                    case 'managerBonusResources':
+                        var options = this.getHaymarketResourceOptions();
+                        this.clientStateArgs.haymarketOptions = options;
+                        for(var i = 0; i < options.length; i++){
+                            var option = options[i];
+                            var type = option.type;
+                            var div = '<div class="' + type + '-item resource"></div>'
+                            this.addActionButton( 'choose_' + type, div, 'onChooseResourceBonus');
+                        }
+                        break;
                 }
             }
         },        
@@ -530,6 +545,36 @@ function (dojo, declare) {
             script.
         
         */
+
+        getHaymarketResourceOptions: function(){
+            var coal = dojo.query('#haymarket>.coal');
+            var livestock = dojo.query('#haymarket>.livestock');
+            var steel = dojo.query('#haymarket>.steel');
+            var wood = dojo.query('#haymarket>.wood');
+            var haymarketOptions = [];
+            if(coal.length > 0){
+                var elementId = coal[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'coal', id: resourceId});
+            }
+            if(livestock.length > 0){
+                var elementId = livestock[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'livestock', id: resourceId});
+            }
+            if(steel.length > 0){
+                var elementId = steel[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'steel', id: resourceId});
+            }
+            if(wood.length > 0){
+                var elementId = wood[0].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'wood', id: resourceId});
+            }
+
+            return haymarketOptions;
+        },
 
         moveWorkerFromMarketToFactory: function(companyShortName, factoryNumber){
             var marketWorkers = this.job_market.getAllItems();
@@ -2209,6 +2254,37 @@ function (dojo, declare) {
             this.restoreServerGameState();
         },
 
+        onChooseResourceBonus: function(event){
+            var targetId = event.currentTarget.id;
+            var type = targetId.split('_')[1];
+
+            var options = this.clientStateArgs.haymarketOptions;
+
+            var selectedHaymarketResource = null;
+            for(var i = 0; i < options.length; i++){
+                if(options[i].type == type){
+                    selectedHaymarketResource = options[i];
+                    break;
+                }
+            }
+
+            var selectedResources = this.clientStateArgs.selectedResources;
+            selectedResources.push(selectedHaymarketResource);
+            if(selectedResources.length == this.clientStateArgs.resourcesToGet){
+                var args = [];
+                for(var i = 0; i < selectedResources.length; i++){
+                    args.push(selectedResources[i].id);
+                }
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/managerBonusGainResources.html", {
+                    resourceIds: args.join(',')
+                }, this, function( result ) {} );
+            } else {
+                this.setClientState("client_managerBonusSelectResource", {
+                    descriptionmyturn : _('Choose another resource')
+                });
+            }
+        },
+
         onChooseHaymarketResource: function(event){
             var targetId = event.currentTarget.id;
             var type = targetId.split('_')[1];
@@ -2245,31 +2321,7 @@ function (dojo, declare) {
                 }
             }
             
-            var coal = dojo.query('#haymarket>.coal');
-            var livestock = dojo.query('#haymarket>.livestock');
-            var steel = dojo.query('#haymarket>.steel');
-            var wood = dojo.query('#haymarket>.wood');
-            var haymarketOptions = [];
-            if(coal.length > 0){
-                var elementId = coal[0].id; // haymarket_item_69
-                var resourceId = elementId.split('_')[2];
-                haymarketOptions.push({type: 'coal', id: resourceId});
-            }
-            if(livestock.length > 0){
-                var elementId = livestock[0].id; // haymarket_item_69
-                var resourceId = elementId.split('_')[2];
-                haymarketOptions.push({type: 'livestock', id: resourceId});
-            }
-            if(steel.length > 0){
-                var elementId = steel[0].id; // haymarket_item_69
-                var resourceId = elementId.split('_')[2];
-                haymarketOptions.push({type: 'steel', id: resourceId});
-            }
-            if(wood.length > 0){
-                var elementId = wood[0].id; // haymarket_item_69
-                var resourceId = elementId.split('_')[2];
-                haymarketOptions.push({type: 'wood', id: resourceId});
-            }
+            var haymarketOptions = this.getHaymarketResourceOptions();
 
             this.clientStateArgs.haymarketOptions = haymarketOptions;
             this.setClientState("client_tradeChooseHaymarketResource", {
@@ -3184,6 +3236,8 @@ function (dojo, declare) {
 
             if(notif.args.worker_relocation == 'job_market'){
                 this.placeWorker(item)
+            } else if (notif.args.worker_reloaction == 'supply') {
+                this.fadeOutAndDestroy( worker );
             } else {
                 this.placeWorkerInFactory(item, 'factory', worker.parentNode.id)
             }

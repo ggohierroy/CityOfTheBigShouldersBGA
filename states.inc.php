@@ -227,8 +227,8 @@ $machinestates = array(
 
     15 => array(
         "name" => "managerBonusResources",
-        "description" => clienttranslate('${company_name} (${actplayer}) may gain a resources from Haymarket Square (Manager bonus)'),
-        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain a resources from Haymarket Square (Manager bonus)'),
+        "description" => clienttranslate('${company_name} (${actplayer}) may choose ${resources_gained} resources to gain from Haymarket Square'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may choose ${resources_gained} resources to gain from Haymarket Square'),
         "type" => "activeplayer",
         "args" => "argsManagerBonusResources",
         "possibleactions" => array( "managerBonusGainResources" ),

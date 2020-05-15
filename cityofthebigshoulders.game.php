@@ -1053,13 +1053,22 @@ class CityOfTheBigShoulders extends Table
         self::DbQuery($sql);
 
         // check that there will be a spot left for the worker, otherwise send it to the market
-        $worker_sent_to_market = false;
+        $worker_relocation = null;
         if($total_workers + $total_automated + 1 == $total_automations)
         {
             $worker_id = $to_automate_worker['card_id'];
-            $sql = "UPDATE card SET card_location = 'job_market' WHERE card_id = '$worker_id'";
-            self::DbQuery($sql);
-            $worker_sent_to_market = true;
+            $number_workers_market = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = 'job_market'");
+            if($number_workers_market == 12)
+            {
+                // worker is sent to supply (destroyed)
+                self::DbQuery("DELETE FROM card WHERE card_id = '$worker_id'");
+                $worker_relocation = 'supply';
+            }
+            else
+            {
+                self::DbQuery("UPDATE card SET card_location = 'job_market' WHERE card_id = '$worker_id'");
+                $worker_relocation = 'job_market';
+            }
         }
         else
         {
@@ -1074,6 +1083,7 @@ class CityOfTheBigShoulders extends Table
                 $worker_id = $to_automate_worker['card_id'];
                 $sql = "UPDATE card SET card_location = '${company_short_name}_${relocateFactoryNumber}' WHERE card_id = '$worker_id'";
                 self::DbQuery($sql);
+                $worker_relocation = "${company_short_name}_${relocateFactoryNumber}";
             }
         }
 
@@ -1084,12 +1094,8 @@ class CityOfTheBigShoulders extends Table
             'company_name' => self::getCompanyName($company_short_name),
             'company_short_name' => $company_short_name,
             'factory_number' => $factory_number,
-            'worker_relocation' => $worker_sent_to_market ? 'job_market' : "${company_short_name}_${relocateFactoryNumber}"
+            'worker_relocation' => $worker_relocation 
         ));
-
-        if($worker_sent_to_market){
-            self::notifyAllPlayers( "workerSentToMarket", clienttranslate( 'Worker relocated to the job market' ), []);
-        }
     }
 
     function getBuildingOwner($building)
@@ -3689,6 +3695,13 @@ class CityOfTheBigShoulders extends Table
             self::DbQuery($sql);
         }
 
+        // get workers already on board (can't have more than 12 workers)
+        $number_workers_market = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = 'job_market'");
+        if($number_of_workers_to_add + $number_workers_market > 12)
+        {
+            $number_of_workers_to_add = 12 - $number_workers_market;
+        }
+
         // add workers to board
         $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location,card_location_arg) VALUES ";
         $cards = [];
@@ -3838,6 +3851,10 @@ class CityOfTheBigShoulders extends Table
             // if everyone passes, the last player that did an action is necessarily the active player
             $next_player_id = self::getPlayerAfter( $player_id );
             self::setGameStateValue('priority_deal_player_id', $next_player_id);
+            $player_info = self::loadPlayersBasicInfos()[$next_player_id];
+            self::notifyAllPlayers( "shareValueChange", clienttranslate( '${player_name} receives the priority deal marker' ), array(
+                'player_name' => $player_info['player_name']
+            ));
 
             // deal buildings
             $round = self::getGameStateValue('round');
