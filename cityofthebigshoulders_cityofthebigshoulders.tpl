@@ -165,6 +165,8 @@ var jstpl_generic_div = '<div id="${id}" class="${class}"</div>';
 
 var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"</div>';
 
+var jstpl_temp_worker = '<div class="worker temp"</div>';
+
 </script>  
 
 {OVERALL_GAME_FOOTER}

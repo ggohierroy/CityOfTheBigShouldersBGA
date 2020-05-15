@@ -246,6 +246,7 @@ function (dojo, declare) {
                     dojo.query('#player_'+this.player_id+' .company').addClass('active');
                     break;
                 case 'client_chooseFactoryRelocate':
+                case 'client_placeHiredWorkers':
                     // activate all factories in the current company
                     var shortName = this.clientStateArgs.companyShortName;
                     dojo.query('#company_'+shortName+ ' .factory').addClass('active');
@@ -430,7 +431,7 @@ function (dojo, declare) {
                     case 'client_chooseNumberOfWorkers':
                         this.addActionButton( 'less_workers', _('-'), 'onRemoveWorker', null, false, 'gray');
                         this.addActionButton( 'more_workers', _('+'), 'onAddWorker', null, false, 'gray');
-                        this.addActionButton( 'confirm_action', _('Confirm'), 'onConfirmAction');
+                        this.addActionButton( 'confirm_action', _('Confirm'), 'onConfirmNumberOfWorkers');
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_chooseFactoryRelocate':
@@ -438,6 +439,10 @@ function (dojo, declare) {
                         break;
                     case "client_chooseFactoryRelocateBonus":
                         this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
+                        break;
+                    case "client_placeHiredWorkers":
+                        this.addActionButton( 'confirm_gain_resource', _('Confirm'), 'onConfirmAction');
+                        this.addActionButton( 'cancel_gain_less', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_playerTurnConfirmBuyResources':
                         this.addActionButton( 'confirm_buy_resources', _('Confirm'), 'onConfirmBuyResources');
@@ -525,6 +530,28 @@ function (dojo, declare) {
             script.
         
         */
+
+        moveWorkerFromMarketToFactory: function(companyShortName, factoryNumber){
+            var marketWorkers = this.job_market.getAllItems();
+            var workerSpotId = this.getNextAvailableWorkerSpot(companyShortName + '_' + factoryNumber);
+            var worker = null;
+            var workerId = null;
+            if(marketWorkers == 0){
+                // create worker
+                worker = dojo.place( this.format_block( 'jstpl_temp_worker', {} ), workerSpotId);
+                this.placeOnObject( worker, 'job_market');
+                this.slideToObject( worker, workerSpotId ).play();
+            } else {
+                worker = $(marketWorkers[0]);
+                workerId = worker.id;
+                dojo.place(worker, workerSpotId);
+                this.placeOnObject( worker, 'job_market');
+                this.slideToObject( worker, workerSpotId ).play();
+                this.job_market.removeFromZone(workerId);
+            }
+
+            return workerId;
+        },
 
         createResourceOptions: function(shortName){
             var coal = dojo.query('#' + shortName + '_resources>.coal');
@@ -1651,6 +1678,27 @@ function (dojo, declare) {
             //    return;
 
             switch(state){
+                case 'client_placeHiredWorkers':
+
+                    cost = this.getCostOfWorkers(1);
+                    var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
+                    if(emptyWorkerSpots == 0){
+                        this.showMessage( _("This factory doesn't have any more space for workers"), 'info' );
+                        break;
+                    }
+
+                    var workerId = this.moveWorkerFromMarketToFactory(companyShortName, factoryNumber);
+
+                    this.clientStateArgs.numberOfWorkersToBuy++;
+                    this.clientStateArgs.selectedFactories.push({ workerId: workerId, factoryNumber: factoryNumber });
+                    this.clientStateArgs.totalCost += cost;
+                    this.setClientState("client_placeHiredWorkers", {
+                        descriptionmyturn : dojo.string.substitute(_('Hire ${numberWorkers} worker for $${cost}'),{
+                            cost: this.clientStateArgs.totalCost,
+                            numberWorkers: this.clientStateArgs.numberOfWorkersToBuy
+                        })
+                    });
+                    break;
                 case 'client_appealBonusChooseFactory':
                     if(this.clientStateArgs.bonus == 'automation')
                     {
@@ -1739,18 +1787,17 @@ function (dojo, declare) {
 
             var cost = buildingMaterial.cost;
             var buildingAction = this.clientStateArgs.buildingAction;
-
             // make checks specific to action and get cost of action
             switch(buildingAction){
                 case "job_market_worker":
                     // check if there are empty worker spots
+                    cost = this.getCostOfWorkers(1);
                     var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
                     if(emptyWorkerSpots == 0){
                         actionOk = false;
                         message = _("This factory doesn't have any more space for workers");
                         break;
                     }
-                    cost = this.getCostOfWorkers(1);
                     break;
                 case "building1":
                     cost -= 10; // discount
@@ -1805,8 +1852,13 @@ function (dojo, declare) {
                 // execute action specific stuff
                 switch(buildingAction){
                     case 'job_market_worker':
-                        this.clientStateArgs.actionArgs.numberOfWorkersToBuy = 1;
-                        this.setClientState("client_chooseNumberOfWorkers", {
+                        var workerId = this.moveWorkerFromMarketToFactory(companyShortName, factoryNumber);
+                        this.clientStateArgs.numberOfWorkersToBuy = 1;
+                        var selectedFactories = [];
+                        selectedFactories.push({ 'workerId': workerId, 'factoryNumber': factoryNumber });
+                        this.clientStateArgs.selectedFactories = selectedFactories;
+                        this.clientStateArgs.totalCost = cost;
+                        this.setClientState("client_placeHiredWorkers", {
                             descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
                                 cost: cost,
                             })
@@ -1889,6 +1941,19 @@ function (dojo, declare) {
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
             var workerHolderChilds = dojo.query(factorySelector + '>.worker-holder>');
             var numberOfWorkers = company.factories[factoryNumber].workers;
+            return numberOfWorkers - workerHolderChilds.length;
+        },
+
+        getEmptyWorkerSpotsInCompany(companyShortName){
+            var company = this.gamedatas.all_companies[companyShortName];
+            var companySelector = '#company_'+companyShortName; //#company_brunswick
+            var workerHolderChilds = dojo.query(companySelector + ' .worker-holder>');
+            var numberOfWorkers = 0;
+            var factories = company.factories;
+            for(var index in factories){
+                var factory = factories[index];
+                numberOfWorkers += factory.workers;
+            }
             return numberOfWorkers - workerHolderChilds.length;
         },
 
@@ -2107,12 +2172,12 @@ function (dojo, declare) {
             this.clientStateArgs.workerId = workerId;
             
             switch(targetId){
-                case "job_market_worker":
                 case "hire_manager":
                 case "building6":
                 case "building11":
                 case "building14":
                 case "building44":
+                case "job_market_worker":
                     this.chooseFactory();
                     break;
                 case "building21":
@@ -2245,6 +2310,21 @@ function (dojo, declare) {
 
             if(workerId && buildingAction)
                 this[buildingAction + '_holder'].removeFromZone(workerId, true);
+
+            if(buildingAction == 'job_market_worker')
+            {
+                // put back workers in market
+                var selectedFactories = this.clientStateArgs.selectedFactories;
+                for(var i = 0; i < selectedFactories.length; i++){
+                    var workerId = selectedFactories[i].workerId;
+                    if(workerId != null){
+                        this.job_market.placeInZone(workerId);
+                    }
+                }
+
+                // destroy all temp workers
+                dojo.query('.worker.temp').forEach(dojo.destroy);
+            }
 
             // reset counters with server-side counters
             this.updateCounters(this.gamedatas.counters);
@@ -2683,17 +2763,27 @@ function (dojo, declare) {
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
         },
 
+        onConfirmNumberOfWorkers: function(){
+            this.clientStateArgs.numberOfWorkersToPlace = this.clientStateArgs.numberOfWorkersToBuy;
+            this.clientStateArgs.selectedFactories = [];
+            this.setClientState("client_placeHiredWorkers", {
+                descriptionmyturn : dojo.string.substitute(_('${numberOfWorkers} workers left to place in your factories'),{
+                    numberOfWorkers: this.clientStateArgs.numberOfWorkersToPlace
+                })
+            });
+        },
+
+        // this is called when clicking the + button when choosing number of workers to hire
         onAddWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.actionArgs.numberOfWorkersToBuy;
-            var factoryNumber = this.clientStateArgs.factoryNumber;
+            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
             var companyShortName = this.clientStateArgs.companyShortName;
-            var numberOfEmptySpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
+            var numberOfEmptySpots = this.getEmptyWorkerSpotsInCompany(companyShortName);
             
             if(numberOfWorkersToBuy == numberOfEmptySpots)
                 return;
 
             numberOfWorkersToBuy++;
-            this.clientStateArgs.actionArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
 
             var companyShortName = this.clientStateArgs.companyShortName;
             var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
@@ -2710,13 +2800,14 @@ function (dojo, declare) {
             });
         },
 
+        // this is called when clicking the - button when choosing number of workers to hire
         onRemoveWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.actionArgs.numberOfWorkersToBuy;
+            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
             if(numberOfWorkersToBuy == 1)
                 return;
 
             numberOfWorkersToBuy--;
-            this.clientStateArgs.actionArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
+            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
             
             var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
 
@@ -2733,10 +2824,21 @@ function (dojo, declare) {
                 return;
             
             var args = [];
-            for(var property in this.clientStateArgs.actionArgs){
-                var arg = this.clientStateArgs.actionArgs[property];
-                args.push(arg);
+            switch(this.clientStateArgs.buildingAction){
+                case 'job_market_worker':
+                    var selectedFactories = this.clientStateArgs.selectedFactories;
+                    for(var i = 0; i < selectedFactories.length; i++){
+                        args.push(selectedFactories[i].factoryNumber);   
+                    }
+                    break;
+                default:
+                    for(var property in this.clientStateArgs.actionArgs){
+                        var arg = this.clientStateArgs.actionArgs[property];
+                        args.push(arg);
+                    }
+                    break;
             }
+
             var actionArgs = args.join(",");
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buildingAction.html", {
@@ -3150,12 +3252,46 @@ function (dojo, declare) {
         },
 
         notif_workersHired: function(notif){
-            for(var index in notif.args.worker_ids){
-                workerId = notif.args.worker_ids[index];
-                this.placeWorkerInFactory({
-                    card_id: workerId,
-                    card_location: notif.args.factory_id
-                }, 'market');
+            if(!this.isCurrentPlayerActive()){
+                // active player already has the workers in his factory
+                for(var index in notif.args.worker_ids){
+                    worker = notif.args.worker_ids[index];
+
+                    // bypass the server worker id, get any worker from the market
+                    // front-end ids are irrelevant, and only used for moving tokens around
+                    var marketWorkers = this.job_market.getAllItems();
+                    var marketWorker = $(marketWorkers[0]);
+                    var workerId = marketWorker.id.split('_')[1];
+
+                    this.placeWorkerInFactory({
+                        card_id: workerId,
+                        card_location: worker.card_location
+                    }, 'market');
+                }
+            }
+
+            // destroy all temp workers
+            dojo.query('.worker.temp').forEach(dojo.destroy);
+
+            // create new workers if any
+            for(var index in notif.args.all_worker){
+                var worker = notif.args.all_worker[index];
+
+                var element = $('worker_' + worker.card_id);
+                if(element == null) {
+                    // create the worker
+                    this.placeWorkerInFactory({
+                        card_id: worker.card_id,
+                        card_location: worker.card_location
+                    });
+                    if(!this.isCurrentPlayerActive()){
+                        // move it from the factory
+                        this.placeWorkerInFactory({
+                            card_id: worker.card_id,
+                            card_location: worker.card_location
+                        }, 'market');
+                    }
+                }
             }
         },
 

@@ -1405,52 +1405,103 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
-    // $factory_id -> 'brunswick_factory_1'
-    function hireWorkers($number_of_workers, $company_short_name, $factory_number)
+    function hireWorkers($company_short_name, $worker_factories)
     {
-        if(!$factory_number)
-            throw new BgaVisibleSystemException("Unknown factory number");
+        $number_of_workers = count($worker_factories);
+        $factories_material = $this->companies[$company_short_name]['factories'];
 
-        $condition = $company_short_name.'_'.$factory_number;
-        
-        $total_spots = $this->companies[$company_short_name]['factories'][$factory_number]['workers'];
-        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location LIKE '$condition%'";
-        $number_of_workers_in_factory = self::getUniqueValueFromDB($sql);
-        
-        $available_spots = $total_spots - $number_of_workers_in_factory;
-        if($available_spots < 0)
-            throw new BgaVisibleSystemException("Negative spots available in factory");
-        
-        if($available_spots < $number_of_workers)
-            throw new BgaVisibleSystemException("Not enough space for hired workers");
+        // get workers already in factories
+        $workers_by_factory = self::getCollectionFromDB(
+            "SELECT card_location, COUNT(card_id) AS worker_count FROM card 
+            WHERE primary_type = 'worker' AND card_location LIKE '$company_short_name%'
+            GROUP BY card_location");
 
-        $sql = "SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'";
-        $workers_in_market = self::getObjectListFromDB($sql);
-        $number_of_workers_in_market = count($workers_in_market);
-        $convert = [0 => 50, 1 => 40, 2 => 40, 3 => 40, 4 => 40, 5 => 30, 6 => 30, 7 => 30, 8 => 30, 9 => 20, 10 => 20, 11 => 20, 12 => 20];
-        $cost = 0;
-        $values = [];
-        for($i = 0; $i < $number_of_workers; $i++){
-            $cost += $convert[$number_of_workers_in_market];
-            if($number_of_workers_in_market > 0){
-                $worker = array_shift($workers_in_market);
-                $values[] = $worker['card_id'];
-                $number_of_workers_in_market--;
+        // get automated workers in factories location = spalding_worker_holder_{factory_number}
+        $automations_by_factory = self::getCollectionFromDB(
+            "SELECT card_location, COUNT(card_id) AS automation_count FROM card 
+            WHERE primary_type = 'automation' AND card_location LIKE '${company_short_name}_worker_holder%'
+            GROUP BY card_location");
+        
+        // regroup workers being added by factory
+        $workers_to_hire_by_factory = [];
+        foreach($worker_factories as $factory_number)
+        {
+            $key = intval($factory_number);
+            if(array_key_exists($key, $workers_to_hire_by_factory)){
+                $workers_to_hire_by_factory[$key]++;
+            } else {
+                $workers_to_hire_by_factory[$key] = 1;
             }
         }
 
-        // move these workers to the factory
-        $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company' WHERE card_id IN ";
-        $sql .= "(".implode( $values, ',' ).")";
-        self::DbQuery($sql);
+        // get workers in market
+        $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'");
+        $number_of_workers_in_market = count($workers_in_market);
+        
+        // hire the workers
+        $moved_workers_return = [];
+        foreach($workers_to_hire_by_factory as $factory_number => $workers_to_hire_count)
+        {
+            $automation_count = 0;
+            $automation_key = "${company_short_name}_worker_holder_${factory_number}";
+            if(array_key_exists($automation_key, $automations_by_factory))
+                $automation_count = $automations_by_factory[$automation_key];
+            
+            $worker_key = "${company_short_name}_${factory_number}";
+            $worker_count = 0;
+            if(array_key_exists($worker_key, $workers_by_factory))
+                $worker_count = $workers_by_factory[$worker_key];
+            
+            $total_spots = $factories_material[$factory_number]['workers'];
 
+            // check that each factory can hold the workers being hired
+            if($automation_count + $worker_count + $workers_to_hire_count > $total_spots)
+                throw new BgaVisibleSystemException("Not enough space for hired workers");
+            
+            $moved_workers = [];
+            $new_workers = [];
+            $condition = $company_short_name.'_'.$factory_number;
+            for($i = 0; $i < $workers_to_hire_count; $i++)
+            {
+                $worker = array_shift($workers_in_market);
+                if($worker != null)
+                {
+                    $moved_workers[] = $worker['card_id'];
+                    $worker['card_location'] = $condition;
+                    $moved_workers_return[] = $worker;
+                }
+                else 
+                {
+                    $new_workers[] = "('company','worker','worker',0,'$condition',0)";
+                }
+            }
+
+            if(count($moved_workers) > 0)
+            {
+                // move these workers to the factory
+                $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company' WHERE card_id IN ";
+                $sql .= "(".implode( $moved_workers, ',' ).")";
+                self::DbQuery($sql);
+            }
+            
+            // create workers if market has less workers than amount being hired
+            if(count($new_workers) > 0)
+            {
+                $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+                $card_sql .= implode( $new_workers, ',' );
+                self::DbQuery($card_sql);
+            }
+        }
+
+        $all_workers = self::getObjectListFromDB("SELECT * FROM card WHERE primary_type = 'worker' AND card_location LIKE '$company_short_name%'");
         $company_material = $this->companies[$company_short_name];
         $company_name = $company_material['name'];
 
         self::notifyAllPlayers( "workersHired", clienttranslate( '${company_name} hired ${number_of_workers} workers from the job market' ), array(
             'factory_id' => $condition,
             'company_name' => $company_name,
-            'worker_ids' => $values,
+            'worker_ids' => $moved_workers_return, // moved workers
+            'all_worker' => $all_workers,
             'number_of_workers' => $number_of_workers
         ) );
     }
@@ -2696,7 +2747,8 @@ class CityOfTheBigShoulders extends Table
         $asset = null;
         if($building_action == 'job_market_worker')
         {
-            $number_of_workers = intval($action_args);
+            $worker_factories = explode(',', $action_args);
+            $number_of_workers = count($worker_factories);
             $cost = self::getCostToHireWorkers($number_of_workers);
         } 
         else if ($building_action == 'capital_investment' || 
@@ -2818,7 +2870,8 @@ class CityOfTheBigShoulders extends Table
         $appeal_bonus_gained = false;
         switch($building_action){
             case 'job_market_worker':
-                self::hireWorkers($number_of_workers, $company_short_name, $factory_number);
+                $worker_factories = explode(',', $action_args);
+                self::hireWorkers($company_short_name, $worker_factories);
                 break;
             case 'advertising':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
