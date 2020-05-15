@@ -312,6 +312,13 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerAssetAppealBonus':
+                case 'playerActionAppealBonus':
+                case 'playerBuyResourceAppealBonus':
+                case 'playerProduceGoodsAppealBonus':
+                case 'playerDistributeAppealBonus':
+                case 'playerDividendsAppealBonus':
+                case 'playerFreeActionAppealBonus':
+                case 'managerBonusAppeal':
                     if(this.isCurrentPlayerActive()){
                         var nextAppealBonus = args.args.next_appeal_bonus;
                         dojo.addClass($('appeal_' + nextAppealBonus), 'active');
@@ -343,6 +350,13 @@ function (dojo, declare) {
                     break;
                 case 'client_appealBonusChooseFactory':
                 case 'playerAssetAppealBonus':
+                case 'playerActionAppealBonus':
+                case 'playerBuyResourceAppealBonus':
+                case 'playerProduceGoodsAppealBonus':
+                case 'playerDistributeAppealBonus':
+                case 'playerDividendsAppealBonus':
+                case 'playerFreeActionAppealBonus':
+                case 'managerBonusAppeal':
                     dojo.query('.appeal-bonus').removeClass('active');
                     break;
             
@@ -489,6 +503,13 @@ function (dojo, declare) {
                         this.addActionButton( 'pass_free_action', _('Pass'), 'onPassFreeAction');
                         break;
                     case 'playerAssetAppealBonus':
+                    case 'playerActionAppealBonus':
+                    case 'playerBuyResourceAppealBonus':
+                    case 'playerProduceGoodsAppealBonus':
+                    case 'playerDistributeAppealBonus':
+                    case 'playerDividendsAppealBonus':
+                    case 'playerFreeActionAppealBonus':
+                    case 'managerBonusAppeal':
                         this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
                         break;
                 }
@@ -1404,13 +1425,10 @@ function (dojo, declare) {
             var tokenId = 'worker_' + worker.card_id;
             var workerSpotId = this.getNextAvailableWorkerSpot(worker.card_location);
             if(from == 'market'){
-                this.job_market.removeFromZone(tokenId);
-                dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: tokenId,
-                    token_class: 'worker'
-                } ), workerSpotId );
+                dojo.place(tokenId, workerSpotId);
                 this.placeOnObject( tokenId, 'job_market');
                 this.slideToObject( tokenId, workerSpotId ).play();
+                this.job_market.removeFromZone(tokenId);
             } else if (from == 'supply'){
                 // some buildings allow hiring workers from the supply
                 dojo.place( this.format_block( 'jstpl_token', {
@@ -3045,7 +3063,6 @@ function (dojo, declare) {
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
             var worker = null;
             var automation = null;
-
             if(this.isCurrentPlayerActive()){
                 // the worker has been moved to the automation spot
                 // we need to send it to its final destination (either job market or factory)

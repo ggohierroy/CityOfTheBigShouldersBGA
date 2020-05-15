@@ -46,7 +46,6 @@ class CityOfTheBigShoulders extends Table
             "next_company_id" => 15, // we need this because the current company can change appeal during operation phase
             "current_company_id" => 16, // we need this to return company name in the operation phase args
             "last_factory_produced" => 17,
-            "appeal_gained" => 18,
             "resources_gained" => 19,
             "bonus_company_id" => 20,
             "next_appeal_bonus" => 21,
@@ -1930,7 +1929,26 @@ class CityOfTheBigShoulders extends Table
 
         if($next_appeal_bonus == $final_appeal_bonus)
         {
-            $this->gamestate->nextState( 'next' );
+            $state = $this->gamestate->state();
+            if( $state['name'] == 'managerBonusAppeal')
+            {
+                $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
+                $total_factories = count($this->companies[$company_short_name]['factories']);
+                if($last_factory_produced == $total_factories)
+                {
+                    // go to state distributeGoods
+                    $this->gamestate->nextState( 'distributeGoods' );
+                }
+                else
+                {
+                    // else go to next factory
+                    $this->gamestate->nextState( 'nextFactory' );
+                }
+            }
+            else
+            {
+                $this->gamestate->nextState( 'next' );
+            }
         }
         else
         {
@@ -2169,14 +2187,16 @@ class CityOfTheBigShoulders extends Table
 
         // check if manager and execute action
         $manager = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE primary_type = 'manager' AND card_location = '${short_name}_${factory_number}'");
+        
+        $appeal_bonus_gained = false;
+        $resources_gained = false;
         if($manager != null)
         {
             self::notifyAllPlayers( "notifyManagerBonus", clienttranslate( '${company_name} receives manager bonus'), array(
                 'company_name' => self::getCompanyName($short_name)
             ) );
 
-            $appeal_gained = false;
-            $resources_gained = false;
+            
             foreach($factory['manager_bonus'] as $bonus_type => $bonus)
             {
                 switch($bonus_type)
@@ -2186,26 +2206,12 @@ class CityOfTheBigShoulders extends Table
                         break;
                     case 'resource':
                         self::setGameStateValue( "resources_gained", $bonus );
+                        $resources_gained = true;
                         break;
                     case 'appeal':
-                        self::setGameStateValue( "appeal_gained", $bonus );
-                        self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], $bonus);
+                        $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], $bonus);
                         break;
                 }
-            }
-
-            if($appeal_gained)
-            {
-                // go to operation appeal bonus state
-
-                return;
-            }
-
-            if($resources_gained)
-            {
-                // go to resource bonus state
-
-                return;
             }
         }
 
@@ -2217,6 +2223,19 @@ class CityOfTheBigShoulders extends Table
                 self::companyProduceGoods($short_name, $company_id, $company['extra_goods']);
             }
 
+            if($resources_gained)
+            {
+                // go to resource bonus state
+                $this->gamestate->nextState( 'managerBonusResources' );
+                return;
+            }
+
+            if($appeal_bonus_gained)
+            {
+                $this->gamestate->nextState( 'managerBonusAppeal' );
+                return;
+            }
+
             // go to state distributeGoods
             $this->gamestate->nextState( 'distributeGoods' );
         }
@@ -2225,6 +2244,20 @@ class CityOfTheBigShoulders extends Table
             // else go to next factory, state nextFactory
             // update last_factory_produced
             self::setGameStateValue( "last_factory_produced", $factory_number );
+
+            if($resources_gained)
+            {
+                // go to resource bonus state
+                $this->gamestate->nextState( 'managerBonusResources' );
+                return;
+            }
+
+            if($appeal_bonus_gained)
+            {
+                $this->gamestate->nextState( 'managerBonusAppeal' );
+                return;
+            }
+
             $this->gamestate->nextState( 'nextFactory' );
         }
     }
@@ -2516,13 +2549,14 @@ class CityOfTheBigShoulders extends Table
             'asset_short_name' => $asset_name
         ) );
         
+        $appeal_bonus_gained = false;
         switch($asset_name)
         {
             case 'color_catalog':
                 self::increaseIncome($short_name, 60);
                 break;
             case 'brand_recognition':
-                self::increaseCompanyAppeal($short_name, $company_id, $company['appeal'], 2);
+                $appeal_bonus_gained = self::increaseCompanyAppeal($short_name, $company_id, $company['appeal'], 2);
                 break;
             case 'catalogue_empire':
                 self::increaseIncome($short_name, 80);
@@ -2539,7 +2573,7 @@ class CityOfTheBigShoulders extends Table
                 self::increaseShareValue($short_name, 1);
                 break;
             case 'brilliant_marketing':
-                self::increaseCompanyAppeal($short_name, $company_id, $company['appeal'], 1);
+                $appeal_bonus_gained = self::increaseCompanyAppeal($short_name, $company_id, $company['appeal'], 1);
                 break;
             case 'union_stockyards':
             case 'michigan_lumber':
@@ -2573,7 +2607,15 @@ class CityOfTheBigShoulders extends Table
         $asset_id = $asset['card_id'];
         self::DbQuery("UPDATE card SET card_location_arg = 1 WHERE card_id = $asset_id");
 
-        $this->gamestate->nextState( 'loopback' );
+        if($appeal_bonus_gained)
+        {
+            // depeding on current state, this leads to a different state
+            $this->gamestate->nextState( 'freeAppealBonus' );
+        }
+        else
+        {
+            $this->gamestate->nextState( 'loopback' );
+        }
     }
 
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
@@ -2857,7 +2899,7 @@ class CityOfTheBigShoulders extends Table
                 if($asset['card_type'] == 'price_protection')
                     self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 2);
 
-                switch($asset_material['bonus'])
+                switch($bonus)
                 {
                     case 'worker':
                         $this->gamestate->nextState( 'workerBonus' );
@@ -3432,6 +3474,18 @@ class CityOfTheBigShoulders extends Table
             'last_factory_produced' => self::getGameStateValue( "last_factory_produced" ),
             'company_short_name' => $short_name,
             'income' => $company['income']
+        ];
+    }
+
+    function argsManagerBonusResources()
+    {
+        $id = self::getGameStateValue( "current_company_id" );
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
+        return [
+            'company_name' => self::getCompanyName($short_name),
+            'company_short_name' => $short_name,
+            'resources_gained' => self::getGameStateValue( "resources_gained" )
         ];
     }
 

@@ -151,7 +151,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerActionPhase",
         "possibleactions" => array( "buildingAction", "tradeResources", "useAsset" ),
-        "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeActionAppealBonus" => 25, "loopback" => 11)
+        "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeAppealBonus" => 25, "loopback" => 11)
     ),
 
     23 => array(
@@ -160,7 +160,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} may trade with Haymarket Square or use Capital Assets'),
         "type" => "activeplayer",
         "possibleactions" => array( "tradeResources", "useAsset", "passFreeActions" ),
-        "transitions" => array( "pass" => 12, "freeActionAppealBonus" => 25, "loopback" => 23)
+        "transitions" => array( "pass" => 12, "freeAppealBonus" => 31, "loopback" => 23)
     ),
 
     12 => array(
@@ -212,7 +212,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
-        "transitions" => array( "playerProduceGoodsPhase" => 14 )
+        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26)
     ),
 
     14 => array(
@@ -222,7 +222,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods" ),
-        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonus" => 16 )
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27)
     ),
 
     15 => array(
@@ -230,7 +230,7 @@ $machinestates = array(
         "description" => clienttranslate('${company_name} (${actplayer}) may gain a resources from Haymarket Square (Manager bonus)'),
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain a resources from Haymarket Square (Manager bonus)'),
         "type" => "activeplayer",
-        "args" => "argsOperationPhase",
+        "args" => "argsManagerBonusResources",
         "possibleactions" => array( "managerBonusGainResources" ),
         "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14 )
     ),
@@ -243,7 +243,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 30, "nextFactory" => 14, "distributeGoods" => 15 )
+        "transitions" => array( "loopback" => 30, "nextFactory" => 14, "distributeGoods" => 16 )
     ),
 
     16 => array(
@@ -253,7 +253,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset" ),
-        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19 )
+        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28)
     ),
 
     17 => array(
@@ -263,7 +263,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "payDividends", "withhold", "useAsset" ),
-        "transitions" => array( "gameOperationPhase" => 19 )
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29)
     ),
 
     19 => array(
