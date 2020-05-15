@@ -240,32 +240,36 @@ class CityOfTheBigShoulders extends Table
         switch($partner_type)
         {
             case 'round':
-                $players = self::getObjectListFromDB("SELECT player_id, number_partners FROM player");
+                $players = self::getObjectListFromDB("SELECT player_id, number_partners, current_number_partners FROM player");
                 $counters = [];
 
                 foreach($players as $player)
                 {
                     $player_id = $player['player_id'];
                     self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
+                    self::addCounter($counters, "partner_current_${player_id}", $player['current_number_partners'] + 1);
                 }
 
-                self::DbQuery("UPDATE player SET number_partners = number_partners + 1");
+                self::DbQuery("UPDATE player SET number_partners = number_partners + 1, current_number_partners = current_number_partners + 1");
 
                 self::notifyAllPlayers("countersUpdated", clienttranslate("All players receive a new partner"), [
                     'counters' => $counters
                 ]);
                 break;
             case 'appeal':
-                $player = self::getObjectListFromDB("SELECT player_name, player_id, number_partners, appeal_partner_gained FROM player WHERE player_id = $player_id");
+                $player = self::getObjectListFromDB(
+                    "SELECT player_name, player_id, number_partners, current_number_partners, appeal_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['appeal_partner_gained'] == true)
                     return;
 
                 $counters = [];
                 self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
+                self::addCounter($counters, "partner_current_${player_id}", $player['current_number_partners'] + 1);
 
                 self::DbQuery("UPDATE player SET 
                     number_partners = number_partners + 1,
+                    current_number_partners = current_number_partners + 1,
                     appeal_partner_gained = 1
                     WHERE player_id = $player_id");
 
@@ -275,16 +279,19 @@ class CityOfTheBigShoulders extends Table
                 ]);
                 break;
             case 'company':
-                $player = self::getObjectListFromDB("SELECT player_name, player_id, number_partners, company_partner_gained FROM player WHERE player_id = $player_id");
+                $player = self::getObjectListFromDB(
+                    "SELECT player_name, player_id, number_partners, current_number_partners, company_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['company_partner_gained'] == true)
                     return;
 
                 $counters = [];
                 self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
+                self::addCounter($counters, "partner_current_${player_id}", $player['current_number_partners'] + 1);
 
                 self::DbQuery("UPDATE player SET 
                     number_partners = number_partners + 1,
+                    current_number_partners = current_number_partners + 1,
                     company_partner_gained = 1
                     WHERE player_id = $player_id");
 
@@ -1922,7 +1929,7 @@ class CityOfTheBigShoulders extends Table
     function getPlayer($player_id)
     {
         return self::getObjectFromDB(
-            "SELECT player_id AS id, treasury AS treasury, current_number_partners AS current_number_partners
+            "SELECT player_id, treasury, current_number_partners, number_partners
             FROM player 
             WHERE player_id='$player_id'"
         );
@@ -2169,13 +2176,18 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'produceGoods' );
 
+        $player_id = self::getActivePlayerId();
+
         // get current company and factory
         $company_id = self::getGameStateValue( 'current_company_id');
         $factory_number = self::getGameStateValue( 'last_factory_produced') + 1;
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name, appeal, extra_goods FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, appeal, extra_goods, owner_id FROM company WHERE id = $company_id");
         $short_name = $company['short_name'];
         $company_material = $this->companies[$short_name];
         $factory_material = $company_material['factories'][$factory_number];
+
+        if($company['owner_id'] != $player_id)
+            throw new BgaVisibleSystemException("Company not owned by player");
 
         // check worker requirements for factory
         $location = "${short_name}_${factory_number}";
@@ -2241,6 +2253,14 @@ class CityOfTheBigShoulders extends Table
         
         // produce goods
         self::companyProduceGoods($short_name, $company_id, $goods_produced);
+
+        // check if second factory to gain partner
+        if($factory_number == 2 || ($factory_number == 3 && $short_name == 'henderson'))
+        {
+            $initial_company_id = self::getUniqueValueFromDB("SELECT initial_company_id FROM player WHERE player_id = $player_id");
+            if($initial_company_id == $company_id)
+                self::gainPartner($player_id, 'company');
+        }
 
         // check if manager and execute action
         $manager = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE primary_type = 'manager' AND card_location = '${short_name}_${factory_number}'");
@@ -2726,7 +2746,9 @@ class CityOfTheBigShoulders extends Table
             throw new BgaVisibleSystemException("You don't have any more workers");
         
         // TODO: change the way we create partners to use total number of partners as well so ID is ascending
-        $worker_id = "worker_${player_id}_${number_of_partners}";
+        $total_number_partners = $player['number_partners'];
+        $worker_number = $total_number_partners - $number_of_partners + 1;
+        $worker_id = "worker_${player_id}_${worker_number}";
         
         // update player's number of partners
         $number_of_partners--;
@@ -3374,7 +3396,7 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'startCompany' );
 
         $state = $this->gamestate->state();
-        if($state == 'playerSkipSellBuyPhase' || $state == 'playerBuyPhase')
+        if($state['name'] == 'playerSkipSellBuyPhase' || $state['name'] == 'playerBuyPhase')
         {
             $round = self::getGameStateValue( "round" );
             if($round == 0)
@@ -3423,9 +3445,21 @@ class CityOfTheBigShoulders extends Table
 
         // update player's treasury
         $newTreasury = $player['treasury'] - $share_value*3;
-        $sql = "UPDATE player 
-            SET treasury='$newTreasury'
-            WHERE player_id='$player_id'";
+        if($state['name'] == 'playerStartFirstCompany')
+        {
+            // also set this company as initial company
+            $sql = "UPDATE player 
+                SET treasury='$newTreasury',
+                    initial_company_id = $company_id
+                WHERE player_id='$player_id'";
+        }
+        else
+        {
+            $sql = "UPDATE player 
+                SET treasury='$newTreasury'
+                WHERE player_id='$player_id'";
+        }
+        
         self::DbQuery( $sql );
 
         // create stocks and give director's share to player
@@ -3852,7 +3886,7 @@ class CityOfTheBigShoulders extends Table
             $next_player_id = self::getPlayerAfter( $player_id );
             self::setGameStateValue('priority_deal_player_id', $next_player_id);
             $player_info = self::loadPlayersBasicInfos()[$next_player_id];
-            self::notifyAllPlayers( "shareValueChange", clienttranslate( '${player_name} receives the priority deal marker' ), array(
+            self::notifyAllPlayers( "dealMarkerReceived", clienttranslate( '${player_name} receives the priority deal marker' ), array(
                 'player_name' => $player_info['player_name']
             ));
 

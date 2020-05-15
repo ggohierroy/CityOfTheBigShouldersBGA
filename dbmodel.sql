@@ -39,6 +39,7 @@ ALTER TABLE `player` ADD `current_number_partners` SMALLINT UNSIGNED NOT NULL DE
 ALTER TABLE `player` ADD `player_order` TINYINT(3) UNSIGNED;
 ALTER TABLE `player` ADD `appeal_partner_gained` BOOLEAN NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `company_partner_gained` BOOLEAN NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `initial_company_id` INT(10) UNSIGNED;
 
 CREATE TABLE IF NOT EXISTS `company` (
     `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,

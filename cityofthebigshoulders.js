@@ -2180,11 +2180,12 @@ function (dojo, declare) {
             var playerId = this.getActivePlayerId();
             var counterName = 'partner_current_'+playerId;
             var workerNumber = this.gamedatas.counters[counterName]['counter_value'];
+            var totalWorkers = this.gamedatas.counters["partner_"+playerId]['counter_value'];
             
             if(workerNumber == 0)
                 return;
             
-            var workerId = 'worker_'+playerId+'_'+workerNumber;
+            var workerId = 'worker_'+playerId+'_'+(totalWorkers - workerNumber + 1);
 
             // check if spot can be used multiple times
             var playerLimit = true;
