@@ -634,7 +634,7 @@ $this->building = [
     "pips" => 1,
     "min_players" => 2,
     "number_of_workers" => 1,
-    "cost" => 10,
+    "cost" => 30,
     "payment" => "companytoplayer",
     "tooltip" => clienttranslate("The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],

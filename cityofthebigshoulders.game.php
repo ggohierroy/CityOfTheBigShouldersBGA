@@ -235,6 +235,105 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function adjustCompanyOrder($company_short_name, $new_appeal, &$current_order)
+    {
+        // current order has these properties => 'id', 'next_company_id', 'owner_id', 'order', 'short_name', 'appeal'
+        $next_company_id = null;
+        $new_order = [];
+        $company_count = count($current_order);
+        $company_to_update = null;
+        $company_to_update_next_company_id = null;
+        $should_update = false;
+
+        // when this method is called, there is at least 2 companies in play
+        foreach($current_order as $index => $company)
+        {
+            if($company['short_name'] == $company_short_name)
+            {
+                $company_to_update = $company;
+                $company_to_update['appeal'] = $new_appeal;
+                $current_order[$index]['appeal'] = $new_appeal;
+                $company_to_update_next_company_id = $company_to_update['next_company_id'];
+
+                // check that company is not first in company order
+                if($index > 0)
+                {
+                    // check if previous company has lower or equal than the new appeal
+                    if($current_order[$index - 1]['appeal'] <= $new_appeal)
+                    {
+                        $should_update = true;
+                        // update its next company id so that it is no longer the company being updated
+                        
+                        $new_next_id = $company_to_update_next_company_id == null ? 'NULL' : $company_to_update_next_company_id;
+                        $previous_company_id = $current_order[$index - 1]['id'];
+                        $current_order[$index - 1]['next_company_id'] = $new_next_id;
+                        self::DbQuery("UPDATE company SET next_company_id = $new_next_id WHERE id = $previous_company_id");
+                    }
+                }
+
+                break;
+            }
+        }
+
+        if($company_to_update == null)
+            throw new BgaVisibleSystemException("Could not find company with new appeal in company order");
+
+        if($should_update == false)
+        {
+            $next_company_id = $company_to_update_next_company_id;
+            return $next_company_id;
+        }
+
+        // reorder companies and insert in new array
+        $order = 1;
+        $inserted = false;
+        foreach($current_order as $index => $company)
+        {
+            if($company['short_name'] == $company_short_name)
+                continue;
+
+            if($company['appeal'] > $new_appeal)
+            {
+                $new_order[] = $company;
+            }
+            else if ($inserted == false)
+            {
+                $inserted = true;
+                
+                if($index > 0)
+                {
+                    // if the company does not become first in turn order (at least one company before it)
+                    // update the previous company to point to the company being updated
+                    $new_next_id = $company_to_update['id'];
+                    $previous_company_id = $current_order[$index - 1]['id'];
+                    $current_order[$index - 1]['next_company_id'] = $new_next_id;
+                    self::DbQuery("UPDATE company SET next_company_id = $new_next_id WHERE id = $previous_company_id");
+                }
+
+                // then update company being updated to point to the one that's next in line
+                $next_company_id = $company['id'];
+                $company_to_update['next_company_id'] = $next_company_id;
+                $company_to_update['order'] = $order;
+                $new_order[] = $company_to_update;
+                $order++;
+
+                // insert the company that's now after the one being updated
+                $company['order'] = $order;
+                $new_order[] = $company;
+            } 
+            else 
+            {
+                $company['order'] = $order;
+                $new_order[] = $company;
+            }
+
+            $order++;
+        }
+
+        $current_order = $new_order;
+        return $next_company_id;
+    }
+
     function gainPartner($player_id, $partner_type)
     {
         switch($partner_type)
@@ -1330,14 +1429,22 @@ class CityOfTheBigShoulders extends Table
         if($new_appeal > 16)
             $new_appeal = 16;
 
-        self::DbQuery("UPDATE company SET appeal = $new_appeal WHERE short_name = '$company_short_name'");
+        // Adjust company order
+        $current_order = self::getCurrentCompanyOrder();
+        $next_company_id = self::adjustCompanyOrder($company_short_name, $new_appeal, $current_order);
+
+        $next_company_id = $next_company_id == null ? 'NULL' : $next_company_id;
+        self::DbQuery("UPDATE company SET 
+            appeal = $new_appeal, 
+            next_company_id = $next_company_id 
+            WHERE short_name = '$company_short_name'");
 
         self::notifyAllPlayers( "appealIncreased", clienttranslate( '${company_name} increased its appeal to ${appeal}' ), array(
             'company_name' => self::getCompanyName($company_short_name),
             'company_short_name' => $company_short_name,
             'appeal' => $new_appeal,
             'previous_appeal' => $current_appeal,
-            'order' => self::getCurrentCompanyOrder()
+            'order' => $current_order
         ) );
 
         $last_bonus_gained = self::BONUS_LOOKUP[$current_appeal];

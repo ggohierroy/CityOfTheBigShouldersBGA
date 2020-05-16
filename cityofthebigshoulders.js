@@ -254,6 +254,8 @@ function (dojo, declare) {
                     break;
                 case 'playerBuyResourcesPhase':
                     if(this.isCurrentPlayerActive()){
+                        this.activatePlayerAssets();
+                        dojo.query('#haymarket_square').addClass('active');
                         this.supply_10.unselectAll();
                         this.supply_20.unselectAll();
                         this.supply_30.unselectAll();
@@ -268,6 +270,8 @@ function (dojo, declare) {
                     break;
                 case 'playerProduceGoodsPhase':
                     if(this.isCurrentPlayerActive()){
+                        this.activatePlayerAssets();
+                        dojo.query('#haymarket_square').addClass('active');
                         var currentFactory = Number(args.args.last_factory_produced) + 1;
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#'+companyShortName+'_factory_'+currentFactory).addClass('active');
@@ -276,9 +280,15 @@ function (dojo, declare) {
                 case 'playerDistributeGoodsPhase':
                     this.clientStateArgs.goods = [];
                     if(this.isCurrentPlayerActive()){
+                        this.activatePlayerAssets();
+                        dojo.query('#haymarket_square').addClass('active');
                         this.activateDemandForCompany(args.args.company_short_name);
                         this.clientStateArgs.income = Number(args.args.income);
                     }
+                    break;
+                case 'playerDividendsPhase':
+                    this.activatePlayerAssets();
+                    dojo.query('#haymarket_square').addClass('active');
                     break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     this.activateDemandForCompany(args.args.company_short_name);
@@ -364,7 +374,6 @@ function (dojo, declare) {
                 case 'client_actionChooseFactory':
                 case 'client_chooseFactoryRelocate':
                 case 'client_placeHiredWorkers':
-                case 'playerProduceGoodsPhase':
                 case 'playerAssetAutomationBonus':
                 case 'playerAssetWorkerBonus':
                 case 'client_chooseFactoryRelocateBonus':
@@ -380,7 +389,24 @@ function (dojo, declare) {
                 case 'client_tradeChooseCompanyResources':
                     dojo.query('.company').removeClass('active');
                     break;
+                case 'playerBuyResourcesPhase':
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    break;
+                case 'playerProduceGoodsPhase':
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    dojo.query('.factory').removeClass('active');
+                    break;
                 case 'playerDistributeGoodsPhase':
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    dojo.query('.demand').removeClass('active');
+                    break;
+                case 'playerDividendsPhase':
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     dojo.query('.demand').removeClass('active');
                     break;
@@ -3234,7 +3260,7 @@ function (dojo, declare) {
         },
 
         notif_appealIncreased: function(notif){
-
+            debugger;
             this.placeAppealToken({
                 short_name: notif.args.company_short_name,
                 appeal: notif.args.appeal,
