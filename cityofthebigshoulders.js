@@ -221,11 +221,9 @@ function (dojo, declare) {
                     this.clientStateArgs.actionArgs = {};
                     
                     if(this.isCurrentPlayerActive()){
+                        this.activatePlayerAssets();
                         dojo.query('.worker_spot').addClass('active');
                         dojo.query('#haymarket_square').addClass('active');
-                    } else {
-                        dojo.query('.worker_spot').removeClass('active');
-                        dojo.query('#haymarket_square').removeClass('active');
                     }
                     
                     // disable fundraise actions that only become available in later rounds
@@ -245,11 +243,14 @@ function (dojo, declare) {
                     // activate all companies in player area
                     dojo.query('#player_'+this.player_id+' .company').addClass('active');
                     break;
+                case 'client_confirmGainLessResources':
+                    dojo.query('#company_'+this.clientStateArgs.companyShortName).addClass('active');
+                    break;
                 case 'client_chooseFactoryRelocate':
                 case 'client_placeHiredWorkers':
+                case 'client_chooseFactoryRelocateBonus':
                     // activate all factories in the current company
-                    var shortName = this.clientStateArgs.companyShortName;
-                    dojo.query('#company_'+shortName+ ' .factory').addClass('active');
+                    this.activateFactoriesInCompany(this.clientStateArgs.companyShortName);
                     break;
                 case 'playerBuyResourcesPhase':
                     if(this.isCurrentPlayerActive()){
@@ -266,7 +267,6 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerProduceGoodsPhase':
-                    dojo.query('.factory').removeClass('active');
                     if(this.isCurrentPlayerActive()){
                         var currentFactory = Number(args.args.last_factory_produced) + 1;
                         var companyShortName = args.args.company_short_name;
@@ -275,41 +275,32 @@ function (dojo, declare) {
                     break;
                 case 'playerDistributeGoodsPhase':
                     this.clientStateArgs.goods = [];
-                    dojo.query('.demand').removeClass('active');
                     if(this.isCurrentPlayerActive()){
-                        var companyShortName = args.args.company_short_name;
-                        var companyType = this.gamedatas.all_companies[companyShortName].type;
-                        dojo.query('.'+companyType).addClass('active');
+                        this.activateDemandForCompany(args.args.company_short_name);
                         this.clientStateArgs.income = Number(args.args.income);
                     }
+                    break;
+                case 'client_playerTurnConfirmDistributeGoods':
+                    this.activateDemandForCompany(args.args.company_short_name);
                     break;
                 case 'client_chooseAsset':
                     this.clientStateArgs.actionArgs = {};
                     this.capital_assets.setSelectionMode(1);
+                    dojo.query('#capital_assets>').addClass('active');
                     break;
                 case 'playerAssetAutomationBonus':
                 case 'playerAssetWorkerBonus':
                     if(this.isCurrentPlayerActive()){
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
-                    } else {
-                        dojo.query('.factory').removeClass('active');
                     }
                     break;
                 case 'playerFreeActionPhase':
                     this.clientStateArgs.actionArgs = {};
                     
                     if(this.isCurrentPlayerActive()){
-                        var assetTiles = dojo.query('#player_'+this.player_id+' .asset-tile');
-                        for(var i = 0; i<assetTiles.length; i++){
-                            var assetTile = assetTiles[i];
-                            if(!dojo.hasClass(assetTile, 'exhausted'))
-                                dojo.addClass(assetTile, 'active');
-                        }
+                        this.activatePlayerAssets();
                         dojo.query('#haymarket_square').addClass('active');
-                    } else {
-                        dojo.query('#player_'+this.player_id+' .asset-tile').removeClass('active');
-                        dojo.query('#haymarket_square').removeClass('active');
                     }
                     break;
                 case 'playerAssetAppealBonus':
@@ -335,6 +326,9 @@ function (dojo, declare) {
                     this.clientStateArgs.resourcesToGet = args.args.resources_gained;
                     this.clientStateArgs.selectedResources = [];
                     break;
+                case 'client_tradeChooseCompanyResources':
+                    this.activateCompany(this.clientStateArgs.companyShortName);
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -354,6 +348,9 @@ function (dojo, declare) {
                     this['personal_area_'+playerId].setSelectionMode(0);
                     break;
                 case 'client_appealBonusChooseFactory':
+                    dojo.query('.appeal-bonus').removeClass('active');
+                    dojo.query('.factory').removeClass('active');
+                    break;
                 case 'playerAssetAppealBonus':
                 case 'playerActionAppealBonus':
                 case 'playerBuyResourceAppealBonus':
@@ -364,18 +361,40 @@ function (dojo, declare) {
                 case 'managerBonusAppeal':
                     dojo.query('.appeal-bonus').removeClass('active');
                     break;
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-           
-           
+                case 'client_actionChooseFactory':
+                case 'client_chooseFactoryRelocate':
+                case 'client_placeHiredWorkers':
+                case 'playerProduceGoodsPhase':
+                case 'playerAssetAutomationBonus':
+                case 'playerAssetWorkerBonus':
+                case 'client_chooseFactoryRelocateBonus':
+                    dojo.query('.factory').removeClass('active');
+                    break;
+                case 'playerActionPhase':
+                    dojo.query('.worker_spot').removeClass('active');
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    break;
+                case 'client_actionChooseCompany':
+                case 'client_tradeChooseCompany':
+                case 'client_tradeChooseCompanyResources':
+                    dojo.query('.company').removeClass('active');
+                    break;
+                case 'playerDistributeGoodsPhase':
+                case 'client_playerTurnConfirmDistributeGoods':
+                    dojo.query('.demand').removeClass('active');
+                    break;
+                case 'playerFreeActionPhase':
+                    dojo.query('.asset-tile').removeClass('active');
+                    dojo.query('#haymarket_square').removeClass('active');
+                    break;
+                case 'client_chooseAsset':
+                    this.capital_assets.setSelectionMode(0);
+                    dojo.query('#capital_assets>').removeClass('active');
+                    break;
+                case 'client_confirmGainLessResources':
+                    dojo.query('.company-content').removeClass('active');
+                    break;
             case 'dummmy':
                 break;
             }               
@@ -432,12 +451,7 @@ function (dojo, declare) {
                     case 'client_tradeChooseCompany':
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
-                    case 'client_chooseNumberOfWorkers':
-                        this.addActionButton( 'less_workers', _('-'), 'onRemoveWorker', null, false, 'gray');
-                        this.addActionButton( 'more_workers', _('+'), 'onAddWorker', null, false, 'gray');
-                        this.addActionButton( 'confirm_action', _('Confirm'), 'onConfirmNumberOfWorkers');
-                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
-                        break;
+
                     case 'client_chooseFactoryRelocate':
                         this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
                         break;
@@ -545,6 +559,28 @@ function (dojo, declare) {
             script.
         
         */
+
+        activateDemandForCompany(shortName){
+            var companyType = this.gamedatas.all_companies[shortName].type;
+            dojo.query('.'+companyType).addClass('active');
+        },
+
+        activateFactoriesInCompany(shortName){
+            dojo.query('#company_'+shortName+ ' .factory').addClass('active');
+        },
+
+        activateCompany: function(companyShortName){
+            dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
+        },
+
+        activatePlayerAssets: function(){
+            var assetTiles = dojo.query('#player_'+this.player_id+' .asset-tile');
+            for(var i = 0; i<assetTiles.length; i++){
+                var assetTile = assetTiles[i];
+                if(!dojo.hasClass(assetTile, 'exhausted'))
+                    dojo.addClass(assetTile, 'active');
+            }
+        },
 
         getHaymarketResourceOptions: function(){
             var coal = dojo.query('#haymarket>.coal');
@@ -1656,17 +1692,7 @@ function (dojo, declare) {
                     if(!this.checkAction('buildingAction'))
                         return;
 
-                    // deselect companies other than the current one
-                    dojo.query('#player_'+this.player_id+' .company').removeClass('active');
-                    dojo.addClass(companyTargetId, 'active');
-
-                    var actionOk = this.executeActionForCompany(companyShortName);
-
-                    if(!actionOk){
-                        // reactivate all companies
-                        dojo.query('#player_'+this.player_id+' .company').addClass('active');
-                        return;
-                    } 
+                    this.executeActionForCompany(companyShortName);
                     break;
             }
         },
@@ -1678,8 +1704,6 @@ function (dojo, declare) {
             var split = factoryTargetId.split('_'); // brunswick_factory_2
             var companyShortName = split[0];
             var factoryNumber = split[2];
-
-            
 
             // This happens when a factory is clicked during the produce goods phase (operation phase)
             if(state == 'playerProduceGoodsPhase'){
@@ -1755,12 +1779,7 @@ function (dojo, declare) {
                                 this.showMessage( _("This factory can't be automated"), 'info' );
                                 return;
                             }
-                            
-                            // deselect factories other than the current one
-                            var factorySelector = '#'+factoryTargetId;
-                            dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
-                            dojo.query(factorySelector).addClass('active');
-                            
+
                             this.clientStateArgs.factoryNumber = factoryNumber;
                             var relocate = this.automateWorker(companyShortName, factoryNumber);
                             if(relocate){
@@ -1777,29 +1796,13 @@ function (dojo, declare) {
                     }
                     break;
                 case 'client_actionChooseFactory':
-                    // deselect factories other than the current one
-                    var factorySelector = '#'+factoryTargetId;
-                    dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
-                    dojo.query(factorySelector).addClass('active');
-                    
-                    var actionOk = this.executeActionForCompany(companyShortName, factoryNumber);
-
-                    if(!actionOk){
-                        // reactivate all factories
-                        dojo.query('#player_'+this.player_id+' .factory').addClass('active');
-                        return;
-                    }
+                    this.executeActionForCompany(companyShortName, factoryNumber);
                     break;
                 case 'playerAssetAutomationBonus':
                     if(!this.canAutomateFactory(companyShortName, factoryNumber)){
                         this.showMessage( _("This factory can't be automated"), 'info' );
                         return;
                     }
-
-                    // deselect factories other than the current one
-                    var factorySelector = '#'+factoryTargetId;
-                    dojo.query('#player_'+this.player_id+' .factory').removeClass('active');
-                    dojo.query(factorySelector).addClass('active');
 
                     var relocate = this.automateWorker(companyShortName, factoryNumber);
                     if(relocate){
@@ -1888,76 +1891,74 @@ function (dojo, declare) {
                 }
             }
 
-            if(actionOk){
-
-                // save client state args
-                this.clientStateArgs.factoryNumber = factoryNumber;
-                this.clientStateArgs.companyShortName = companyShortName;
-                
-                // execute action specific stuff
-                switch(buildingAction){
-                    case 'job_market_worker':
-                        var workerId = this.moveWorkerFromMarketToFactory(companyShortName, factoryNumber);
-                        this.clientStateArgs.numberOfWorkersToBuy = 1;
-                        var selectedFactories = [];
-                        selectedFactories.push({ 'workerId': workerId, 'factoryNumber': factoryNumber });
-                        this.clientStateArgs.selectedFactories = selectedFactories;
-                        this.clientStateArgs.totalCost = cost;
-                        this.setClientState("client_placeHiredWorkers", {
-                            descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
-                                cost: cost,
-                            })
-                        });
-                        break;
-                    case "capital_investment":
-                    case "building1":
-                    case "building19":
-                    case "building40":
-                        this.setClientState("client_chooseAsset", {
-                            descriptionmyturn : _('Choose an asset to buy')
-                        });
-                        break;
-                    case "building15":
-                    case "building3":
-                    case "building5":
-                    case "building7":
-                    case "building13":
-                    case "building17":
-                    case "building34":
-                    case "building36":
-                    case "building37":
-                    case "building38":
-                        var material = this.gamedatas.all_buildings[buildingAction];
-                        var result = this.gainResources(material.resources);
-                        if(result.gotEverything) {
-                            this.onConfirmAction();
-                        } else {
-                            this.setClientState("client_confirmGainLessResources", {
-                                descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
-                                    items: result.optionsString })
-                            });
-                        }
-                        break;
-                    case 'building6':
-                    case "building24":
-                        var relocate = this.automateWorker(companyShortName, factoryNumber);
-                        if(relocate){
-                            this.setClientState("client_chooseFactoryRelocate", {
-                                descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
-                            });
-                        } else {
-                            this.onConfirmAction();
-                        }
-                        break;
-                    default:
-                        this.onConfirmAction();
-                        break;
-                }
-            } else {
+            if(!actionOk){
                 this.showMessage( message, 'info' );
+                return;
             }
 
-            return actionOk;
+            // save client state args
+            this.clientStateArgs.factoryNumber = factoryNumber;
+            this.clientStateArgs.companyShortName = companyShortName;
+            
+            // execute action specific stuff
+            switch(buildingAction){
+                case 'job_market_worker':
+                    var workerId = this.moveWorkerFromMarketToFactory(companyShortName, factoryNumber);
+                    this.clientStateArgs.numberOfWorkersToBuy = 1;
+                    var selectedFactories = [];
+                    selectedFactories.push({ 'workerId': workerId, 'factoryNumber': factoryNumber });
+                    this.clientStateArgs.selectedFactories = selectedFactories;
+                    this.clientStateArgs.totalCost = cost;
+                    this.setClientState("client_placeHiredWorkers", {
+                        descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
+                            cost: cost,
+                        })
+                    });
+                    break;
+                case "capital_investment":
+                case "building1":
+                case "building19":
+                case "building40":
+                    this.setClientState("client_chooseAsset", {
+                        descriptionmyturn : _('Choose an asset to buy')
+                    });
+                    break;
+                case "building15":
+                case "building3":
+                case "building5":
+                case "building7":
+                case "building13":
+                case "building17":
+                case "building34":
+                case "building36":
+                case "building37":
+                case "building38":
+                    var material = this.gamedatas.all_buildings[buildingAction];
+                    var result = this.gainResources(material.resources);
+                    if(result.gotEverything) {
+                        this.onConfirmAction();
+                    } else {
+                        this.setClientState("client_confirmGainLessResources", {
+                            descriptionmyturn : dojo.string.substitute(_('Some resources are not available. Confirm gain ${items}'), {
+                                items: result.optionsString })
+                        });
+                    }
+                    break;
+                case 'building6':
+                case "building24":
+                    var relocate = this.automateWorker(companyShortName, factoryNumber);
+                    if(relocate){
+                        this.setClientState("client_chooseFactoryRelocate", {
+                            descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+                        });
+                    } else {
+                        this.onConfirmAction();
+                    }
+                    break;
+                default:
+                    this.onConfirmAction();
+                    break;
+            }
         },
 
         checkCompanyMoney(companyShortName, cost){
@@ -2814,62 +2815,6 @@ function (dojo, declare) {
             }
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
-        },
-
-        onConfirmNumberOfWorkers: function(){
-            this.clientStateArgs.numberOfWorkersToPlace = this.clientStateArgs.numberOfWorkersToBuy;
-            this.clientStateArgs.selectedFactories = [];
-            this.setClientState("client_placeHiredWorkers", {
-                descriptionmyturn : dojo.string.substitute(_('${numberOfWorkers} workers left to place in your factories'),{
-                    numberOfWorkers: this.clientStateArgs.numberOfWorkersToPlace
-                })
-            });
-        },
-
-        // this is called when clicking the + button when choosing number of workers to hire
-        onAddWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
-            var companyShortName = this.clientStateArgs.companyShortName;
-            var numberOfEmptySpots = this.getEmptyWorkerSpotsInCompany(companyShortName);
-            
-            if(numberOfWorkersToBuy == numberOfEmptySpots)
-                return;
-
-            numberOfWorkersToBuy++;
-            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
-
-            var companyShortName = this.clientStateArgs.companyShortName;
-            var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
-            if(!this.checkCompanyMoney(companyShortName, cost)){
-                this.showMessage( _("Not enough money to hire more workers"), 'info' );
-                return;
-            }
-
-            this.setClientState("client_chooseNumberOfWorkers", {
-                descriptionmyturn : dojo.string.substitute(_('Hire ${numberOfWorkers} worker for $${cost}'),{
-                    cost: cost,
-                    numberOfWorkers: numberOfWorkersToBuy
-                })
-            });
-        },
-
-        // this is called when clicking the - button when choosing number of workers to hire
-        onRemoveWorker: function(){
-            var numberOfWorkersToBuy = this.clientStateArgs.numberOfWorkersToBuy;
-            if(numberOfWorkersToBuy == 1)
-                return;
-
-            numberOfWorkersToBuy--;
-            this.clientStateArgs.numberOfWorkersToBuy = numberOfWorkersToBuy;
-            
-            var cost = this.getCostOfWorkers(numberOfWorkersToBuy);
-
-            this.setClientState("client_chooseNumberOfWorkers", {
-                descriptionmyturn : dojo.string.substitute(_('Hire ${numberOfWorkers} worker for $${cost}'),{
-                    cost: cost,
-                    numberOfWorkers: numberOfWorkersToBuy
-                })
-            });
         },
 
         onConfirmAction: function(){
