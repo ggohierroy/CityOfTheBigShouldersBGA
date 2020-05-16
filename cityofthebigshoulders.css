@@ -387,8 +387,8 @@
 }
 
 .active {
-    border: 1px red solid;
-    cursor: pointer;
+    border: 1px red solid !important;
+    cursor: pointer !important;
 }
 
 #job_market_worker{

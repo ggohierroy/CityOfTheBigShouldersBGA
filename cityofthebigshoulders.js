@@ -183,6 +183,7 @@ function (dojo, declare) {
                     if(this.isCurrentPlayerActive())
                     {
                         this.available_companies.setSelectionMode(1);
+                        dojo.query('#available_companies>.company').addClass('active');
                     } else {
                         this.available_companies.setSelectionMode(0);
                     }
@@ -194,27 +195,40 @@ function (dojo, declare) {
                     this.available_companies.setSelectionMode(0);
                     break;
                 case 'playerSellPhase':
-                    var playerId = this.getActivePlayerId();
-                    this['personal_area_'+playerId].setSelectionMode(2);
+                    if(this.isCurrentPlayerActive()) {
+                        var playerId = this.player_id;
+                        this['personal_area_'+playerId].setSelectionMode(2);
+                        dojo.query('#personal_area_'+playerId+'>.stockitem').addClass('active');
+                    }
                     break;
                 case 'playerSkipSellBuyPhase':
-                    this.available_companies.setSelectionMode(1);
-                    this.available_companies.unselectAll();
-                    this.available_shares_company.setSelectionMode(1);
-                    this.available_shares_company.unselectAll();
-                    this.available_shares_bank.setSelectionMode(1);
-                    this.available_shares_bank.unselectAll();
+                    if(this.isCurrentPlayerActive()) {
+                        this.available_companies.setSelectionMode(1);
+                        dojo.query('#available_companies>.company').addClass('active');
+                        this.available_shares_company.setSelectionMode(1);
+                        this.available_shares_bank.setSelectionMode(1);
+                        dojo.query('#available_shares_company>.stockitem').addClass('active');
+                        dojo.query('#available_shares_bank>.stockitem').addClass('active');
+                    }
                     break;
                 case 'playerBuyPhase':
-                    this.available_companies.setSelectionMode(1);
-                    this.available_companies.unselectAll();
-                    this.available_shares_company.setSelectionMode(1);
-                    this.available_shares_company.unselectAll();
-                    this.available_shares_bank.setSelectionMode(1);
-                    this.available_shares_bank.unselectAll();
+                    if(this.isCurrentPlayerActive()) {
+                        this.available_companies.setSelectionMode(1);
+                        dojo.query('#available_companies>.company').addClass('active');
+                        this.available_shares_company.setSelectionMode(1);
+                        this.available_shares_bank.setSelectionMode(1);
+                        dojo.query('#available_shares_company>.stockitem').addClass('active');
+                        dojo.query('#available_shares_bank>.stockitem').addClass('active');
+                    }
                     break;
                 case 'playerBuildingPhase':
-                    
+                    dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
+                    break;
+                case 'clientPlayerDiscardBuilding':
+                    dojo.query('#building_area_'+this.player_id+'>.stockitem').forEach(function(item){
+                    if(!dojo.hasClass(item, 'building_to_play'))
+                        dojo.addClass(item, 'active');
+                    })
                     break;
                 case 'playerActionPhase':
                     // reset action args
@@ -353,6 +367,19 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'playerSkipSellBuyPhase':
+                    dojo.query('#available_shares_company>.stockitem').removeClass('active');
+                    dojo.query('#available_shares_bank>.stockitem').removeClass('active');
+                    dojo.query('.company').removeClass('active');
+                    break;
+                case 'playerBuyPhase':
+                    dojo.query('#available_shares_company>.stockitem').removeClass('active');
+                    dojo.query('#available_shares_bank>.stockitem').removeClass('active');
+                    dojo.query('.company').removeClass('active');
+                    break;
+                case 'playerSellPhase':
+                    dojo.query('#personal_area_'+this.player_id+'>.stockitem').removeClass('active');
+                    break;
                 case 'client_playerStockPhaseSellShares':
                     var playerId = this.getActivePlayerId();
                     this['personal_area_'+playerId].setSelectionMode(0);
@@ -387,6 +414,7 @@ function (dojo, declare) {
                 case 'client_actionChooseCompany':
                 case 'client_tradeChooseCompany':
                 case 'client_tradeChooseCompanyResources':
+                case 'playerStartFirstCompany':
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerBuyResourcesPhase':
@@ -420,6 +448,18 @@ function (dojo, declare) {
                     break;
                 case 'client_confirmGainLessResources':
                     dojo.query('.company-content').removeClass('active');
+                    break;
+                case 'client_playerTurnSelectStartingShareValue':
+                    this.available_companies.unselectAll();
+                    dojo.query('.company').removeClass('active');
+                    break;
+                case 'client_playerTurnBuyCertificate':
+                    this.available_shares_company.unselectAll();
+                    this.available_shares_bank.unselectAll();
+                    break;
+                case 'playerBuildingPhase':
+                case 'clientPlayerDiscardBuilding':
+                    dojo.query('#building_area_'+this.player_id+'>.stockitem').removeClass('active');
                     break;
             case 'dummmy':
                 break;
@@ -1303,12 +1343,12 @@ function (dojo, declare) {
             }
 
             this.buildings.addToStockWithId(hashBuildingType, itemId, from);
+            var div = this.buildings.getItemDivId(itemId);
+            dojo.removeClass(div, 'stockitem_unselectable');
 
             if(location.indexOf('_play') !== -1){
-                var div = this.buildings.getItemDivId(itemId);
                 dojo.addClass(div, "building_to_play");
             } else if(location.indexOf('_discard') !== -1){
-                var div = this.buildings.getItemDivId(itemId);
                 dojo.addClass(div, "building_to_discard");
             }
 
@@ -2653,7 +2693,7 @@ function (dojo, declare) {
             if(items.length == 1){
 
                 var gamestate = this.gamedatas.gamestate;
-                if(gamestate.name == 'playerSkipSellBuyPhase' || gamestate.name == 'playerBuyPhase')
+                if(gamestate.name == 'playerSkipSellBuyPhase' || gamestate.name == 'playerBuyPhase' || gamestate.name == 'client_playerTurnBuyCertificate')
                 {
                     if(gamestate.args.round == 0){
                         this.showMessage( _('You cannot start a new company during the first decade'), 'info' );
@@ -2663,6 +2703,8 @@ function (dojo, declare) {
                 }
 
                 this.available_shares_company.unselectAll();
+                this.available_shares_bank.unselectAll();
+
                 var companyShortName = items[0].id;
                 var companyName = this.gamedatas.all_companies[companyShortName].name;
                 this.setClientState("client_playerTurnSelectStartingShareValue", {
@@ -2986,6 +3028,12 @@ function (dojo, declare) {
 
             dojo.subscribe('workerReceived', this, "notif_workerReceived");
             this.notifqueue.setSynchronous('workerReceived', 200);
+
+            dojo.subscribe('newRound', this, "notif_newRound");
+        },
+
+        notif_newRound: function(notif){
+            dojo.query(".asset-tile").removeClass('exhausted');
         },
 
         notif_assetUsed: function(notif){

@@ -1160,7 +1160,7 @@ class CityOfTheBigShoulders extends Table
 
         // check that there will be a spot left for the worker, otherwise send it to the market
         $worker_relocation = null;
-        if($total_workers + $total_automated + 1 == $total_automations)
+        if($total_workers + $total_automated == $total_automations)
         {
             $worker_id = $to_automate_worker['card_id'];
             $number_workers_market = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = 'job_market'");
@@ -1172,7 +1172,7 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
-                self::DbQuery("UPDATE card SET card_location = 'job_market' WHERE card_id = '$worker_id'");
+                self::DbQuery("UPDATE card SET owner_type = NULL, card_location = 'job_market' WHERE card_id = '$worker_id'");
                 $worker_relocation = 'job_market';
             }
         }
@@ -3772,6 +3772,9 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers( "partnersReturned", "", array(
             'counters' => $counters
         ) );
+
+        // unexhaust asset tiles
+        self::DbQuery("UPDATE card SET card_location_arg = 0 WHERE primary_type = 'asset' AND owner_type = 'company'");
 
         // change round
         self::incGameStateValue( "round", 1 );
