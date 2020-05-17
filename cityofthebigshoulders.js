@@ -632,6 +632,38 @@ function (dojo, declare) {
                             this.addActionButton( 'choose_' + type, div, 'onChooseResourceBonus');
                         }
                         break;
+                    case 'client_confirmGainDifferentResources':
+                        var options = this.getHaymarketDifferentResourceOptions();
+                        if(options.length !== 0) {
+                            for(var i = 0; i < options.length; i++){
+                                var option = options[i];
+                                if(option.type1) {
+                                    var div = '<div id="choose_' + option.id1 + '" class="' + option.type1 + '-item resource"></div><div id="choose_' + option.id2 + '" class="' + option.type2 + '-item resource"></div>'
+                                    this.addActionButton( 'choose_' + option.type1 + '_' + option.type2, div, 'onChooseResources');
+                                } else {
+                                    var div = '<div id="choose_' + option.id + '" class="' + option.type + '-item resource"></div>'
+                                    this.addActionButton( 'choose_' + option.type, div, 'onChooseResources');
+                                }
+                            }
+                        }
+                        this.addActionButton( 'cancel_trade', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_confirmGainSameResources':
+                        var options = this.getHaymarketSameResourceOptions();
+                        if(options.length !== 0) {
+                            for(var i = 0; i < options.length; i++){
+                                var option = options[i];
+                                if(option.ids.length > 1) {
+                                    var div = '<div id="choose_' + option.ids[0] + '" class="' + option.type + '-item resource"></div><div id="choose_' + option.ids[1] + '" class="' + option.type + '-item resource"></div>'
+                                    this.addActionButton( 'choose_' + option.type, div, 'onChooseResources');
+                                } else {
+                                    var div = '<div id="choose_' + option.id + '" class="' + option.type + '-item resource"></div>'
+                                    this.addActionButton( 'choose_' + option.type, div, 'onChooseResources');
+                                }
+                            }
+                        }
+                        this.addActionButton( 'cancel_trade', _('Cancel'), 'onCancelAction');
+                        break;
                 }
             }
         },        
@@ -740,6 +772,84 @@ function (dojo, declare) {
             }
 
             return haymarketOptions;
+        },
+
+        getHaymarketSameResourceOptions: function(){
+            var coal = dojo.query('#haymarket>.coal');
+            var livestock = dojo.query('#haymarket>.livestock');
+            var steel = dojo.query('#haymarket>.steel');
+            var wood = dojo.query('#haymarket>.wood');
+
+            var options = [];
+            if(coal.length > 0){
+                var elementId = coal[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[2];
+                var option = {type: 'coal', ids: [resourceId]};
+                options.push(option);
+                
+                if(coal.length > 1){
+                    elementId = coal[1].id;
+                    resourceId = elementId.split('_')[2];
+                    option.ids.push(resourceId);
+                }
+            }
+            if(livestock.length > 0){
+                var elementId = livestock[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[2];
+                var option = {type: 'livestock', ids: [resourceId]};
+                options.push(option);
+                
+                if(livestock.length > 1){
+                    elementId = livestock[1].id;
+                    resourceId = elementId.split('_')[2];
+                    option.ids.push(resourceId);
+                }
+            }
+            if(steel.length > 0){
+                var elementId = steel[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[2];
+                var option = {type: 'steel', ids: [resourceId]};
+                options.push(option);
+
+                if(steel.length > 1){
+                    elementId = steel[1].id;
+                    resourceId = elementId.split('_')[2];
+                    option.ids.push(resourceId);
+                }
+            }
+            if(wood.length > 0){
+                var elementId = wood[0].id; // brunswick_resources_item_68
+                var resourceId = elementId.split('_')[2];
+                var option = {type: 'wood', ids: [resourceId]};
+                options.push(option);
+
+                if(wood.length > 1){
+                    elementId = wood[1].id;
+                    resourceId = elementId.split('_')[2];
+                    option.ids.push(resourceId);
+                }
+            }
+
+            return options;
+        },
+
+        getHaymarketDifferentResourceOptions: function(){
+            var options = this.getHaymarketResourceOptions();
+
+            if(options.length <= 1)
+                return options;
+
+            var differentOptions = [];
+
+            for(var i = 0; i < options.length - 1; i++){
+                var option1 = options[i];
+                for(var j = i + 1; j < options.length; j++){
+                    var option2 = options[j];
+                    differentOptions.push({type1: option1.type, type2: option2.type, id1: option1.id, id2: option2.id});
+                }
+            }
+            
+            return differentOptions;
         },
 
         getHaymarketResourceOptions: function(){
@@ -2130,6 +2240,18 @@ function (dojo, declare) {
                         this.onConfirmAction();
                     }
                     break;
+                case 'building8': // different resources
+                case 'building18':
+                    this.setClientState("client_confirmGainDifferentResources", {
+                        descriptionmyturn : _('Confirm which two different resources to gain')
+                    });
+                    break;
+                case 'building12':
+                case 'building20':
+                    this.setClientState("client_confirmGainSameResources", {
+                        descriptionmyturn : _('Confirm which two same resources to gain')
+                    });
+                    break;
                 default:
                     this.onConfirmAction();
                     break;
@@ -2433,6 +2555,17 @@ function (dojo, declare) {
             dojo.query('.building_to_play').removeClass('building_to_play');
             dojo.query('.building_to_discard').removeClass('building_to_discard');
             this.restoreServerGameState();
+        },
+
+        onChooseResources: function(event){
+            var childNodes = event.currentTarget.childNodes;
+            for(var i = 0; i < childNodes.length; i++){
+                var nodeId = childNodes[i].id;
+                var resourceId = nodeId.split('_')[1];
+                this.clientStateArgs.actionArgs[nodeId] = resourceId;
+            }
+
+            this.onConfirmAction();
         },
 
         onChooseResourceBonus: function(event){

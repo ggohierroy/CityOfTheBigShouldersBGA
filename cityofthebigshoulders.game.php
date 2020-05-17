@@ -580,6 +580,78 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
+    function gainSameResources($company_short_name, $company_id, $action_args)
+    {
+        // get the resources and make sure they are in haymarket
+        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
+
+        if(count($resources) > 2)
+            throw new BgaVisibleSystemException("Can only gain two resources from this building");
+
+        foreach($resources as $index => $resource)
+        {
+            // check that resource is in haymarket
+            if($resource['card_location'] != 'haymarket')
+                throw new BgaVisibleSystemException("Resource is not in haymarket");
+            
+            $resources[$index]['from'] = $resources[$index]['card_location'];
+            $resources[$index]['card_location'] = $company_short_name;
+        }
+
+        if($resources[0]['card_type'] != $resources[1]['card_type'])
+            throw new BgaVisibleSystemException("Resources have to be the same");
+
+        // update resources location
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN ($resource_ids)");
+
+        $count = count($resources);
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'resource_ids' => $resources
+        ) );
+    }
+
+    function gainDifferentResources($company_short_name, $company_id, $action_args)
+    {
+        // get the resources and make sure they are in haymarket
+        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
+
+        if(count($resources) > 2)
+            throw new BgaVisibleSystemException("Can only gain two resources from this building");
+
+        foreach($resources as $index => $resource)
+        {
+            // check that resource is in haymarket
+            if($resource['card_location'] != 'haymarket')
+                throw new BgaVisibleSystemException("Resource is not in haymarket");
+            
+            $resources[$index]['from'] = $resources[$index]['card_location'];
+            $resources[$index]['card_location'] = $company_short_name;
+        }
+
+        if($resources[0]['card_type'] == $resources[1]['card_type'])
+            throw new BgaVisibleSystemException("Resources can't be the same");
+
+        // update resources location
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN ($resource_ids)");
+
+        $count = count($resources);
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'resource_ids' => $resources
+        ) );
+    }
+
     function gainResources($company_short_name, $company_id, $resources_gained, $resource_ids)
     {
         // get the resources and make sure they are in haymarket
@@ -3341,7 +3413,15 @@ class CityOfTheBigShoulders extends Table
             case "building38":
                 $resources_gained = $building_material['resources'];
                 self::gainResources($company_short_name, $company_id, $resources_gained, $action_args);
-            break;
+                break;
+            case "building8":
+            case "building18":
+                self::gainDifferentResources($company_short_name, $company_id, $action_args);
+                break;
+            case "building12":
+            case "building20":
+                self::gainSameResources($company_short_name, $company_id, $action_args);
+                break;
         }
 
         if($appeal_bonus_gained)
