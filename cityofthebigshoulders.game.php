@@ -235,6 +235,49 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function maxByPlayer($value_by_company, $companies)
+    {
+        $value_by_player = [];
+
+        foreach($value_by_company as $item)
+        {
+            $company_id = $item['company_id'];
+            $player_id = $companies[$company_id]['owner_id'];
+            if(array_key_exists($player_id, $value_by_player))
+            {
+                if($value_by_player[$player_id]['value'] < $item['value'])
+                    $value_by_player[$player_id]['value'] = $item['value'];
+            }
+            else
+            {
+                $value_by_player[$player_id] = ['player_id' => $player_id, 'value' => $item['value']];
+            }
+        }
+        
+        return $value_by_player;
+    }
+
+    function sumByPlayer($value_by_company, $companies)
+    {
+        $value_by_player = [];
+
+        foreach($value_by_company as $item)
+        {
+            $company_id = $item['company_id'];
+            $player_id = $companies[$company_id]['owner_id'];
+            if(array_key_exists($player_id, $value_by_player))
+            {
+                $value_by_player[$player_id]['value'] += $item['value'];
+            }
+            else
+            {
+                $value_by_player[$player_id] = ['player_id' => $player_id, 'value' => $item['value']];
+            }
+        }
+        
+        return $value_by_player;
+    }
+
     function adjustCompanyOrder($company_short_name, $new_appeal, &$current_order)
     {
         // current order has these properties => 'id', 'next_company_id', 'owner_id', 'order', 'short_name', 'appeal'
@@ -1395,7 +1438,7 @@ class CityOfTheBigShoulders extends Table
         self::increaseShareValue($company_short_name, $increase);
     }
 
-    function hire_manager($company_short_name, $factory_number)
+    function hire_manager($company_short_name, $company_id, $factory_number)
     {
         $location = "${company_short_name}_${factory_number}";
 
@@ -1407,7 +1450,7 @@ class CityOfTheBigShoulders extends Table
 
         // create manager in that factory
         $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
-            VALUES ('company', 'manager', 'manager', 0, '$location', 0)";
+            VALUES ('company', 'manager', 'manager', 0, '$location', $company_id)";
         self::DbQuery($sql);
         $manager_id = self::DbGetLastId();
 
@@ -1420,7 +1463,7 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
-    function hire_salesperson($company_short_name)
+    function hire_salesperson($company_short_name, $company_id)
     {
         // check that company can hire more salesperson
         $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'salesperson' AND card_location = '$company_short_name'";
@@ -1432,7 +1475,7 @@ class CityOfTheBigShoulders extends Table
         
         // create manager in that factory
         $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
-            VALUES ('company', 'salesperson', 'salesperson', 0, '$company_short_name', 0)";
+            VALUES ('company', 'salesperson', 'salesperson', 0, '$company_short_name', $company_id)";
         self::DbQuery($sql);
         $salesperson_id = self::DbGetLastId();
 
@@ -1518,7 +1561,7 @@ class CityOfTheBigShoulders extends Table
         return $cost;
     }
 
-    function hireWorkerFromSupply($company_short_name, $factory_number)
+    function hireWorkerFromSupply($company_short_name, $company_id, $factory_number)
     {
         if(!$factory_number)
             throw new BgaVisibleSystemException("Unknown factory number");
@@ -1537,7 +1580,7 @@ class CityOfTheBigShoulders extends Table
         
         // create a new worker since it's coming from the supply
         self::DbQuery("INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES
-            ('company', 'worker', 'worker', 0, '$location', 0)");
+            ('company', 'worker', 'worker', 0, '$location', $company_id)");
         $worker_id = self::DbGetLastId();
 
         $company_material = $this->companies[$company_short_name];
@@ -1550,7 +1593,7 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
-    function hireWorkers($company_short_name, $worker_factories)
+    function hireWorkers($company_short_name, $company_id, $worker_factories)
     {
         $number_of_workers = count($worker_factories);
         $factories_material = $this->companies[$company_short_name]['factories'];
@@ -1613,18 +1656,19 @@ class CityOfTheBigShoulders extends Table
                 {
                     $moved_workers[] = $worker['card_id'];
                     $worker['card_location'] = $condition;
+                    $worker['card_location_arg'] = $company_id;
                     $moved_workers_return[] = $worker;
                 }
                 else 
                 {
-                    $new_workers[] = "('company','worker','worker',0,'$condition',0)";
+                    $new_workers[] = "('company','worker','worker',0,'$condition',$company_id)";
                 }
             }
 
             if(count($moved_workers) > 0)
             {
                 // move these workers to the factory
-                $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company' WHERE card_id IN ";
+                $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company', card_location_arg = $company_id WHERE card_id IN ";
                 $sql .= "(".implode( $moved_workers, ',' ).")";
                 self::DbQuery($sql);
             }
@@ -2104,10 +2148,10 @@ class CityOfTheBigShoulders extends Table
         switch($bonus_name)
         {
             case 'worker':
-                self::hireWorkerFromSupply($company_short_name, $factory_number);
+                self::hireWorkerFromSupply($company_short_name, $company_id, $factory_number);
                 break;
             case 'manager':
-                self::hire_manager($company_short_name, $factory_number);
+                self::hire_manager($company_short_name, $company_id, $factory_number);
                 break;
             case 'automation':
                 self::automateWorker($company_short_name, $factory_number, $relocate_number);
@@ -2764,11 +2808,16 @@ class CityOfTheBigShoulders extends Table
     }
 
     // this function is called when buying an asset tile and the immediate bonus is an automation
+    // TODO: front-end shouldn't send short name
     function automateFactory( $company_short_name, $factory_number, $relocate_number )
     {
         self::checkAction( 'automateFactory' );
 
-        self::automateWorker($company_short_name, $factory_number, $relocate_number);
+        $company_id = self::getGameStateValue( "bonus_company_id" );
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
+
+        self::automateWorker($short_name, $factory_number, $relocate_number);
 
         $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
@@ -2786,11 +2835,16 @@ class CityOfTheBigShoulders extends Table
         }
     }
 
+    // TODO: front-end shouldn't send short name
     function hireWorker( $company_short_name, $factory_number)
     {
         self::checkAction( 'hireWorker' );
 
-        self::hireWorkerFromSupply($company_short_name, $factory_number);
+        $company_id = self::getGameStateValue( "bonus_company_id" );
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
+
+        self::hireWorkerFromSupply($short_name, $company_id, $factory_number);
 
         // set state to next game state
         $this->gamestate->nextState( 'freeActions' );
@@ -3109,7 +3163,7 @@ class CityOfTheBigShoulders extends Table
         switch($building_action){
             case 'job_market_worker':
                 $worker_factories = explode(',', $action_args);
-                self::hireWorkers($company_short_name, $worker_factories);
+                self::hireWorkers($company_short_name, $company_id, $worker_factories);
                 break;
             case 'advertising':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
@@ -3132,12 +3186,12 @@ class CityOfTheBigShoulders extends Table
             case 'hire_manager':
             case 'building11':
             case 'building14':
-                self::hire_manager($company_short_name, $factory_number);
+                self::hire_manager($company_short_name, $company_id, $factory_number);
                 break;
             case 'hire_salesperson':
             case "building2":
             case "building22":
-                self::hire_salesperson($company_short_name);
+                self::hire_salesperson($company_short_name, $company_id);
                 break;
             case 'fundraising_60':
                 $round = self::getGameStateValue( "round" );
@@ -3656,11 +3710,11 @@ class CityOfTheBigShoulders extends Table
         $initial_stocks = [
             ['owner_type' => 'player', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_director', 'card_type_arg' => $company_id, 'card_location' => 'personal_area_'.$player_id, 'card_location_arg' => $player_id],
             ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_preferred', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
-            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => 0],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
+            ['owner_type' => 'company', 'primary_type' => 'stock', 'card_type' => $company_short_name.'_common', 'card_type_arg' => $company_id, 'card_location' => 'available_shares_company', 'card_location_arg' => $company_id],
         ];
 
         $values = [];
@@ -3780,6 +3834,155 @@ class CityOfTheBigShoulders extends Table
         Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
         The action method of state X is called everytime the current game state is set to X.
     */
+
+    function stGamePublicGoalScoring()
+    {
+        $goals = self::getObjectListFromDB("SELECT card_type FROM card WHERE primary_type = 'goal'", true);
+
+        $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value FROM company");
+        $players = self::getCollectionFromDB("SELECT player_id, player_name, treasury, number_partners FROM player");
+        $scores = []; //$scores[$player_id] = ['player_id' => $player_id, 'score_delta' => $multiplier * $value_delta];
+        foreach($goals as $goal_type)
+        {
+            $value_by_player = null;
+            $goal_name = "";
+
+            switch($goal_type)
+            {
+                case 'goal1': // most managers
+                    $goal_name = clienttranslate('Most managers across all companies');
+                    $value_by_company = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS company_id FROM card 
+                        WHERE owner_type = 'company' AND primary_type = 'manager' GROUP BY card_location_arg");
+                    $value_by_player = self::sumByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal2': // most salespeople
+                    $goal_name = clienttranslate('Most salespeople across all companies');
+                    $value_by_company = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS company_id FROM card 
+                        WHERE owner_type = 'company' AND primary_type = 'salesperson' GROUP BY card_location_arg");
+                    $value_by_player = self::sumByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal3': // most capital assets
+                    $goal_name = clienttranslate('Most Capital Assets across all companies');
+                    $value_by_company_short_name = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location AS company_short_name FROM card 
+                        WHERE owner_type = 'company' AND primary_type = 'asset' GROUP BY card_location");
+                    $value_by_company = array_map(function($asset) {
+                        $company_id = null;
+                        foreach($companies as $company)
+                        {
+                            if($company['short_name'] == $asset['company_short_name'])
+                                $company_id = $company['company_id'];
+                        }
+                        return array(
+                            'value' => $asset['value'],
+                            'company_id' => $company_id
+                        );
+                    }, $players);
+                    $value_by_player = self::sumByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal4': // most workers
+                    $goal_name = clienttranslate('Most workers across all companies');
+                    $value_by_company = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS company_id FROM card 
+                        WHERE owner_type = 'company' AND primary_type = 'worker' GROUP BY card_location_arg");
+                    $value_by_player = self::sumByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal5': // most automated
+                    $goal_name = clienttranslate('Most automated workers across all companies');
+                    $value_by_company = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS company_id FROM card 
+                        WHERE owner_type = 'company' AND primary_type = 'automation' AND card_location LIKE '%_worker_holder_%' GROUP BY card_location_arg");
+                    $value_by_player = self::sumByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal6': // highest appeal
+                    $goal_name = clienttranslate('Company highest appeal');
+                    $value_by_company = $companies;
+                    $value_by_player = self::maxByPlayer($value_by_company, $companies);
+                    break;
+                case 'goal7': // most money
+                    $goal_name = clienttranslate('Most money');
+                    $value_by_player = array_map(function($player) {
+                        return array(
+                            'player_id' => $player['player_id'],
+                            'value' => $player['treasury']
+                        );
+                    }, $players);
+                    break;
+                case 'goal8': // most partners
+                    $goal_name = clienttranslate('Most partners');
+                    $value_by_player = array_map(function($player) {
+                        return array(
+                            'player_id' => $player['player_id'],
+                            'value' => $player['number_partners']
+                        );
+                    }, $players);
+                    break;
+                case 'goal9': // most common stock
+                    $goal_name = clienttranslate('Most common (10%) stock');
+                    $value_by_player = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS player_id FROM card 
+                        WHERE owner_type = 'player' AND primary_type = 'stock' AND card_type LIKE '%_common' GROUP BY card_location_arg");
+                    break;
+                case 'goal10': // most preferred stock
+                    $goal_name = clienttranslate('Most preferred (20%) stock');
+                    $value_by_player = self::getObjectListFromDB(
+                        "SELECT COUNT(card_id) AS value, card_location_arg AS player_id FROM card 
+                        WHERE owner_type = 'player' AND primary_type = 'stock' AND card_type LIKE '%_preferred' GROUP BY card_location_arg");
+                    break;
+            }
+
+            if($value_by_player != null)
+            {
+                // find max value
+                $max_value = 0;
+                foreach($value_by_player as $item)
+                {
+                    if($item['value'] > $max_value)
+                        $max_value = $item['value'];
+                }
+
+                // ajust player scores
+                foreach($value_by_player as $item)
+                {
+                    if($item['value'] < $max_value)
+                        continue;
+
+                    $player_id = $item['player_id'];
+                    if(array_key_exists($player_id, $scores))
+                    {
+                        $scores[$player_id]['score_delta'] += 200;
+                    }
+                    else
+                    {
+                        $scores[$player_id] = ['player_id' => $player_id, 'score_delta' => 200];
+                    }
+
+                    self::notifyAllPlayers( "publicGoalScored", clienttranslate( '${goal_name}: ${player_name} receives $200' ), array(
+                        'player_name' => $players[$player_id]['player_name'],
+                        'goal_name' => $goal_name
+                    ) );
+                }
+                
+            }
+            else
+            {
+                throw new BgaVisibleSystemException("Could not find data to calculate public goal");
+            }
+        }
+
+        foreach($scores as $score)
+        {
+            $score_delta = $score['score_delta'];
+            $player_id = $score['player_id'];
+            self::DbQuery("UPDATE player SET player_score = player_score + $score_delta WHERE player_id = $player_id");
+        }
+
+        self::notifyAllPlayers( "scoreUpdated", "", array(
+            'scores' => $scores
+        ) );
+    }
     
     function stGameOperationPhase()
     {
@@ -3793,7 +3996,7 @@ class CityOfTheBigShoulders extends Table
             $round = self::getGameStateValue("round");
             if($round == 4)
             {
-                $this->gamestate->nextState( 'gameEnd' );
+                $this->gamestate->nextState( 'publicGoalScoring' );
                 return;
             }
 
