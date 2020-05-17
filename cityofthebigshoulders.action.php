@@ -329,6 +329,27 @@
       self::ajaxResponse( );
     }
 
+    public function priceProtect()
+    {
+      self::setAjaxMode();
+      $this->game->priceProtect();
+      self::ajaxResponse( );
+    }
+
+    public function passPriceProtect()
+    {
+      self::setAjaxMode();
+      $this->game->passPriceProtect();
+      self::ajaxResponse( );
+    }
+
+    public function withholdProtection()
+    {
+      self::setAjaxMode();
+      $this->game->withholdProtection();
+      self::ajaxResponse( );
+    }
+
   }
   
 

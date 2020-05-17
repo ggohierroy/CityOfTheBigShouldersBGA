@@ -86,7 +86,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} may sell any number of certificates to the bank'),
         "type" => "activeplayer",
         "possibleactions" => array( "sellShares", "skipSell", "passStockAction" ),
-        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9 )
+        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "interruptPriceProtection" => 33 )
     ),
 
     9 => array(
@@ -114,16 +114,25 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameStockPhase",
-        "transitions" => array( "playerStockPhase" => 4, "playerBuildingPhase" => 7, "playerPriceProtection" => 6 )
+        "transitions" => array( "playerStockPhase" => 4, "playerBuildingPhase" => 7 )
+    ),
+
+    33 => array(
+        "name" => "gameInterruptPriceProtection",
+        "description" => "",
+        "type" => "game",
+        "action" => "stGameInterruptPriceProtection",
+        "transitions" => array( "playerPriceProtection" => 6, "buyPhase" => 8 )
     ),
 
     6 => array(
         "name" => "playerPriceProtection",
-        "description" => clienttranslate('${actplayer} must choose to use the company\'s Price Protection asset tile or skip'),
-        "descriptionmyturn" => clienttranslate('${you} must choose to use the company\'s Price Protection asset tile or skip'),
+        "description" => clienttranslate('${company_name}\'s share price is about to drop ${lost_value_step}. ${actplayer} may choose to use Price Protection to prevent it'),
+        "descriptionmyturn" => clienttranslate('${company_name}\'s share price is about to drop ${lost_value_step}. ${you} may choose to use Price Protection to prevent it'),
         "type" => "activeplayer",
-        "possibleactions" => array( "st", "stBuyStock", "stStartCompany", "stPass" ),
-        "transitions" => array( "nextPlayer" => 5 )
+        "args" => "argPriceProtection",
+        "possibleactions" => array( "priceProtect", "passPriceProtect" ),
+        "transitions" => array( "interruptReturn" => 33 )
     ),
 
     7 => array(
@@ -262,7 +271,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders with its earnings ($${income})'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "payDividends", "withhold", "useAsset" ),
+        "possibleactions" => array( "payDividends", "withhold", "useAsset", "withholdProtection" ),
         "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29)
     ),
 
