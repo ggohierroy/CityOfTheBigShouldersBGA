@@ -271,6 +271,14 @@
       self::ajaxResponse( );
     }
 
+    public function managerBonusGainResources()
+    {
+      self::setAjaxMode();
+      $resource_ids = self::getArg( "resourceIds", AT_numberlist, true );
+      $this->game->managerBonusGainResources($resource_ids);
+      self::ajaxResponse( );
+    }
+
     public function skipBuyResources()
     {
       self::setAjaxMode();

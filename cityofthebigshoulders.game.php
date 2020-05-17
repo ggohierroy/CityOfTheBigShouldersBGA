@@ -351,12 +351,12 @@ class CityOfTheBigShoulders extends Table
 
                 self::DbQuery("UPDATE player SET number_partners = number_partners + 1, current_number_partners = current_number_partners + 1");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate("All players receive a new partner"), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('All players receive a new partner'), [
                     'counters' => $counters
                 ]);
                 break;
             case 'appeal':
-                $player = self::getObjectListFromDB(
+                $player = self::getNonEmptyObjectFromDB(
                     "SELECT player_name, player_id, number_partners, current_number_partners, appeal_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['appeal_partner_gained'] == true)
@@ -372,13 +372,13 @@ class CityOfTheBigShoulders extends Table
                     appeal_partner_gained = 1
                     WHERE player_id = $player_id");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate("${player_name} receives a new partner"), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner'), [
                     'counters' => $counters,
                     'player_name' => $player['player_name']
                 ]);
                 break;
             case 'company':
-                $player = self::getObjectListFromDB(
+                $player = self::getNonEmptyObjectFromDB(
                     "SELECT player_name, player_id, number_partners, current_number_partners, company_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['company_partner_gained'] == true)
@@ -394,7 +394,7 @@ class CityOfTheBigShoulders extends Table
                     company_partner_gained = 1
                     WHERE player_id = $player_id");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate("${player_name} receives a new partner"), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner'), [
                     'counters' => $counters,
                     'player_name' => $player['player_name']
                 ]);
@@ -2298,9 +2298,12 @@ class CityOfTheBigShoulders extends Table
 
         // check worker requirements for factory
         $location = "${short_name}_${factory_number}";
+        $automated = "${short_name}_worker_holder_${factory_number}";
         $workers_in_factory = self::getUniqueValueFromDB(
             "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = '$location'");
-        if($factory_material['workers'] != $workers_in_factory)
+        $automations_in_factory = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'automation' AND card_location = '$automated'");
+        if($factory_material['workers'] != $workers_in_factory + $automations_in_factory)
             throw new BgaUserException( self::_("Not enough workers to produce in this factory") );
 
         // check resource requirements for factory
@@ -2381,7 +2384,7 @@ class CityOfTheBigShoulders extends Table
             ) );
 
             
-            foreach($factory['manager_bonus'] as $bonus_type => $bonus)
+            foreach($factory_material['manager_bonus'] as $bonus_type => $bonus)
             {
                 switch($bonus_type)
                 {
@@ -2592,6 +2595,78 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'produceGoods' );
     }
 
+    function managerBonusGainResources($resource_ids)
+    {
+        self::checkAction( 'managerBonusGainResources' );
+
+        $in_clause = "(${resource_ids})";
+        $sql = "SELECT card_id, owner_type, card_location, card_type FROM card WHERE primary_type = 'resource' AND card_id IN $in_clause";
+        $resources = self::getObjectListFromDB($sql);
+
+        $resources_gained = self::getGameStateValue("resources_gained");
+        if(count($resources) > $resources_gained)
+            throw new BgaVisibleSystemException("You can't gain more resources than the bonus");
+
+        $count = 0;
+        $resource_array = [];
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id = $company_id");
+        $company_short_name = $company['short_name'];
+        foreach($resources as $resource)
+        {
+            if($resource['owner_type'] != null)
+                throw new BgaVisibleSystemException("Resource is already owned");
+            
+            if($resource['card_location'] != 'haymarket')
+                throw new BgaVisibleSystemException("These resources can only come from Haymarket Square");
+            
+            $resource_array[$resource['card_id']] = [
+                'from' => $resource['card_location'], 
+                'card_location' => $company_short_name, 
+                'card_id' => $resource['card_id'],
+                'card_type' => $resource['card_type']];
+
+            $count++;
+        }
+
+        // move resources to company
+        self::DbQuery("UPDATE card SET 
+            owner_type = 'company',
+            card_location = '$company_short_name',
+            card_location_arg = $company_id
+            WHERE card_id IN $in_clause");
+        
+        // notify all players
+        self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources from Haymarket Square' ), array(
+            'company_name' => self::getCompanyName($company_short_name),
+            'count' => $count,
+            'resource_ids' => $resource_array
+        ) );
+
+        // check if should go to appeal bonus
+        $next_appeal_bonus = self::getGameStateValue("next_appeal_bonus");
+        $final_appeal_bonus = self::getGameStateValue("final_appeal_bonus");
+        if($next_appeal_bonus != $final_appeal_bonus)
+        {
+            $this->gamestate->nextState( 'managerBonusAppeal' );
+            return;
+        }
+
+        // check if it was last factory to produce
+        $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
+        $total_factories = count($this->companies[$company_short_name]['factories']);
+        if($last_factory_produced == $total_factories)
+        {
+            // go to state distributeGoods
+            $this->gamestate->nextState( 'distributeGoods' );
+        }
+        else
+        {
+            // else go to next factory
+            $this->gamestate->nextState( 'nextFactory' );
+        }
+    }
+
     function buyResources($resource_ids)
     {
         self::checkAction( 'buyResources' );
@@ -2641,7 +2716,6 @@ class CityOfTheBigShoulders extends Table
         $company_treasury -= $cost;
         self::DbQuery("UPDATE company SET treasury = $company_treasury WHERE id = $company_id");
 
-        
         $counters = [];
         self::addCounter($counters, "money_${company_short_name}", $company_treasury);
 

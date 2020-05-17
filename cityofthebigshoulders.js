@@ -270,16 +270,12 @@ function (dojo, declare) {
                     if(this.isCurrentPlayerActive()){
                         this.activatePlayerAssets();
                         dojo.query('#haymarket_square').addClass('active');
-                        this.supply_10.unselectAll();
-                        this.supply_20.unselectAll();
-                        this.supply_30.unselectAll();
                         this.supply_10.setSelectionMode(2);
                         this.supply_20.setSelectionMode(2);
                         this.supply_30.setSelectionMode(2);
-                    } else {
-                        this.supply_10.setSelectionMode(0);
-                        this.supply_20.setSelectionMode(0);
-                        this.supply_30.setSelectionMode(0);
+                        dojo.query('#supply_10>.stockitem').addClass('active');
+                        dojo.query('#supply_20>.stockitem').addClass('active');
+                        dojo.query('#supply_30>.stockitem').addClass('active');
                     }
                     break;
                 case 'playerProduceGoodsPhase':
@@ -367,6 +363,9 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'client_playerTurnConfirmBuyResources':
+                    
+                    break;
                 case 'playerSkipSellBuyPhase':
                     dojo.query('#available_shares_company>.stockitem').removeClass('active');
                     dojo.query('#available_shares_bank>.stockitem').removeClass('active');
@@ -418,6 +417,9 @@ function (dojo, declare) {
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerBuyResourcesPhase':
+                    dojo.query('#supply_10>.stockitem').removeClass('active');
+                    dojo.query('#supply_20>.stockitem').removeClass('active');
+                    dojo.query('#supply_30>.stockitem').removeClass('active');
                     dojo.query('.asset-tile').removeClass('active');
                     dojo.query('#haymarket_square').removeClass('active');
                     break;
@@ -530,6 +532,7 @@ function (dojo, declare) {
                         break;
                     case 'client_playerTurnConfirmBuyResources':
                         this.addActionButton( 'confirm_buy_resources', _('Confirm'), 'onConfirmBuyResources');
+                        this.addActionButton( 'cancel_buy_resources', _('Cancel'), 'onCancelBuyResources');
                         break;
                     case 'playerBuyResourcesPhase':
                         this.addActionButton( 'skip_buy_resources', _('Skip'), 'onSkipBuyResources');
@@ -601,10 +604,11 @@ function (dojo, declare) {
                     case 'managerBonusAppeal':
                         this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
                         break;
-                    case 'client_managerBonusSelectResource':
                     case 'managerBonusResources':
                         var options = this.getHaymarketResourceOptions();
                         this.clientStateArgs.haymarketOptions = options;
+                    case 'client_managerBonusSelectResource':
+                        var options = this.clientStateArgs.haymarketOptions;
                         for(var i = 0; i < options.length; i++){
                             var option = options[i];
                             var type = option.type;
@@ -646,6 +650,80 @@ function (dojo, declare) {
                 if(!dojo.hasClass(assetTile, 'exhausted'))
                     dojo.addClass(assetTile, 'active');
             }
+        },
+
+        getDifferentHaymarketOptions: function(selectedResources){
+            var coal = dojo.query('#haymarket>.coal');
+            var livestock = dojo.query('#haymarket>.livestock');
+            var steel = dojo.query('#haymarket>.steel');
+            var wood = dojo.query('#haymarket>.wood');
+            var haymarketOptions = [];
+            for(var i = 0; i < coal.length; i++){
+                item = coal[i];
+                var found = false;
+                dojo.forEach(selectedResources, function(selected){
+                    if('haymarket_item_' + selected.id == item.id){
+                        found = true;
+                        return;
+                    }
+                })
+                if(found)
+                    continue;
+                var elementId = coal[i].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'coal', id: resourceId});
+                break;
+            }
+            for(var i = 0; i < livestock.length; i++){
+                item = livestock[i];
+                var found = false;
+                dojo.forEach(selectedResources, function(selected){
+                    if('haymarket_item_' + selected.id == item.id){
+                        found = true;
+                        return;
+                    }
+                })
+                if(found)
+                    continue;
+                var elementId = livestock[i].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'livestock', id: resourceId});
+                break;
+            }
+            for(var i = 0; i < steel.length; i++){
+                item = steel[i];
+                var found = false;
+                dojo.forEach(selectedResources, function(selected){
+                    if('haymarket_item_' + selected.id == item.id){
+                        found = true;
+                        return;
+                    }
+                })
+                if(found)
+                    continue;
+                var elementId = steel[i].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'steel', id: resourceId});
+                break;
+            }
+            for(var i = 0; i < wood.length; i++){
+                item = wood[i];
+                var found = false;
+                dojo.forEach(selectedResources, function(selected){
+                    if('haymarket_item_' + selected.id == item.id){
+                        found = true;
+                        return;
+                    }
+                })
+                if(found)
+                    continue;
+                var elementId = wood[i].id; // haymarket_item_69
+                var resourceId = elementId.split('_')[2];
+                haymarketOptions.push({type: 'wood', id: resourceId});
+                break;
+            }
+
+            return haymarketOptions;
         },
 
         getHaymarketResourceOptions: function(){
@@ -1521,10 +1599,13 @@ function (dojo, declare) {
             var companyShortName = good.card_location.split('_')[0]; // brunswick_goods
             if(from == 'supply'){
                 // good produced -> create good
-                dojo.place( this.format_block( 'jstpl_generic_div', {
-                    id: 'good_' + good.card_id, 
-                    class: 'good_token'
-                } ), 'main_board' );
+                // when goods are produced, all goods are returned, so we avoid recreating them
+                if($('good_' + good.card_id) == null){
+                    dojo.place( this.format_block( 'jstpl_generic_div', {
+                        id: 'good_' + good.card_id, 
+                        class: 'good_token'
+                    } ), 'main_board' );
+                }
 
                 this[companyShortName + '_goods'].placeInZone('good_' + good.card_id);
 
@@ -2347,6 +2428,7 @@ function (dojo, declare) {
                     resourceIds: args.join(',')
                 }, this, function( result ) {} );
             } else {
+                this.clientStateArgs.haymarketOptions = this.getDifferentHaymarketOptions(selectedResources);
                 this.setClientState("client_managerBonusSelectResource", {
                     descriptionmyturn : _('Choose another resource')
                 });
@@ -2560,6 +2642,13 @@ function (dojo, declare) {
             });
         },
 
+        onCancelBuyResources: function(){
+            this.supply_10.unselectAll();
+            this.supply_20.unselectAll();
+            this.supply_30.unselectAll();
+            this.restoreServerGameState();
+        },
+
         onConfirmBuyResources: function(){
             if(!this.checkAction('buyResources'))
             {
@@ -2581,6 +2670,10 @@ function (dojo, declare) {
             for(var index in items){
                 resourceIds.push(items[index].id);
             }
+
+            this.supply_10.setSelectionMode(0);
+            this.supply_20.setSelectionMode(0);
+            this.supply_30.setSelectionMode(0);
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyResources.html", {
                 resourceIds: resourceIds.join(",")

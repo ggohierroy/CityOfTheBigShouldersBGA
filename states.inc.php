@@ -232,7 +232,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsManagerBonusResources",
         "possibleactions" => array( "managerBonusGainResources" ),
-        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14 )
+        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14, "managerBonusAppeal" => 30 )
     ),
 
     // this happens when a manager bonus gives appeal
