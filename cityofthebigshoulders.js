@@ -1081,6 +1081,7 @@ function (dojo, declare) {
             var assetName = item.card_type;
             var hash = this.hashString(assetName);
 
+            var itemDivId = null;
             if(item.card_location == '80' || 
                 item.card_location == '70' || 
                 item.card_location == '60' || 
@@ -1088,11 +1089,11 @@ function (dojo, declare) {
                 item.card_location == '40') {
                 // place on board
                 this.capital_assets.addToStockWithId(hash, assetName + '_' + item.card_id);
-                return hash;
+                var itemDivId = this.capital_assets.getItemDivId(assetName + '_' + item.card_id);
             } else {
                 // place on company
                 this[item.card_location + '_asset'].addToStockWithId(hash, assetName + '_' + item.card_id, fromItemDiv);
-                var itemDivId = this[item.card_location + '_asset'].getItemDivId(assetName + '_' + item.card_id);
+                itemDivId = this[item.card_location + '_asset'].getItemDivId(assetName + '_' + item.card_id);
                 var nodes = dojo.query('#' + itemDivId);
                 nodes.removeClass('stockitem_unselectable');
                 dojo.attr(itemDivId, 'asset-name', assetName);
@@ -1101,6 +1102,10 @@ function (dojo, declare) {
                 if(from)
                     this.capital_assets.removeFromStockById(assetName + '_' + item.card_id);
             }
+
+            var assetMaterial = this.gamedatas.all_capital_assets[assetName];
+            this.addTooltip( itemDivId, _( assetMaterial.tooltip ), "");
+            return hash;
         },
 
         placeSalesperson: function(salesperson, slideFromSupply = false){
@@ -1415,21 +1420,24 @@ function (dojo, declare) {
 
             var location = building.card_location; // building_track_2319929 or player_2319930 or player_2319930_play
 
+            var div = null;
             if (location.indexOf('building_track') !== -1){
                 this[location].addToStockWithId(hashBuildingType, itemId, from);
-                return;
+                div = this[location].getItemDivId(itemId);
+            } else {
+                this.buildings.addToStockWithId(hashBuildingType, itemId, from);
+                div = this.buildings.getItemDivId(itemId);
+                dojo.removeClass(div, 'stockitem_unselectable');
+
+                if(location.indexOf('_play') !== -1){
+                    dojo.addClass(div, "building_to_play");
+                } else if(location.indexOf('_discard') !== -1){
+                    dojo.addClass(div, "building_to_discard");
+                }
             }
 
-            this.buildings.addToStockWithId(hashBuildingType, itemId, from);
-            var div = this.buildings.getItemDivId(itemId);
-            dojo.removeClass(div, 'stockitem_unselectable');
-
-            if(location.indexOf('_play') !== -1){
-                dojo.addClass(div, "building_to_play");
-            } else if(location.indexOf('_discard') !== -1){
-                dojo.addClass(div, "building_to_discard");
-            }
-
+            var buildingMaterial = this.gamedatas.all_buildings[building.card_type];
+            this.addTooltip( div, _( buildingMaterial.tooltip ), "");
         },
 
         placeStock: function(stock, from){
@@ -1573,7 +1581,11 @@ function (dojo, declare) {
 
         placeGoal(goal){
             var hash = this.hashString(goal.card_type);
-            this.goals.addToStock(hash);
+            this.goals.addToStockWithId(hash, hash);
+
+            var itemDivId = this.goals.getItemDivId(hash);
+            var goalMaterial = this.gamedatas.goals[goal.card_type];
+            this.addTooltip( itemDivId, _( goalMaterial.tooltip ), "");
         },
 
         placeDemand(demand){
