@@ -90,12 +90,12 @@ class CityOfTheBigShoulders extends Table
 
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
+        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score) VALUES ";
         $values = array();
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."',175)";
         }
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
@@ -406,7 +406,7 @@ class CityOfTheBigShoulders extends Table
     {
         $self::DbQuery("UPDATE company SET extra_goods = extra_goods + 1 WHERE short_name = '$company_short_name");
 
-        self::notifyAllPlayers( "shareValueChange", clienttranslate( '${company_name} receives an Appeal Bonus Goods token' ), array(
+        self::notifyAllPlayers( "appealBonusGoodsTokenReceived", clienttranslate( '${company_name} receives an Appeal Bonus Goods token' ), array(
             'company_short_name' => $company_short_name,
             'company_name' => self::getCompanyName($company_short_name)
         ));
@@ -414,6 +414,9 @@ class CityOfTheBigShoulders extends Table
 
     function increaseShareValue($short_name, $value)
     {
+        if($value == 0)
+            return;
+
         $sql = "SELECT id, treasury, share_value_step FROM company WHERE short_name = '$short_name'";
         $company = self::getNonEmptyObjectFromDB($sql);
         $company_id = $company['id'];   
@@ -426,16 +429,60 @@ class CityOfTheBigShoulders extends Table
         if($new_share_value_step < 0)
             $new_share_value_step = 0;
 
+        if($new_share_value_step == $share_value_step)
+            return;
+        
         self::DbQuery("UPDATE company SET share_value_step = $new_share_value_step WHERE id = $company_id");
 
         $new_share_value = self::getShareValue($new_share_value_step);
-        self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} increased to $${share_value}' ), array(
+        $share_value = self::getShareValue($share_value_step);
+        self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} changed to $${share_value}' ), array(
             'company_short_name' => $short_name,
             'company_name' => self::getCompanyName($short_name),
             'share_value' => $new_share_value,
             'share_value_step' => $new_share_value_step,
             'previous_share_value_step' => $share_value_step
         ));
+
+        $value_delta = $new_share_value - $share_value;
+        // update player scores
+        $scores = [];
+        
+        // get stocks of company owned by players
+        $stocks = self::getObjectListFromDB(
+            "SELECT card_id, card_type, card_location_arg FROM card 
+            WHERE primary_type = 'stock' AND owner_type = 'player' AND card_type_arg = $company_id");
+        foreach($stocks as $stock)
+        {
+            $stock_type = explode('_', $stock['card_type'])[1];
+
+            $multiplier = 1;
+            if($stock_type == 'director')
+                $multiplier = 3;
+            else if($stock_type == 'preferred')
+                $multiplier = 2;
+            
+            $player_id = $stock['card_location_arg'];
+            if(array_key_exists($player_id, $scores))
+            {
+                $scores[$player_id]['score_delta'] += $multiplier * $value_delta;
+            }
+            else
+            {
+                $scores[$player_id] = ['player_id' => $player_id, 'score_delta' => $multiplier * $value_delta];
+            }
+        }
+
+        foreach($scores as $score)
+        {
+            $score_delta = $score['score_delta'];
+            $player_id = $score['player_id'];
+            self::DbQuery("UPDATE player SET player_score = player_score + $score_delta WHERE player_id = $player_id");
+        }
+
+        self::notifyAllPlayers( "scoreUpdated", "", array(
+            'scores' => $scores
+        ) );
     }
 
     function increaseIncome($short_name, $amount)
@@ -1297,11 +1344,12 @@ class CityOfTheBigShoulders extends Table
         {
             $new_treasury = $players[$player_id]['treasury'] + $payment;
 
-            $sql = "UPDATE player SET treasury = $new_treasury WHERE player_id = $player_id";
+            $sql = "UPDATE player SET treasury = $new_treasury, player_score = player_score + $payment WHERE player_id = $player_id";
             self::DbQuery($sql);
 
             self::notifyAllPlayers( "dividendEarned", clienttranslate( '${player_name} earns $${earning}' ), array(
                 'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
                 'earning' => $payment,
                 'counters' => self::getCounter("money_${player_id}", $new_treasury)
             ));
@@ -1313,13 +1361,12 @@ class CityOfTheBigShoulders extends Table
         $share_value_step = $company['share_value_step'];
         $treasury = $company['treasury'];
         $new_treasury = $treasury;
-        $update = false;
 
         // pay the company
         if($payment_to_company > 0)
         {
-            $update = true;
             $new_treasury += $payment_to_company;
+            self::DbQuery("UPDATE company SET treasury = $new_treasury WHERE id = $company_id");
 
             self::notifyAllPlayers( "dividendEarned", clienttranslate( '${company_name} earns $${earning}' ), array(
                 'company_name' => self::getCompanyName($company_short_name),
@@ -1330,44 +1377,22 @@ class CityOfTheBigShoulders extends Table
 
         // check for share value increase
         $share_value = self::getShareValue($share_value_step);
-        $new_share_value_step = $share_value_step;
+        $increase = 0;
 
         if($money >= 3 * $share_value && $share_value_step > 6)
         {
-            $update = true;
-            $new_share_value_step += 3;
-        } else if ($money >= 2 * $share_value)
+            $increase = 3;
+        }
+        else if ($money >= 2 * $share_value)
         {
-            $update = true;
-            $new_share_value_step += 2;
-        } else if ($money >= $share_value)
+            $increase = 2;
+        } 
+        else if ($money >= $share_value)
         {
-            $update = true;
-            $new_share_value_step += 1;
+            $increase = 1;
         }
 
-        if($new_share_value_step > 20)
-            $new_share_value_step = 20;
-
-        if($update)
-        {
-            $sql = "UPDATE company SET treasury = $new_treasury, share_value_step = $new_share_value_step WHERE id = $company_id";
-            self::DbQuery($sql);
-        }
-
-        if($new_share_value_step > $share_value_step)
-        {
-            $new_share_value = self::getShareValue($new_share_value_step);
-            self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} increased to $${share_value}' ), array(
-                'company_short_name' => $company_short_name,
-                'company_name' => self::getCompanyName($company_short_name),
-                'share_value' => $new_share_value,
-                'share_value_step' => $new_share_value_step,
-                'previous_share_value_step' => $share_value_step
-            ));
-        }
-
-        // TODO: update player scores
+        self::increaseShareValue($company_short_name, $increase);
     }
 
     function hire_manager($company_short_name, $factory_number)
@@ -3050,6 +3075,10 @@ class CityOfTheBigShoulders extends Table
             $sql = "UPDATE player SET treasury = $new_player_treasury WHERE player_id = $player_id";
             self::DbQuery($sql);
 
+            self::notifyAllPlayers( "scoreUpdated", "", array(
+                'scores' => [ ['player_id' => $player_id, 'score_delta' => $cost] ]
+            ) );
+
             self::addCounter($counters, "money_${player_id}", $new_player_treasury);
         }
 
@@ -3480,7 +3509,7 @@ class CityOfTheBigShoulders extends Table
             if(array_key_exists($short_name, $companies_selling))
             {
                 $current_lost_value = $companies_selling[$short_name]['lost_value'];
-                $companies_selling[$short_name] = $current_lost_value + $multiplier;
+                $companies_selling[$short_name]['lost_value'] = $current_lost_value + $multiplier;
             }
             else
             {
@@ -3531,29 +3560,9 @@ class CityOfTheBigShoulders extends Table
         foreach($companies_selling as $company)
         {
             $short_name = $company['short_name'];
-            $values[] = "($player_id, $round, $short_name)";
-
-            // also update companies to reflect new share value
-            // make sure value is not less than 0
-            $company_id = $company['company_id'];
             $lost_value = $company['lost_value'];
-            $company = self::getNonEmptyObjectFromDB("SELECT share_value_step, id FROM company WHERE id = $company_id");
-            $share_value_step = $company['share_value_step'];
 
-            $new_share_value_step = 0;
-            if($share_value_step - $lost_value > 0)
-                $new_share_value_step = $share_value_step - $lost_value;
-
-            self::DbQuery( "UPDATE company SET share_value_step = $new_share_value_step WHERE id = $company_id" );
-
-            $new_share_value = self::getShareValue($new_share_value_step);
-            self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} decreases to $${share_value}' ), array(
-                'company_short_name' => $short_name,
-                'company_name' => self::getCompanyName($short_name),
-                'share_value' => $new_share_value,
-                'share_value_step' => $new_share_value_step,
-                'previous_share_value_step' => $share_value_step
-            ));
+            self::increaseShareValue($short_name, -$lost_value);
         }
 
         // update player treasury
@@ -4121,18 +4130,8 @@ class CityOfTheBigShoulders extends Table
                     $company_id = $stock['card_type_arg'];
                     $company = $companies[$company_id];
                     $company_short_name = $company['short_name'];
-                    $previous_share_value_step = $company['share_value_step'];
-                    $new_share_value_step = $previous_share_value_step;
-                    if($new_share_value_step < 20)
-                        $new_share_value_step++;
-                    $new_share_value = self::getShareValue($new_share_value_step);
-                    self::notifyAllPlayers( "shareValueChange", clienttranslate( '${company_name} is completely owned by players, the share value increases to $${share_value}' ), array(
-                        'company_short_name' => $company_short_name,
-                        'company_name' => self::getCompanyName($company_short_name),
-                        'share_value' => $new_share_value,
-                        'share_value_step' => $new_share_value_step,
-                        'previous_share_value_step' => $share_value_step
-                    ));
+
+                    self::increaseShareValue($company_short_name, 1);
                 }
             }
 

@@ -3122,7 +3122,16 @@ function (dojo, declare) {
             dojo.subscribe('workerReceived', this, "notif_workerReceived");
             this.notifqueue.setSynchronous('workerReceived', 200);
 
+            dojo.subscribe('scoreUpdated', this, "notif_scoreUpdated");
+
             dojo.subscribe('newRound', this, "notif_newRound");
+        },
+
+        notif_scoreUpdated: function(notif){
+            for(var index in notif.args.scores){
+                var score = notif.args.scores[index];
+                this.scoreCtrl[score.player_id].incValue(score.score_delta);
+            }
         },
 
         notif_newRound: function(notif){
@@ -3384,6 +3393,10 @@ function (dojo, declare) {
 
         notif_dividendEarned: function(notif){
             this.updateCounters(notif.args.counters);
+
+            if(notif.args.player_id){
+                this.scoreCtrl[notif.args.player_id].incValue(notif.args.earning);
+            }
         },
 
         notif_salespersonHired: function(notif){
