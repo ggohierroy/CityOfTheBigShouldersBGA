@@ -250,6 +250,7 @@ function (dojo, declare) {
                     break;
                 case 'client_actionChooseFactory':
                 case 'client_actionChooseFactorySkip':
+                case 'client_actionChooseFactorySkipToRelocate':
                     // activate all factories in player area
                     dojo.query('#player_'+this.player_id+' .factory').addClass('active');
                     break;
@@ -264,6 +265,7 @@ function (dojo, declare) {
                 case 'client_chooseFactoryRelocate':
                 case 'client_placeHiredWorkers':
                 case 'client_chooseFactoryRelocateBonus':
+                case 'client_chooseFactoryRelocateDoubleAutomation':
                     // activate all factories in the current company
                     this.activateFactoriesInCompany(this.clientStateArgs.companyShortName);
                     break;
@@ -405,6 +407,8 @@ function (dojo, declare) {
                 case 'playerAssetWorkerBonus':
                 case 'client_chooseFactoryRelocateBonus':
                 case 'client_actionChooseFactorySkip':
+                case 'client_actionChooseFactorySkipToRelocate':
+                case 'client_chooseFactoryRelocateDoubleAutomation':
                     dojo.query('.factory').removeClass('active');
                     break;
                 case 'playerActionPhase':
@@ -529,14 +533,17 @@ function (dojo, declare) {
                         this.addActionButton( 'skip_action', _('Skip Rest of Action'), 'onConfirmAction', null, false, 'red');
                         this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
                         break;
+                    case 'client_actionChooseFactorySkipToRelocate':
+                        this.addActionButton( 'skip_action', _('Skip Second Automation and Relocate Worker'), 'onSkipToRelocate', null, false, 'red');
+                        this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
+                        break;
                     case 'client_actionChooseCompany':
                     case 'client_tradeChooseCompany':
                         this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
                         break;
 
                     case 'client_chooseFactoryRelocate':
-                        this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
-                        break;
+                    case 'client_chooseFactoryRelocateDoubleAutomation':
                     case "client_chooseFactoryRelocateBonus":
                         this.addActionButton( 'cancel_relocate', _('Cancel'), 'onCancelAction');
                         break;
@@ -687,6 +694,32 @@ function (dojo, declare) {
             script.
         
         */
+
+        moveAutomatedWorker(companyShortName, fromFactoryNumber, toFactoryNumber){
+            // the worker is on an automation spot
+            var factorySelector = '#'+companyShortName+'_factory_'+fromFactoryNumber; //#brunswick_factory_2
+            var worker = dojo.query(factorySelector + '>.automation_holder>.worker')[0];
+            var automationHolder = worker.parentNode;
+
+            // move to first empty spot in new factory
+            var toFactorySelector = '#'+companyShortName+'_factory_'+toFactoryNumber;
+            var workerHolders = dojo.query(toFactorySelector + '>.worker-holder:empty');
+
+            if(workerHolders.length == 0)
+                return false;
+
+            var workerHolder = workerHolders[0];
+            dojo.place(worker, workerHolder);
+            this.placeOnObject(worker, automationHolder);
+            this.slideToObject(worker, workerHolder).play();
+
+            // we mark this worker as first-automation
+            // otherwise we have no clue that this is the automated worker that was already moved
+            // when we get notification back from server
+            dojo.addClass(worker, 'first-automation');
+
+            return true;
+        },
 
         createTempManager(shortName, factoryNumber){
             // create manager
@@ -1035,18 +1068,23 @@ function (dojo, declare) {
         // returns whether a worker should be relocated
         automateWorker: function(companyShortName, factoryNumber){
 
-            // check if there is at least one spot to put the worker, otherwise confirm action
+            // workers could temporarily be in automation spots
+            // get automations in worker spots and all workers of company
+            // check against number of worker spots in factory
             var companySelector = '#company_' + companyShortName;
-            var workerHolders = dojo.query(companySelector + ' .worker-holder:empty');
-            if(workerHolders.length == 0){
-                return false;
-            }
+            var totalWorkers = dojo.query(companySelector + ' .worker').length;
+            var totalAutomated = dojo.query(companySelector + ' .worker-holder>.automation_token').length;
+            var totalWorkerSpots = dojo.query(companySelector + ' .worker-holder').length;
 
-            // if there is a choice between multiple factories,
+            // if there is a choice between multiple factories, get the automation
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
-            var automationHolder = dojo.query(factorySelector + '>.automation_holder:not(:empty)')[0];
-            var automation = automationHolder.firstChild;
+            var automation = dojo.query(factorySelector + '>.automation_holder>.automation_token')[0];
+
+            // get the automation holder
+            var automationHolder = automation.parentNode;
             var holderPosition = automationHolder.id.split('_')[4]; // spalding_automation_holder_2_0
+            
+            // get the worker and worker holder
             var holderId = [companyShortName, factoryNumber, 'worker_holder', holderPosition];
             var workerHolder = dojo.byId(holderId.join('_'));
             var worker = workerHolder.firstChild;
@@ -1061,25 +1099,29 @@ function (dojo, declare) {
             this.placeOnObject(worker, workerHolder);
             this.slideToObject(worker, automationHolder).play();
 
-            this.undo = function(){
-                dojo.place(automation, automationHolder);
-                dojo.place(worker, workerHolder);
-            };
+            this.clientStateArgs.undoMoves.push({'element': automation, 'to': automationHolder});
+            this.clientStateArgs.undoMoves.push({'element': worker, 'to': workerHolder});
 
-            // then change client state to choose where to put worker
+            if(totalWorkers + totalAutomated == totalWorkerSpots){
+                return false;
+            }
+
+            // worker needs to be relocated
             return true;
         },
        
         canAutomateFactory: function(companyShortName, factoryNumber){
             // get first automation holder with a child (automation token)
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
-            var automationHolders = dojo.query(factorySelector + '>.automation_holder:not(:empty');
+            var automationTokens = dojo.query(factorySelector + '>.automation_holder>.automation_token');
 
+            // because of double automation, sometimes there is a worker in those holders
             // if not found, factory is completely automated
-            if(automationHolders.length == 0)
+            if(automationTokens.length == 0)
                 return false;
             
-            var automationHolder = automationHolders[0]; // spalding_automation_holder_2_0
+            var firstToken = automationTokens[0];
+            var automationHolder = firstToken.parentNode; // spalding_automation_holder_2_0
             var holderPosition = automationHolder.id.split('_')[4];
 
             // get the worker holder in the same position as this automation holder
@@ -1272,7 +1314,7 @@ function (dojo, declare) {
         getSalespersonEmptySpots: function(companyShortName){
             var currentNumberSalersperon = this[companyShortName+'_salesperson_holder'].getAllItems.length;
             var company = this.gamedatas.all_companies[companyShortName];
-            return company.salesperson_number - currentNumberSalersperon;
+            return company.salesperson_number - currentNumberSalersperon - 1;
         },
 
         doesFactoryEmployManager: function(companyShortName, factoryNumber){
@@ -1568,6 +1610,8 @@ function (dojo, declare) {
         placeBuilding: function(building, from){
             var hashBuildingType = this.hashString(building.card_type);
             var itemId = building.card_type+'_'+building.card_id;
+            //var hashBuildingType = this.hashString('building21');
+            //var itemId = 'building21'+'_'+building.card_id;
 
             var location = building.card_location; // building_track_2319929 or player_2319930 or player_2319930_play
 
@@ -2029,6 +2073,38 @@ function (dojo, declare) {
                 return;
             }
 
+            if(state == 'client_chooseFactoryRelocateDoubleAutomation'){
+                if(this.clientStateArgs.secondAutomationSkipped){
+                    // if the sencond automation was skipped, we can confirm action
+                    this.clientStateArgs.actionArgs.relocateFactoryNumber = factoryNumber;
+                    this.onConfirmAction();
+                } else if (this.clientStateArgs.actionArgs.relocateFactoryNumber1) {
+                    // if the first worker has been relocated, and we are here, both workers have been relocated => confirm action
+                    this.clientStateArgs.actionArgs.relocateFactoryNumber2 = factoryNumber;
+                    this.onConfirmAction();
+                } else {
+                    // move 1st automated worker temporarily
+                    var canMove = this.moveAutomatedWorker(companyShortName, this.clientStateArgs.actionArgs.firstFactoryNumber, factoryNumber);
+                    if(!canMove) {
+                        this.showMessage( _("This factory doesn't have any more space for workers"), 'info' );
+                        return;
+                    }
+                        
+                    this.clientStateArgs.actionArgs.relocateFactoryNumber1 = factoryNumber;
+
+                    if(this.clientStateArgs.actionArgs.secondFactoryRelocate == 0){
+                        // if the second worker cannot be relocated
+                        this.onConfirmAction();
+                    } else {
+                        // else go to 2nd relocation
+                        this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
+                            descriptionmyturn : _('Choose a factory in which to relocate the second automated worker')
+                        });
+                    }
+                }
+                return;
+            }
+
             // this is a special state that happens when a worker is automated because of an asset tile immediate bonus
             if(state == 'client_chooseFactoryRelocateBonus'){
                 this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", {
@@ -2107,6 +2183,7 @@ function (dojo, declare) {
                     break;
                 case 'client_actionChooseFactory':
                 case 'client_actionChooseFactorySkip':
+                case 'client_actionChooseFactorySkipToRelocate':
                     this.executeActionForCompany(companyShortName, factoryNumber);
                     break;
                 case 'playerAssetAutomationBonus':
@@ -2170,6 +2247,8 @@ function (dojo, declare) {
                 case "hire_manager":
                 case "building11":
                 case "building14":
+                case "building23": // double manager
+                case "building35":
                     if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
                         actionOk = false;
                         message = _("This factory already employs a manager");
@@ -2177,18 +2256,14 @@ function (dojo, declare) {
                     break;
                 case "building6":
                 case "building24":
+                case "building21":
+                case "building42":
+                    debugger;
                     if(!this.canAutomateFactory(companyShortName, factoryNumber)){
                         actionOk = false;
                         message = _("This factory can't be automated");
                     }
                     break;
-                case "building23": // double manager
-                case "building35":
-                    if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
-                        actionOk = false;
-                        message = _("This factory already employs a manager");
-                    }
-                    break;  
             }
 
             var paymentMethod = buildingMaterial.payment;
@@ -2210,7 +2285,7 @@ function (dojo, declare) {
             // save client state args
             this.clientStateArgs.factoryNumber = factoryNumber;
             this.clientStateArgs.companyShortName = companyShortName;
-            
+
             // execute action specific stuff
             switch(buildingAction){
                 case 'job_market_worker':
@@ -2264,6 +2339,39 @@ function (dojo, declare) {
                         });
                     } else {
                         this.onConfirmAction();
+                    }
+                    break;
+                case "building21": // double automation
+                case "building42":
+                    if(this.clientStateArgs.actionArgs.firstFactoryNumber){
+                        this.clientStateArgs.secondFactoryNumber = factoryNumber;
+
+                        var relocate = this.automateWorker(companyShortName, factoryNumber);
+
+                        if(this.clientStateArgs.actionArgs.firstFactoryRelocate == 0){
+                            // if there is no spot to put the first worker, there is no spot to put the first either
+                            this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
+                            this.onConfirmAction();
+                        } else {
+                            if(!relocate){
+                                this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
+                            }
+
+                            this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
+                                descriptionmyturn : _('Choose a factory in which to relocate the first automated worker')
+                            });
+                        }
+                    } else {
+                        this.clientStateArgs.actionArgs.firstFactoryNumber = factoryNumber;
+                        var relocate = this.automateWorker(companyShortName, factoryNumber);
+                        if(!relocate){
+                            this.clientStateArgs.actionArgs.firstFactoryRelocate = 0;
+                        }
+
+                        this.setClientState("client_actionChooseFactorySkipToRelocate", {
+                            descriptionmyturn : dojo.string.substitute(_('Choose a second factory to automate'),{
+                            })
+                        });
                     }
                     break;
                 case 'building8': // different resources
@@ -2582,15 +2690,19 @@ function (dojo, declare) {
                 case "job_market_worker":
                     this.chooseFactory();
                     break;
-                case "hire_manager":
                 case "building6": // automation
+                case "building24": // automation
+                case "building21": // double automation
+                case "building42": // double automation
+                    this.clientStateArgs.undoMoves = [];
+                    this.chooseFactorySkip();
+                    break;
+                case "hire_manager":
                 case "building11": // manager
                 case "building14": // manager
-                case "building21": // double automation
                 case "building23": // doubler manager
                 case "building26": // doubler worker
                 case "building35": // doubler manager
-                case "building42": // double automation
                 case "building43": // worker + manager
                 case "building44": // worker + salesperson
                     this.chooseFactorySkip();
@@ -2761,6 +2873,15 @@ function (dojo, declare) {
                     // destroy temp managers
                     dojo.query('.manager.temp').forEach(dojo.destroy);
                     break;
+                case "building6":
+                case "building24":
+                case "building21":
+                case "building42": // any automation
+                    dojo.forEach(this.clientStateArgs.undoMoves, function(item){
+                        dojo.removeClass(item.element, 'first-automation');
+                        dojo.place(item.element, item.to);
+                    });
+                    break;
             }
 
             // reset counters with server-side counters
@@ -2771,9 +2892,6 @@ function (dojo, declare) {
             dojo.query('.company').removeClass('active');
 
             this.capital_assets.setSelectionMode(0);
-
-            // execute undo
-            if (typeof this.undo === "function") { this.undo(); this.undo = undefined; }
 
             this.restoreServerGameState();
         },
@@ -3221,6 +3339,13 @@ function (dojo, declare) {
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
         },
 
+        onSkipToRelocate: function(){
+            this.clientStateArgs.secondAutomationSkipped = true;
+            this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
+                descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+            });
+        },
+
         onConfirmAction: function(){
             if(!this.checkAction('buildingAction'))
                 return;
@@ -3583,6 +3708,16 @@ function (dojo, declare) {
             var worker = null;
             var automation = null;
             if(this.isCurrentPlayerActive()){
+                // when doing a double automation, it's possible that the worker is already in its spot
+                // check that first-automation worker exists
+                var elements = dojo.query('.first-automation');
+                if(elements.length > 0)
+                {
+                    // in this case everything is already in place for the active player
+                    elements.removeClass('first-automation');
+                    return;
+                }
+
                 // the worker has been moved to the automation spot
                 // we need to send it to its final destination (either job market or factory)
                 worker = dojo.query(factorySelector + '>.automation_holder>.worker')[0];
@@ -3658,7 +3793,6 @@ function (dojo, declare) {
         },
 
         notif_appealIncreased: function(notif){
-            debugger;
             this.placeAppealToken({
                 short_name: notif.args.company_short_name,
                 appeal: notif.args.appeal,

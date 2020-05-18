@@ -1371,7 +1371,7 @@ class CityOfTheBigShoulders extends Table
             'company_name' => self::getCompanyName($company_short_name),
             'company_short_name' => $company_short_name,
             'factory_number' => $factory_number,
-            'worker_relocation' => $worker_relocation 
+            'worker_relocation' => $worker_relocation
         ));
     }
 
@@ -3347,7 +3347,7 @@ class CityOfTheBigShoulders extends Table
                     throw new BgaVisibleSystemException("Can't hire more than 2 managers");
                 foreach($manager_factories as $number)
                 {
-                    self::hire_manager($company_short_name, $company_id, $number);
+                    self::hire_manager($company_short_name, $company_id, intval($number));
                 }
                 break;
             case 'hire_salesperson':
@@ -3398,6 +3398,29 @@ class CityOfTheBigShoulders extends Table
             case "building24":
                 $relocateFactoryNumber = intval($action_args);
                 self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                break;
+            case "building21": // double automation
+            case "building42":
+                $manager_factories = explode(',', $action_args);
+                if(count($manager_factories) == 2)
+                {
+                    $factory_number = intval($manager_factories[0]);
+                    $relocate_factory_number = intval($manager_factories[1]);
+                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                }
+                else if(count($manager_factories) == 4)
+                {
+                    $factory_number = intval($manager_factories[0]);
+                    $relocate_factory_number = intval($manager_factories[2]);
+                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                    $factory_number = intval($manager_factories[1]);
+                    $relocate_factory_number = intval($manager_factories[3]);
+                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                } 
+                else 
+                {
+                    throw new BgaVisibleSystemException("Bad data for double automation");
+                }
                 break;
             case "capital_investment":
             case "building1":
