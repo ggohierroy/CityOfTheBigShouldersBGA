@@ -251,6 +251,7 @@ function (dojo, declare) {
                 case 'client_actionChooseFactory':
                 case 'client_actionChooseFactorySkip':
                 case 'client_actionChooseFactorySkipToRelocate':
+                case 'client_actionChooseFactorySkipWorker':
                     // activate all factories in player area
                     dojo.query('#player_'+this.player_id+' .factory').addClass('active');
                     break;
@@ -409,6 +410,7 @@ function (dojo, declare) {
                 case 'client_actionChooseFactorySkip':
                 case 'client_actionChooseFactorySkipToRelocate':
                 case 'client_chooseFactoryRelocateDoubleAutomation':
+                case 'client_actionChooseFactorySkipWorker':
                     dojo.query('.factory').removeClass('active');
                     break;
                 case 'playerActionPhase':
@@ -535,6 +537,10 @@ function (dojo, declare) {
                         break;
                     case 'client_actionChooseFactorySkipToRelocate':
                         this.addActionButton( 'skip_action', _('Skip Second Automation and Relocate Worker'), 'onSkipToRelocate', null, false, 'red');
+                        this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_actionChooseFactorySkipWorker':
+                        this.addActionButton( 'skip_action', _('Skip Receive Worker'), 'onSkipReceiveWorker', null, false, 'red');
                         this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_actionChooseCompany':
@@ -1338,9 +1344,11 @@ function (dojo, declare) {
             });
         },
 
-        chooseFactorySkip: function(){
+        chooseFactorySkip: function(message){
+            if(!message)
+                message = _('Choose a factory');
             this.setClientState("client_actionChooseFactorySkip", {
-                descriptionmyturn : dojo.string.substitute(_('Choose a factory'),{
+                descriptionmyturn : dojo.string.substitute(message,{
                 })
             });
         },
@@ -2191,6 +2199,7 @@ function (dojo, declare) {
                 case 'client_actionChooseFactory':
                 case 'client_actionChooseFactorySkip':
                 case 'client_actionChooseFactorySkipToRelocate':
+                case 'client_actionChooseFactorySkipWorker':
                     this.executeActionForCompany(companyShortName, factoryNumber);
                     break;
                 case 'playerAssetAutomationBonus':
@@ -2239,7 +2248,6 @@ function (dojo, declare) {
                     if(emptyWorkerSpots == 0){
                         actionOk = false;
                         message = _("This factory doesn't have any more space for workers");
-                        break;
                     }
                     break;
                 case "building26":
@@ -2247,7 +2255,29 @@ function (dojo, declare) {
                     if(emptyWorkerSpots == 0){
                         actionOk = false;
                         message = _("This factory doesn't have any more space for workers");
-                        break;
+                    }
+                    break;
+                case "building43":
+                    if(this.clientStateArgs.actionArgs.workerFactoryNumber){
+                        if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
+                            actionOk = false;
+                            message = _("This factory already employs a manager");
+                        }
+                    } else {
+                        var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
+                        if(emptyWorkerSpots == 0){
+                            actionOk = false;
+                            message = _("This factory doesn't have any more space for workers");
+                        }
+                    }
+                    break;
+                case "building44":
+                    if(!this.clientStateArgs.actionArgs.workerFactoryNumber){
+                        var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
+                        if(emptyWorkerSpots == 0){
+                            actionOk = false;
+                            message = _("This factory doesn't have any more space for workers");
+                        }
                     }
                     break;
                 case "building1":
@@ -2401,7 +2431,7 @@ function (dojo, declare) {
                         descriptionmyturn : _('Confirm which two same resources to gain')
                     });
                     break;
-                case "hire_salesperson":
+                case "hire_salesperson": // salesperson
                 case "building2":
                 case "building22":
                     if(this.getSalespersonEmptySpots(companyShortName) == 0){
@@ -2449,6 +2479,27 @@ function (dojo, declare) {
                             descriptionmyturn : dojo.string.substitute(_('Choose a factory for the second worker'),{
                             })
                         });
+                    }
+                    break;
+                case "building43": // worker + manager
+                    if(this.clientStateArgs.actionArgs.workerFactoryNumber){
+                        this.clientStateArgs.actionArgs.managerFactoryNumber = factoryNumber;
+                        this.onConfirmAction();
+                    } else {
+                        this.clientStateArgs.actionArgs.workerFactoryNumber = factoryNumber;
+                        this.chooseFactorySkip(_("Choose a factory to put hired manager"));
+                    }
+                    break;
+                case "building44": // worker + salesperson
+                    if(!this.clientStateArgs.actionArgs.workerFactoryNumber){
+                        this.clientStateArgs.actionArgs.workerFactoryNumber = factoryNumber;
+                        if(this.getSalespersonEmptySpots(companyShortName) == 0){
+                            this.setClientState("client_confirmGainLessSalespeople", {
+                                descriptionmyturn : _('Confirm gain 0 salesperson')
+                            });
+                        } else {
+                            this.onConfirmAction();
+                        }
                     }
                     break;
                 default:
@@ -2731,9 +2782,13 @@ function (dojo, declare) {
                 case "building23": // doubler manager
                 case "building26": // doubler worker
                 case "building35": // doubler manager
-                case "building43": // worker + manager
-                case "building44": // worker + salesperson
                     this.chooseFactorySkip();
+                    break;
+                case "building44": // worker + salesperson
+                case "building43": // worker + manager
+                    this.setClientState("client_actionChooseFactorySkipWorker", {
+                        descriptionmyturn : _("Choose a factory to put hired worker")
+                    });
                     break;
                 default:
                     this.chooseCompany();
@@ -2911,6 +2966,7 @@ function (dojo, declare) {
                     });
                     break;
                 case "building26":
+                case "building43":
                     dojo.query('.worker.temp').forEach(dojo.destroy);
                     break;
             }
@@ -3375,6 +3431,16 @@ function (dojo, declare) {
             this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
                 descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
             });
+        },
+
+        onSkipReceiveWorker: function(){
+            this.clientStateArgs.workerFactoryLocation = 0;
+            var message = null;
+            if(this.clientStateArgs.buildingAction == "building43")
+                message = _("Choose a factory to put hired manager");
+            else if(this.clientStateArgs.buildingAction == "building43")
+                message = _("Choose a factory to put hired salesperson");
+            this.chooseFactorySkip(message)
         },
 
         onConfirmAction: function(){

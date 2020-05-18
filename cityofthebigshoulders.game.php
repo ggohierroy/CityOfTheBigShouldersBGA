@@ -227,9 +227,9 @@ class CityOfTheBigShoulders extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
-
-        return 0;
+        $round = self::getGameStateValue("round"); // 5 rounds (0-4)
+        $phase = self::getGameStateValue("phase"); // 5 phases (0-4)
+        return $round*20 + $phase*5;
     }
 
 
@@ -3477,6 +3477,27 @@ class CityOfTheBigShoulders extends Table
                     self::hireWorkerFromSupply($company_short_name, $company_id, intval($number));
                 }
                 break;
+            case "building43": // worker + manager
+                $factories = explode(',', $action_args);
+                if(count($factories) > 2)
+                    throw new BgaVisibleSystemException("Can't hire more than 1 worker and 1 manager");
+                
+                $number = intval($factories[0]);
+                if($number1 != 0)
+                    self::hireWorkerFromSupply($company_short_name, $company_id, $number);
+                
+                if(count($factories) > 1)
+                {
+                    $number = intval($factories[1]);
+                    self::hire_manager($company_short_name, $company_id, $number);
+                }
+                break; // worker + salesperson
+            case "building44":
+                $number = intval($action_args);
+                if($number != 0)
+                    self::hireWorkerFromSupply($company_short_name, $company_id, $number);
+                self::hire_salesperson($company_short_name, $company_id);
+                break;
         }
 
         if($appeal_bonus_gained)
@@ -4444,6 +4465,8 @@ class CityOfTheBigShoulders extends Table
             self::gainPartner(null, 'round');
         }
 
+        self::setGameStateValue( "phase", 2 );
+
         // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
     }
@@ -4528,6 +4551,8 @@ class CityOfTheBigShoulders extends Table
                 self::setGameStateValue("current_company_id", $first_company["id"]);
                 self::setGameStateValue("last_factory_produced", 0);
 
+                self::setGameStateValue( "phase", 3 );
+
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;
             }
@@ -4550,7 +4575,7 @@ class CityOfTheBigShoulders extends Table
         {
             self::setGameStateValue( "consecutive_passes", 0 );
             self::setGameStateValue( "turns_this_phase", 0 );
-
+            self::setGameStateValue( "phase", 1 );
             
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );

@@ -85,6 +85,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} may sell any number of certificates to the bank'),
         "descriptionmyturn" => clienttranslate('${you} may sell any number of certificates to the bank'),
         "type" => "activeplayer",
+        "updateGameProgression" => true,
         "possibleactions" => array( "sellShares", "skipSell", "passStockAction" ),
         "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "interruptPriceProtection" => 33 )
     ),
@@ -140,6 +141,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must choose a building to play'),
         "descriptionmyturn" => clienttranslate('${you} must choose a building to play'),
         "type" => "multipleactiveplayer",
+        "updateGameProgression" => true,
         "possibleactions" => array( "selectBuildings" ),
         "action" => "st_MultiPlayerInit",
         "transitions" => array( "gameActionPhaseSetup" => 10 )
@@ -158,6 +160,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must choose an action'),
         "descriptionmyturn" => clienttranslate('${you} must choose an action'),
         "type" => "activeplayer",
+        "updateGameProgression" => true,
         "args" => "argsPlayerActionPhase",
         "possibleactions" => array( "buildingAction", "tradeResources", "useAsset" ),
         "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeAppealBonus" => 25, "loopback" => 11)
@@ -219,6 +222,7 @@ $machinestates = array(
         "description" => clienttranslate('${company_name} (${actplayer}) may purchase resources from the supply chain'),
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may purchase resources from the supply chain'),
         "type" => "activeplayer",
+        "updateGameProgression" => true,
         "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
         "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26)
