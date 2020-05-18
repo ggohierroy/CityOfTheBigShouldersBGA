@@ -577,7 +577,7 @@ function (dojo, declare) {
                     case 'playerDividendsPhase':
                         this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
                         this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
-                        var companyShortName = args.args.company_short_name;
+                        var companyShortName = args.company_short_name;
                         var assets = this[companyShortName + '_asset'].getAllItems();
                         if(assets.length > 0)
                         {
@@ -3744,10 +3744,6 @@ function (dojo, declare) {
         },
 
         notif_earningsWithhold: function(notif){
-            var shortName = notif.args.company_short_name;
-            this['share_zone_'+notif.args.previous_share_value_step].removeFromZone('share_token_'+shortName);
-            this['share_zone_'+notif.args.share_value_step].placeInZone('share_token_'+shortName);
-
             this.updateCounters(notif.args.counters);
         },
 

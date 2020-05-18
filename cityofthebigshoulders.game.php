@@ -2429,28 +2429,22 @@ class CityOfTheBigShoulders extends Table
         }
         else
         {
-            $message = clienttranslate( '${company_name} withholds earnings ($${income}), share value drops to $${share_value}');
-
-            if($share_value_step > 0)
-                $share_value_step--;
+            $message = clienttranslate( '${company_name} withholds earnings ($${income})');
         }
         
-        self::DbQuery("UPDATE company SET treasury = $newTreasury, income = 0, share_value_step = $share_value_step WHERE id = $company_id");
+        self::DbQuery("UPDATE company SET treasury = $newTreasury, income = 0 WHERE id = $company_id");
 
         $counters = [];
         self::addCounter($counters, "money_${short_name}", $newTreasury);
-
-        $share_value = self::getShareValue($share_value_step);
 
         self::notifyAllPlayers( "earningsWithhold", $message, array(
             'company_name' => self::getCompanyName($short_name),
             'company_short_name' => $short_name,
             'income' => $income,
-            'share_value_step' => $share_value_step,
-            'previous_share_value_step' => $previous_share_value_step,
-            'share_value' => $share_value,
             'counters' => $counters
         ) );
+
+        self::increaseShareValue($short_name, -1);
 
         $this->gamestate->nextState( 'gameOperationPhase' );
     }
@@ -3128,7 +3122,7 @@ class CityOfTheBigShoulders extends Table
             if($building == null)
                 throw new BgaVisibleSystemException("Building does not exist");
 
-            if (strpos($building['card_location'], 'building_track_') == false)
+            if (strpos($building['card_location'], 'building_track_') === false)
                 throw new BgaVisibleSystemException("Building is not in play");
 
             $building_material = $this->building[$building_action];
