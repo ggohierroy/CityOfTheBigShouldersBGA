@@ -3401,20 +3401,20 @@ class CityOfTheBigShoulders extends Table
                 break;
             case "building21": // double automation
             case "building42":
-                $manager_factories = explode(',', $action_args);
-                if(count($manager_factories) == 2)
+                $automation_factories = explode(',', $action_args);
+                if(count($automation_factories) == 2)
                 {
-                    $factory_number = intval($manager_factories[0]);
-                    $relocate_factory_number = intval($manager_factories[1]);
+                    $factory_number = intval($automation_factories[0]);
+                    $relocate_factory_number = intval($automation_factories[1]);
                     self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
                 }
-                else if(count($manager_factories) == 4)
+                else if(count($automation_factories) == 4)
                 {
-                    $factory_number = intval($manager_factories[0]);
-                    $relocate_factory_number = intval($manager_factories[2]);
+                    $factory_number = intval($automation_factories[0]);
+                    $relocate_factory_number = intval($automation_factories[2]);
                     self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
-                    $factory_number = intval($manager_factories[1]);
-                    $relocate_factory_number = intval($manager_factories[3]);
+                    $factory_number = intval($automation_factories[1]);
+                    $relocate_factory_number = intval($automation_factories[3]);
                     self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
                 } 
                 else 
@@ -3467,6 +3467,15 @@ class CityOfTheBigShoulders extends Table
             case "building12":
             case "building20":
                 self::gainSameResources($company_short_name, $company_id, $action_args);
+                break;
+            case "building26":
+                $worker_factories = explode(',', $action_args);
+                if(count($manager_factories) > 2)
+                    throw new BgaVisibleSystemException("Can't hire more than 2 workers");
+                foreach($worker_factories as $number)
+                {
+                    self::hireWorkerFromSupply($company_short_name, $company_id, intval($number));
+                }
                 break;
         }
 

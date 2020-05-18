@@ -695,7 +695,7 @@ function (dojo, declare) {
         
         */
 
-        moveAutomatedWorker(companyShortName, fromFactoryNumber, toFactoryNumber){
+        moveAutomatedWorker: function(companyShortName, fromFactoryNumber, toFactoryNumber){
             // the worker is on an automation spot
             var factorySelector = '#'+companyShortName+'_factory_'+fromFactoryNumber; //#brunswick_factory_2
             var worker = dojo.query(factorySelector + '>.automation_holder>.worker')[0];
@@ -721,7 +721,14 @@ function (dojo, declare) {
             return true;
         },
 
-        createTempManager(shortName, factoryNumber){
+        createTempWorker: function(companyShortName, factoryNumber){
+            var workerSpotId = this.getNextAvailableWorkerSpot(companyShortName + '_' + factoryNumber);
+            worker = dojo.place( this.format_block( 'jstpl_temp_worker', {} ), workerSpotId);
+            this.placeOnObject( worker, 'main_board');
+            this.slideToObject( worker, workerSpotId ).play();
+        },
+
+        createTempManager: function(shortName, factoryNumber){
             // create manager
             var holder = shortName + '_' + factoryNumber + '_manager_holder';
             var manager = dojo.place( this.format_block( 'jstpl_temp_manager', {} ), holder);
@@ -729,12 +736,12 @@ function (dojo, declare) {
             this.slideToObject( manager, holder ).play();
         },
 
-        activateDemandForCompany(shortName){
+        activateDemandForCompany: function(shortName){
             var companyType = this.gamedatas.all_companies[shortName].type;
             dojo.query('.'+companyType).addClass('active');
         },
 
-        activateFactoriesInCompany(shortName){
+        activateFactoriesInCompany: function(shortName){
             dojo.query('#company_'+shortName+ ' .factory').addClass('active');
         },
 
@@ -2235,6 +2242,14 @@ function (dojo, declare) {
                         break;
                     }
                     break;
+                case "building26":
+                    var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
+                    if(emptyWorkerSpots == 0){
+                        actionOk = false;
+                        message = _("This factory doesn't have any more space for workers");
+                        break;
+                    }
+                    break;
                 case "building1":
                     cost -= 10; // discount
                     break;
@@ -2380,7 +2395,7 @@ function (dojo, declare) {
                         descriptionmyturn : _('Confirm which two different resources to gain')
                     });
                     break;
-                case 'building12':
+                case 'building12': // same resources
                 case 'building20':
                     this.setClientState("client_confirmGainSameResources", {
                         descriptionmyturn : _('Confirm which two same resources to gain')
@@ -2421,6 +2436,19 @@ function (dojo, declare) {
                         this.clientStateArgs.actionArgs.firstFactory = factoryNumber;
                         this.createTempManager(companyShortName, factoryNumber);
                         this.chooseFactorySkip();
+                    }
+                    break;
+                case "building26": // double worker
+                    if(this.clientStatesArgs.firstWorkerLocation){
+                        this.clientStatesArgs.secondWorkerLocation = factoryNumber;
+                        this.onConfirmAction();
+                    } else {
+                        this.clientStatesArgs.firstWorkerLocation = factoryNumber;
+                        this.createTempWorker(companyShortName, factoryNumber);
+                        this.setClientState("client_actionChooseFactorySkip", {
+                            descriptionmyturn : dojo.string.substitute(_('Choose a factory for the second worker'),{
+                            })
+                        });
                     }
                     break;
                 default:
@@ -2881,6 +2909,9 @@ function (dojo, declare) {
                         dojo.removeClass(item.element, 'first-automation');
                         dojo.place(item.element, item.to);
                     });
+                    break;
+                case "building26":
+                    dojo.query('.worker.temp').forEach(dojo.destroy);
                     break;
             }
 
@@ -3802,6 +3833,7 @@ function (dojo, declare) {
         },
 
         notif_workerReceived: function(notif){
+            dojo.query('.worker.temp').forEach(dojo.destroy); // when receiving double worker from supply
             workerId = notif.args.worker_id;
             this.placeWorkerInFactory({
                 card_id: workerId,
