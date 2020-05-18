@@ -163,6 +163,8 @@ function (dojo, declare) {
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
+            this.creatAppealBonusTooltips();
+
             console.log( "Ending game setup" );
         },
        
@@ -315,6 +317,7 @@ function (dojo, declare) {
                 case 'playerAssetAutomationBonus':
                 case 'playerAssetWorkerBonus':
                     if(this.isCurrentPlayerActive()){
+                        this.clientStateArgs.undoMoves = [];
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
                     }
@@ -700,6 +703,17 @@ function (dojo, declare) {
             script.
         
         */
+
+        creatAppealBonusTooltips: function(){
+            this.addTooltip( "appeal_1", "", _( "Gain a worker from the supply" ));
+            this.addTooltip( "appeal_2", "", _( "Gain a manager from the supply" ));
+            this.addTooltip( "appeal_3", "", _( "Automate a factory" ));
+            this.addTooltip( "appeal_4", "", _( "Gain a partner" ));
+            this.addTooltip( "appeal_5", "", _( "Gain an Appeal Goods Bonus token, which produces 1 good at the end of the company's production step" ));
+            this.addTooltip( "appeal_6", "", _( "Increase company's share value one step along the stock track" ));
+            this.addTooltip( "appeal_7", "", _( "Gain an Appeal Goods Bonus token, which produces 1 good at the end of the company's production step" ));
+            this.addTooltip( "appeal_8", "", _( "Increase company's share value one step along the stock track" ));
+        },
 
         moveAutomatedWorker: function(companyShortName, fromFactoryNumber, toFactoryNumber){
             // the worker is on an automation spot
@@ -1606,6 +1620,10 @@ function (dojo, declare) {
 
         placeWorker: function(worker){
 
+            // this method only places workers in job market
+            if(worker.card_location != 'job_market')
+                return;
+
             // never more than 12 workers in the market
             if(this.job_market.getItemNumber() == 12)
                 return;
@@ -1821,7 +1839,7 @@ function (dojo, declare) {
             var companyShortName = good.card_location.split('_')[0]; // brunswick_goods
             if(from == 'supply'){
                 // good produced -> create good
-                // when goods are produced, all goods are returned, so we avoid recreating them
+                // when goods are produced, all goods are returned from the server, so we avoid recreating them
                 if($('good_' + good.card_id) == null){
                     dojo.place( this.format_block( 'jstpl_generic_div', {
                         id: 'good_' + good.card_id, 

@@ -225,7 +225,7 @@ $machinestates = array(
         "updateGameProgression" => true,
         "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
-        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26)
+        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13)
     ),
 
     14 => array(
@@ -235,7 +235,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods" ),
-        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27)
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27, "loopback" => 14)
     ),
 
     15 => array(
@@ -266,7 +266,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset" ),
-        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28)
+        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16)
     ),
 
     17 => array(
@@ -276,7 +276,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "payDividends", "withhold", "useAsset", "withholdProtection" ),
-        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29)
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17)
     ),
 
     19 => array(

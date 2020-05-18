@@ -1343,7 +1343,7 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
-                self::DbQuery("UPDATE card SET owner_type = NULL, card_location = 'job_market' WHERE card_id = '$worker_id'");
+                self::DbQuery("UPDATE card SET owner_type = NULL, card_location = 'job_market', card_location_arg = 0 WHERE card_id = '$worker_id'");
                 $worker_relocation = 'job_market';
             }
         }
@@ -2767,7 +2767,8 @@ class CityOfTheBigShoulders extends Table
             self::DbQuery(
                 "UPDATE card SET
                 owner_type = NULL,
-                card_location = 'demand${demand_id}'
+                card_location = 'demand${demand_id}',
+                card_location_arg = 0
                 WHERE card_id IN ($good_ids)");
         }
 
