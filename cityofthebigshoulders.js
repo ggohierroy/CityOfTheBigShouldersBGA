@@ -249,6 +249,7 @@ function (dojo, declare) {
                     }
                     break;
                 case 'client_actionChooseFactory':
+                case 'client_actionChooseFactorySkip':
                     // activate all factories in player area
                     dojo.query('#player_'+this.player_id+' .factory').addClass('active');
                     break;
@@ -403,6 +404,7 @@ function (dojo, declare) {
                 case 'playerAssetAutomationBonus':
                 case 'playerAssetWorkerBonus':
                 case 'client_chooseFactoryRelocateBonus':
+                case 'client_actionChooseFactorySkip':
                     dojo.query('.factory').removeClass('active');
                     break;
                 case 'playerActionPhase':
@@ -479,6 +481,10 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'client_confirmGainLessSalespeople':
+                        this.addActionButton( 'confirm_gain_salesperson', _('Confirm'), 'onConfirmAction');
+                        this.addActionButton( 'concel_gain_salesperson', _('Cancel'), 'onCancelAction');
+                        break;
                     case 'playerPriceProtection':
                         this.addActionButton( 'prevent', _('Prevent'), 'onPrevent');
                         this.addActionButton( 'pass', _('Pass'), 'onPassPriceProtection');
@@ -517,7 +523,11 @@ function (dojo, declare) {
                         this.addActionButton( 'cancel_play_building', _('Cancel'), 'onCancelSelectBuildings');
                         break;
                     case 'client_actionChooseFactory':
-                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelAction');
+                        this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_actionChooseFactorySkip':
+                        this.addActionButton( 'skip_action', _('Skip Rest of Action'), 'onConfirmAction', null, false, 'red');
+                        this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_actionChooseCompany':
                     case 'client_tradeChooseCompany':
@@ -677,6 +687,14 @@ function (dojo, declare) {
             script.
         
         */
+
+        createTempManager(shortName, factoryNumber){
+            // create manager
+            var holder = shortName + '_' + factoryNumber + '_manager_holder';
+            var manager = dojo.place( this.format_block( 'jstpl_temp_manager', {} ), holder);
+            this.placeOnObject( manager, 'main_board');
+            this.slideToObject( manager, holder ).play();
+        },
 
         activateDemandForCompany(shortName){
             var companyType = this.gamedatas.all_companies[shortName].type;
@@ -1251,10 +1269,10 @@ function (dojo, declare) {
             this[companyShortName + '_salesperson_holder'].placeInZone(tokenId);
         },
 
-        companyHasSpaceForSalesperson: function(companyShortName){
+        getSalespersonEmptySpots: function(companyShortName){
             var currentNumberSalersperon = this[companyShortName+'_salesperson_holder'].getAllItems.length;
             var company = this.gamedatas.all_companies[companyShortName];
-            return company.salesperson_number > currentNumberSalersperon;
+            return company.salesperson_number - currentNumberSalersperon;
         },
 
         doesFactoryEmployManager: function(companyShortName, factoryNumber){
@@ -1267,6 +1285,13 @@ function (dojo, declare) {
             this.setClientState("client_actionChooseFactory", {
                 descriptionmyturn : dojo.string.substitute(_('Choose a factory'),{
 
+                })
+            });
+        },
+
+        chooseFactorySkip: function(){
+            this.setClientState("client_actionChooseFactorySkip", {
+                descriptionmyturn : dojo.string.substitute(_('Choose a factory'),{
                 })
             });
         },
@@ -2081,6 +2106,7 @@ function (dojo, declare) {
                     }
                     break;
                 case 'client_actionChooseFactory':
+                case 'client_actionChooseFactorySkip':
                     this.executeActionForCompany(companyShortName, factoryNumber);
                     break;
                 case 'playerAssetAutomationBonus':
@@ -2148,13 +2174,6 @@ function (dojo, declare) {
                         actionOk = false;
                         message = _("This factory already employs a manager");
                     }
-                case "hire_salesperson":
-                case "building2":
-                case "building22":
-                    if(!this.companyHasSpaceForSalesperson(companyShortName)){
-                        actionOk = false;
-                        message = _("This company cannot hire any more salesperson");
-                    }
                     break;
                 case "building6":
                 case "building24":
@@ -2163,6 +2182,13 @@ function (dojo, declare) {
                         message = _("This factory can't be automated");
                     }
                     break;
+                case "building23": // double manager
+                case "building35":
+                    if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
+                        actionOk = false;
+                        message = _("This factory already employs a manager");
+                    }
+                    break;  
             }
 
             var paymentMethod = buildingMaterial.payment;
@@ -2251,6 +2277,43 @@ function (dojo, declare) {
                     this.setClientState("client_confirmGainSameResources", {
                         descriptionmyturn : _('Confirm which two same resources to gain')
                     });
+                    break;
+                case "hire_salesperson":
+                case "building2":
+                case "building22":
+                    if(this.getSalespersonEmptySpots(companyShortName) == 0){
+                        this.setClientState("client_confirmGainLessSalespeople", {
+                            descriptionmyturn : _('Confirm gain 0 salesperson')
+                        });
+                    } else {
+                        this.onConfirmAction();
+                    }
+                    break;
+                case "building25": // double salesperson
+                case "building33":
+                    var emptySpots = this.getSalespersonEmptySpots(companyShortName)
+                    if(emptySpots == 0){
+                        this.setClientState("client_confirmGainLessSalespeople", {
+                            descriptionmyturn : _('Confirm gain 0 salesperson')
+                        });
+                    } else if (emptySpots == 1){
+                        this.setClientState("client_confirmGainLessSalespeople", {
+                            descriptionmyturn : _('Confirm gain 1 salesperson')
+                        });
+                    } else {
+                        this.onConfirmAction();
+                    }
+                    break;
+                case "building23": // double manager
+                case "building35":
+                    if(this.clientStateArgs.actionArgs.firstFactory){
+                        this.clientStateArgs.actionArgs.secondFactory = factoryNumber;
+                        this.onConfirmAction();
+                    } else {
+                        this.clientStateArgs.actionArgs.firstFactory = factoryNumber;
+                        this.createTempManager(companyShortName, factoryNumber);
+                        this.chooseFactorySkip();
+                    }
                     break;
                 default:
                     this.onConfirmAction();
@@ -2516,21 +2579,21 @@ function (dojo, declare) {
             this.clientStateArgs.workerId = workerId;
             
             switch(targetId){
-                case "hire_manager":
-                case "building6":
-                case "building11":
-                case "building14":
-                case "building44":
                 case "job_market_worker":
                     this.chooseFactory();
                     break;
-                case "building21":
-                case "building25":
-                case "building26":
-                case "building35":
-                case "building42":
-                case "building43":
-                    // double actions
+                case "hire_manager":
+                case "building6": // automation
+                case "building11": // manager
+                case "building14": // manager
+                case "building21": // double automation
+                case "building23": // doubler manager
+                case "building26": // doubler worker
+                case "building35": // doubler manager
+                case "building42": // double automation
+                case "building43": // worker + manager
+                case "building44": // worker + salesperson
+                    this.chooseFactorySkip();
                     break;
                 default:
                     this.chooseCompany();
@@ -2557,6 +2620,7 @@ function (dojo, declare) {
             this.restoreServerGameState();
         },
 
+        // called when using a building which allows you to gain 2 different or 2 same resources
         onChooseResources: function(event){
             var childNodes = event.currentTarget.childNodes;
             for(var i = 0; i < childNodes.length; i++){
@@ -2678,19 +2742,25 @@ function (dojo, declare) {
             if(workerId && buildingAction)
                 this[buildingAction + '_holder'].removeFromZone(workerId, true);
 
-            if(buildingAction == 'job_market_worker')
-            {
-                // put back workers in market
-                var selectedFactories = this.clientStateArgs.selectedFactories;
-                for(var i = 0; i < selectedFactories.length; i++){
-                    var workerId = selectedFactories[i].workerId;
-                    if(workerId != null){
-                        this.job_market.placeInZone(workerId);
+            switch(buildingAction){
+                case 'job_market_worker':
+                    // put back workers in market
+                    var selectedFactories = this.clientStateArgs.selectedFactories;
+                    for(var i = 0; i < selectedFactories.length; i++){
+                        var workerId = selectedFactories[i].workerId;
+                        if(workerId != null){
+                            this.job_market.placeInZone(workerId);
+                        }
                     }
-                }
 
-                // destroy all temp workers
-                dojo.query('.worker.temp').forEach(dojo.destroy);
+                    // destroy all temp workers
+                    dojo.query('.worker.temp').forEach(dojo.destroy);
+                    break;
+                case "building23": // double manager
+                case "building35":
+                    // destroy temp managers
+                    dojo.query('.manager.temp').forEach(dojo.destroy);
+                    break;
             }
 
             // reset counters with server-side counters
@@ -3580,6 +3650,7 @@ function (dojo, declare) {
         },
 
         notif_managerHired: function(notif){
+            dojo.query('.manager.temp').forEach(dojo.destroy);
             this.placeManager({
                 card_id: notif.args.manager_id,
                 card_location: notif.args.location

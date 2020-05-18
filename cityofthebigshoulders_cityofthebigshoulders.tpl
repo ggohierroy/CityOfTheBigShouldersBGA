@@ -167,6 +167,8 @@ var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style
 
 var jstpl_temp_worker = '<div class="worker temp"</div>';
 
+var jstpl_temp_manager = '<div class="moveable-token meeple meeple-tan manager temp"</div>';
+
 </script>  
 
 {OVERALL_GAME_FOOTER}

@@ -1251,6 +1251,9 @@ class CityOfTheBigShoulders extends Table
     {
         self::dump('relocateFactoryNumber', $relocateFactoryNumber);
 
+        if($factory_number == null)
+            return;
+
         // get the automations in the whole company
         // => location = spalding_automation_holder_{factory_number}_{spot_number}
         // some of the might be in worker spots => location = spalding_worker_holder_{factory_number}
@@ -1518,6 +1521,9 @@ class CityOfTheBigShoulders extends Table
 
     function hire_manager($company_short_name, $company_id, $factory_number)
     {
+        if($factory_number == null)
+            return;
+
         $location = "${company_short_name}_${factory_number}";
 
         // check that factory doesn't already have a manager
@@ -1549,7 +1555,7 @@ class CityOfTheBigShoulders extends Table
         $salesperson_number = $this->companies[$company_short_name]['salesperson_number'];
 
         if($salesperson_number <= $value)
-            throw new BgaVisibleSystemException("The company can no longer hire salespeople");
+            return;
         
         // create manager in that factory
         $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
@@ -3119,9 +3125,11 @@ class CityOfTheBigShoulders extends Table
             $sql = "SELECT card_id, card_location FROM card WHERE primary_type = 'building' AND card_type = '$building_action'";
             $building = self::getObjectFromDB($sql);
 
-            if($building == null){
+            if($building == null)
                 throw new BgaVisibleSystemException("Building does not exist");
-            }
+
+            if (strpos($building['card_location'], 'building_track_') == false)
+                throw new BgaVisibleSystemException("Building is not in play");
 
             $building_material = $this->building[$building_action];
         }
@@ -3332,9 +3340,24 @@ class CityOfTheBigShoulders extends Table
             case 'building14':
                 self::hire_manager($company_short_name, $company_id, $factory_number);
                 break;
+            case "building23": // double manager
+            case "building35":
+                $manager_factories = explode(',', $action_args);
+                if(count($manager_factories) > 2)
+                    throw new BgaVisibleSystemException("Can't hire more than 2 managers");
+                foreach($manager_factories as $number)
+                {
+                    self::hire_manager($company_short_name, $company_id, $number);
+                }
+                break;
             case 'hire_salesperson':
             case "building2":
             case "building22":
+                self::hire_salesperson($company_short_name, $company_id);
+                break;
+            case "building25":
+            case "building33":
+                self::hire_salesperson($company_short_name, $company_id);
                 self::hire_salesperson($company_short_name, $company_id);
                 break;
             case 'fundraising_60':
