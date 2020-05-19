@@ -2442,6 +2442,15 @@ class CityOfTheBigShoulders extends Table
         $company_id = $company_resource1['card_location_arg'];
         $company = self::getNonEmptyObjectFromDB("SELECT id, short_name, owner_id FROM company WHERE id = $company_id");
 
+        $state = $this->gamestate->state();
+        if( $state['name'] != 'playerActionPhase' && $state['name'] != 'playerFreeActionPhase' )
+        {
+            // can only use asset for current company
+            $id = self::getGameStateValue( "current_company_id" );
+            if($company_id != $id)
+                throw new BgaUserException( self::_("During the operation phase, only assets from the company being operated can be used") );
+        }
+
         $player_id = self::getActivePlayerId();
         if($company['owner_id'] != $player_id)
             throw new BgaVisibleSystemException("Player does not own this company");
@@ -3111,6 +3120,15 @@ class CityOfTheBigShoulders extends Table
         $short_name = $asset['card_location'];
         $company = self::getNonEmptyObjectFromDB("SELECT id, owner_id, appeal, treasury FROM company WHERE short_name = '$short_name'");
         $company_id = $company['id'];
+
+        $state = $this->gamestate->state();
+        if( $state['name'] != 'playerActionPhase' && $state['name'] != 'playerFreeActionPhase' )
+        {
+            // can only use asset for current company
+            $id = self::getGameStateValue( "current_company_id" );
+            if($company_id != $id)
+                throw new BgaUserException( self::_("During the operation phase, only assets from the company being operated can be used") );
+        }
 
         if($company['owner_id'] != $player_id)
             throw new BgaVisibleSystemException("Company is not owned by you");
