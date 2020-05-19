@@ -585,14 +585,16 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
                         this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
                         var companyShortName = args.company_short_name;
-                        var assets = this[companyShortName + '_asset'].getAllItems();
-                        if(assets.length > 0)
-                        {
-                            var asset = assets[0];
-                            if(asset.id.indexOf('price_protection') !== -1){
-                                var itemDivId = this[companyShortName + '_asset'].getItemDivId(asset.id);
-                                if(!dojo.hasClass(itemDivId, 'exhausted')){
-                                    this.addActionButton( 'withhold_protect', _('Withhold with Price Protection'), 'onWithholdProtection');
+                        var assetStock = this[companyShortName + '_asset'];
+                        if(assetStock){
+                            var assets = assetStock.getAllItems();
+                            if(assets.length > 0){
+                                var asset = assets[0];
+                                if(asset.id.indexOf('price_protection') !== -1){
+                                    var itemDivId = this[companyShortName + '_asset'].getItemDivId(asset.id);
+                                    if(!dojo.hasClass(itemDivId, 'exhausted')){
+                                        this.addActionButton( 'withhold_protect', _('Withhold with Price Protection'), 'onWithholdProtection');
+                                    }
                                 }
                             }
                         }
@@ -2614,7 +2616,13 @@ function (dojo, declare) {
             }
 
             var targetId = event.currentTarget.id;
-            var demandId = Number(dojo.attr(event.currentTarget, "identifier"));
+            var identifier = dojo.attr(event.currentTarget, "identifier")
+            if(!identifier){
+                this.showMessage(_('Can\'t distribute goods on this space'), 'info');
+                return;
+            }
+
+            var demandId = Number(identifier);
             var demandZoneName = "demand" + demandId + "_goods";
             var is20BonusSpot = targetId.indexOf('_20') !== -1;
 
@@ -3167,9 +3175,6 @@ function (dojo, declare) {
             var assets = this.capital_assets.getSelectedItems();
 
             if(assets.length == 0){
-                this.setClientState("client_chooseAsset", {
-                    descriptionmyturn : _('Choose an asset to buy')
-                });
                 return;
             }
 
@@ -3712,9 +3717,27 @@ function (dojo, declare) {
             dojo.subscribe('workerReceived', this, "notif_workerReceived");
             this.notifqueue.setSynchronous('workerReceived', 200);
 
+            dojo.subscribe('companyAssetDiscarded', this, "notif_companyAssetDiscarded");
+            this.notifqueue.setSynchronous('companyAssetDiscarded', 200);
+
+            dojo.subscribe('marketSquareReset', this, "notif_marketSquareReset");
+            this.notifqueue.setSynchronous('marketSquareReset', 200);
+
             dojo.subscribe('scoreUpdated', this, "notif_scoreUpdated");
 
             dojo.subscribe('newRound', this, "notif_newRound");
+        },
+
+        notif_marketSquareReset: function(notif){
+            this.haymarket.removeAll();
+            for(var index in notif.args.resources){
+                this.placeResource(notif.args.resources[index]);
+            }
+        },
+
+        notif_companyAssetDiscarded: function(notif){
+            var companyShortName = notif.args.short_name;
+            this[companyShortName + '_asset'].removeAll();
         },
 
         notif_scoreUpdated: function(notif){

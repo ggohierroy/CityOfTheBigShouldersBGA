@@ -23,7 +23,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 class CityOfTheBigShoulders extends Table
 {
     const STEP_TO_VALUE = [0=>10, 1=>15, 2=>20, 3=>25, 4=>35, 5=>40, 6=>50, 7=>60, 8=>80, 9=>100, 10=>120, 11=>140, 12=>160, 13=>190, 14=>220, 15=>250, 16=>280, 17=>320, 18=>360, 19=>400, 20=>450];
-    const REFILL_AMOUNT = [0 => 3, 1 => 4, 2 => 4, 3 => 5, 5 => 6];
+    const REFILL_AMOUNT = [0 => 3, 1 => 4, 2 => 4, 3 => 5, 4 => 6];
     const BONUS_LOOKUP = [0 => 0, 1 => 0, 2 => 0, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 4, 10 => 4, 11 => 5, 12 => 5, 13 => 6, 14 => 6, 15 => 7, 16 => 8];
     const BONUS_NAME = [1 => 'worker', 2 => 'manager', 3 => 'automation', 4 => 'partner', 5 => 'good', 6 => 'bump', 7 => 'good', 8 => 'bump'];
 
@@ -48,6 +48,7 @@ class CityOfTheBigShoulders extends Table
             "last_factory_produced" => 17,
             "resources_gained" => 19,
             "bonus_company_id" => 20,
+            "current_appeal_bonus" => 26,
             "next_appeal_bonus" => 21,
             "final_appeal_bonus" => 22,
             "trigger_protection_id" => 23,
@@ -118,6 +119,7 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( 'phase', 0 );
         self::setGameStateInitialValue( 'priority_deal_player_id', 0 );
         self::setGameStateInitialValue( 'bonus_company_id', 0 );
+        self::setGameStateInitialValue( "current_appeal_bonus", 0);
         self::setGameStateInitialValue( "next_appeal_bonus", 0);
         self::setGameStateInitialValue( "final_appeal_bonus", 0);
         self::setGameStateInitialValue( "trigger_protection_id", 0);
@@ -743,7 +745,6 @@ class CityOfTheBigShoulders extends Table
                 }
 
                 // discard tile
-                $demand_by_location[$demand['card_location']] = null;
                 $demand_id = $demand['card_id'];
                 $demands[$index]['card_location'] = 'discard';
                 self::DbQuery("UPDATE card SET card_location = 'discard' WHERE card_id = $demand_id");
@@ -787,9 +788,7 @@ class CityOfTheBigShoulders extends Table
             foreach($bonuses as $bonus)
             {
                 if(array_key_exists("${row}_${bonus}", $demand_by_location))
-                    break;
-                
-                $demand = $demand_by_location["${row}_${bonus}"];
+                    continue;
                 
                 // when location empty, shift tiles to the left
                 if($bonus == '50')
@@ -799,7 +798,7 @@ class CityOfTheBigShoulders extends Table
                         // check if 20 not empty => shift
                         $demand = $demand_by_location["${row}_20"];
                         $demand_by_location["${row}_50"] = $demand;
-                        $demand_by_location["${row}_20"] = null;
+                        unset($demand_by_location["${row}_20"]);
                         $demand_id = $demand['card_id'];
                         $demand['card_location'] = "${row}_50";
                         self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
@@ -813,7 +812,7 @@ class CityOfTheBigShoulders extends Table
                         // else check if 0 not empty => shift
                         $demand = $demand_by_location["${row}_0"];
                         $demand_by_location["${row}_50"] = $demand;
-                        $demand_by_location["${row}_0"] = null;
+                        unset($demand_by_location["${row}_0"]);
                         $demand_id = $demand['card_id'];
                         $demand['card_location'] = "${row}_50";
                         self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
@@ -848,7 +847,7 @@ class CityOfTheBigShoulders extends Table
                         // else check if 0 not empty => shift
                         $demand = $demand_by_location["${row}_0"];
                         $demand_by_location["${row}_20"] = $demand;
-                        $demand_by_location["${row}_0"] = null;
+                        unset($demand_by_location["${row}_0"]);
                         $demand_id = $demand['card_id'];
                         $demand['card_location'] = "${row}_20";
                         self::DbQuery("UPDATE card SET card_location = '${row}_20' WHERE card_id = $demand_id");
@@ -1157,11 +1156,42 @@ class CityOfTheBigShoulders extends Table
 
             // get missing resources if any
             $missing_resources = self::getObjectListFromDB(
-                "SELECT TOP $missing_resources_count card_id, card_location, card_type FROM card
+                "SELECT card_id, card_location, card_type FROM card
                 WHERE card_location = 'haymarket'
-                ORDER BY card_location_arg ASC");
+                ORDER BY card_location_arg ASC
+                LIMIT $missing_resources_count");
 
             $drawn_resources = array_merge($drawn_resources, $missing_resources);
+        }
+
+        // then update location of drawn resources for each empty location
+        for($i = 0; $i < $number_empty_locations; $i++)
+        {
+            $resource_ids_types = [];
+            $location = $supply_locations[3 - $i];
+            $resource_ids = [];
+            for($j = 0; $j < $refill_amount; $j++)
+            {
+                $resource = array_pop($drawn_resources);
+                $resource_ids[] = $resource['card_id'];
+                $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+            }
+
+            $in_condition = implode(',', $resource_ids);
+            self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
+
+            self::notifyAllPlayers( "resourcesDrawn", "", array(
+                'resource_ids_types' => $resource_ids_types,
+                'location' => $location
+            ));
+        }
+
+        if(count($drawn_resources) != 0)
+            throw new BgaVisibleSystemException("Didn't process all drawn resources");
+
+        if($missing_resources_count != 0)
+        {
+            // then reset haymarket square
 
             // move haymarket to resource bag
             $this->cards->moveAllCardsInLocation( 'haymarket', 'resource_bag' );
@@ -1193,32 +1223,12 @@ class CityOfTheBigShoulders extends Table
 
             // shuffle resource bag again
             $this->cards->shuffle('resource_bag');
-        }
 
-        // then update location of drawn resources for each empty location
-        for($i = 0; $i < $number_empty_locations; $i++)
-        {
-            $resource_ids_types = [];
-            $location = $supply_locations[3 - $i];
-            $resource_ids = [];
-            for($j = 0; $j < $refill_amount; $j++)
-            {
-                $resource = array_pop($drawn_resources);
-                $resource_ids[] = $resource['card_id'];
-                $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
-            }
-
-            $in_condition = implode(',', $resource_ids);
-            self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
-
-            self::notifyAllPlayers( "resourcesDrawn", "", array(
-                'resource_ids_types' => $resource_ids_types,
-                'location' => $location
+            $market_square_resources = self::getObjectListFromDB("SELECT * FROM card WHERE card_location = 'haymarket'");
+            self::notifyAllPlayers( "marketSquareReset", clienttranslate("Resources in Haymarket Square return to the bag"), array(
+                'resources' => $market_square_resources
             ));
         }
-
-        if(count($drawn_resources) != 0)
-            throw new BgaVisibleSystemException("Didn't process all drawn resources");
     }
 
     function gainAsset($company_name, $company, $asset, $should_replace)
@@ -1233,7 +1243,7 @@ class CityOfTheBigShoulders extends Table
         $asset_id = $asset['card_id'];
         if($should_replace)
         {
-            $current_asset = self::getUniqueValueFromDB("SELECT card_id, card_type FROM card WHERE primary_type = 'asset' AND card_location = '$company_short_name'");
+            $current_asset = self::getObjectFromDB("SELECT card_id, card_type FROM card WHERE primary_type = 'asset' AND card_location = '$company_short_name'");
             if($current_asset != null)
             {
                 $current_asset_id = $current_asset['card_id'];
@@ -1628,6 +1638,7 @@ class CityOfTheBigShoulders extends Table
         if($last_bonus_gained != $new_bonus_gained)
         {
             self::setGameStateValue('bonus_company_id', $company_id);
+            self::setGameStateValue('current_appeal_bonus', $last_bonus_gained);
             self::setGameStateValue('next_appeal_bonus', $last_bonus_gained + 1);
             self::setGameStateValue('final_appeal_bonus', $new_bonus_gained);
             return true;
@@ -2337,6 +2348,7 @@ class CityOfTheBigShoulders extends Table
         else
         {
             // this means there are more appeal bonuses to gain, go back
+            self::setGameStateValue('current_appeal_bonus', $next_appeal_bonus);
             self::setGameStateValue('next_appeal_bonus', $next_appeal_bonus + 1);
             $this->gamestate->nextState( 'loopback' );
         }
@@ -2371,10 +2383,31 @@ class CityOfTheBigShoulders extends Table
 
         if($next_appeal_bonus == $final_appeal_bonus)
         {
-            $this->gamestate->nextState( 'next' );
+            $state = $this->gamestate->state();
+            if( $state['name'] == 'managerBonusAppeal')
+            {
+                $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
+                $total_factories = count($this->companies[$short_name]['factories']);
+                if($last_factory_produced == $total_factories)
+                {
+                    // go to state distributeGoods
+                    $this->gamestate->nextState( 'distributeGoods' );
+                }
+                else
+                {
+                    // else go to next factory
+                    $this->gamestate->nextState( 'nextFactory' );
+                }
+            }
+            else
+            {
+                // this happens during the operation phase, when asset tiles which gain appeal bonuses are used
+                $this->gamestate->nextState( 'next' );
+            }
         }
         else
         {
+            self::setGameStateValue('current_appeal_bonus', $next_appeal_bonus);
             self::setGameStateValue('next_appeal_bonus', $next_appeal_bonus + 1);
             $this->gamestate->nextState( 'loopback' );
         }
@@ -2790,12 +2823,20 @@ class CityOfTheBigShoulders extends Table
             
             if($current_goods + $number_of_goods_to_distribute == $total_demand)
             {
-                // add bonus to income
-                $demand_tile = $demand_tiles["demand${demand_id}"];
-                $location = $demand_tile['card_location'];
-                $split = explode('_', $location);
-                $bonus = $split[count($split) - 1];
-                $income += $bonus;
+                if(intval($demand_id) > 24)
+                {
+                    // when the space is empty, the only bonus can be 20
+                    $income += 20;
+                }
+                else
+                {
+                    // add bonus to income
+                    $demand_tile = $demand_tiles["demand${demand_id}"];
+                    $location = $demand_tile['card_location'];
+                    $split = explode('_', $location);
+                    $bonus = $split[count($split) - 1];
+                    $income += $bonus;
+                }
             }
 
             // add value of goods to income
@@ -2852,7 +2893,7 @@ class CityOfTheBigShoulders extends Table
     function skipBuyResources()
     {
         self::checkAction( 'skipBuyResources' );
-        $this->gamestate->nextState( 'produceGoods' );
+        $this->gamestate->nextState( 'playerProduceGoodsPhase' );
     }
 
     function managerBonusGainResources($resource_ids)
@@ -2904,9 +2945,9 @@ class CityOfTheBigShoulders extends Table
         ) );
 
         // check if should go to appeal bonus
-        $next_appeal_bonus = self::getGameStateValue("next_appeal_bonus");
+        $current_appeal_bonus = self::getGameStateValue("current_appeal_bonus");
         $final_appeal_bonus = self::getGameStateValue("final_appeal_bonus");
-        if($next_appeal_bonus != $final_appeal_bonus)
+        if($current_appeal_bonus != $final_appeal_bonus)
         {
             $this->gamestate->nextState( 'managerBonusAppeal' );
             return;
@@ -3010,9 +3051,9 @@ class CityOfTheBigShoulders extends Table
 
         self::automateWorker($short_name, $factory_number, $relocate_number);
 
-        $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
+        $current_appeal_bonus = self::getGameStateValue('current_appeal_bonus');
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
-        if($next_appeal_bonus == $final_appeal_bonus)
+        if($current_appeal_bonus == $final_appeal_bonus)
         {
             // set state to next game state
             $this->gamestate->nextState( 'freeActions' );
@@ -3046,7 +3087,7 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'skipAssetBonus' );
 
         // set state to next game state
-        $this->gamestate->nextState( 'gameActionPhase' );
+        $this->gamestate->nextState( 'freeActions' );
     }
 
     function useAsset( $asset_name )
@@ -3976,6 +4017,23 @@ class CityOfTheBigShoulders extends Table
         
         $player_id = self::getActivePlayerId();
 
+        // check if certificate limit reached
+        $player_shares = self::getPlayerShares($player_id);
+        $player_number = self::getPlayersNumber();
+        $certificate_limit = 14;
+        if($player_number == 2)
+        {
+            $certificate_limit = 10;
+        }  
+        else if($player_number == 3)
+        {
+            $certificate_limit = 12;
+        }
+        
+        if(count($player_shares) == $certificate_limit)
+            throw new BgaUserException( self::_("You have reached your certificate limit") );
+
+        // check enough money
         $player = self::getPlayer($player_id);
         
         $share_value = self::getShareValue($initial_share_value_step);
@@ -4332,6 +4390,8 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers( "scoreUpdated", "", array(
             'scores' => $scores
         ) );
+
+        //$this->gamestate->nextState( 'gameEnd' );
     }
     
     function stGameOperationPhase()
@@ -4346,7 +4406,9 @@ class CityOfTheBigShoulders extends Table
             $round = self::getGameStateValue("round");
             if($round == 4)
             {
-                $this->gamestate->nextState( 'publicGoalScoring' );
+                self::stGamePublicGoalScoring();
+                // TODO: change to gameEnd
+                $this->gamestate->nextState( 'cleanup' );
                 return;
             }
 
