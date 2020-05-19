@@ -147,6 +147,9 @@ function (dojo, declare) {
                 this.placeAvailableCompany(company.short_name);
             }
 
+            // create demand space zones (for when demand tile deck is empty)
+            this.createDemandSpaceZones();
+
             // add items to board
             this.placeItemsOnBoard(gamedatas);
 
@@ -159,9 +162,6 @@ function (dojo, declare) {
  
             // connect appeal bonus spots
             dojo.query(".appeal-bonus").connect( 'onclick', this, 'onAppealBonusClicked' );
-
-            // create demand space zones (for when demand tile deck is empty)
-            this.createDemandSpaceZones();
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -1860,7 +1860,7 @@ function (dojo, declare) {
 
         placeGood: function(good, from, fromZone){
 
-            var companyShortName = good.card_location.split('_')[0]; // brunswick_goods
+            var location = good.card_location.split('_')[0]; // brunswick_goods or demand28
             if(from == 'supply'){
                 // good produced -> create good
                 // when goods are produced, all goods are returned from the server, so we avoid recreating them
@@ -1871,20 +1871,20 @@ function (dojo, declare) {
                     } ), 'main_board' );
                 }
 
-                this[companyShortName + '_goods'].placeInZone('good_' + good.card_id);
+                this[location + '_goods'].placeInZone('good_' + good.card_id);
 
             } else if (from == 'company'){
                 // good exists -> move it
                 this[good.card_location].placeInZone('good_' + good.card_id);
                 this[fromZone].removeFromZone('good_' + good.card_id);
             } else {
-                // page refresh -> create good
+                // page refresh -> create good (in company or on demand tile)
                 dojo.place( this.format_block( 'jstpl_generic_div', {
                     id: 'good_' + good.card_id, 
                     class: 'good_token'
-                } ), companyShortName + '_goods' );
+                } ), location + '_goods' );
 
-                this[companyShortName + '_goods'].placeInZone('good_' + good.card_id);
+                this[location + '_goods'].placeInZone('good_' + good.card_id);
             }
         },
 
@@ -3613,6 +3613,9 @@ function (dojo, declare) {
             dojo.subscribe( 'startCompany', this, "notif_startCompany" );
             this.notifqueue.setSynchronous( 'startCompany', 500 );
 
+            dojo.subscribe( 'automationTokensCreated', this, "notif_automationTokensCreated" );
+            this.notifqueue.setSynchronous( 'automationTokensCreated', 200 );
+
             dojo.subscribe( 'certificateBought', this, "notif_certificateBought" );
             this.notifqueue.setSynchronous( 'certificateBought', 500 );
 
@@ -3802,7 +3805,10 @@ function (dojo, declare) {
             // remove all goods from card
             this[demandNumber + '_goods'].removeAll();
 
-            this.fadeOutAndDestroy( demandNumber, 200);
+            // some demand tiles don't exist on the front-end because they are used only when demand deck is empty
+            // so make sure the demand actually exists before destroying it
+            if($(demandNumber) != null) 
+                this.fadeOutAndDestroy( demandNumber, 200);
         },
 
         notif_assetsShifted: function(notif){
@@ -4090,7 +4096,7 @@ function (dojo, declare) {
             var appeal = notif.args.appeal;
             var playerId = notif.args.owner_id;
             var initialShareValueStep = notif.args.initial_share_value_step;
-            var automationTokens = notif.args.automation_tokens;
+            
             var directorStockId = notif.args.director_stock_id;
             var stocks = notif.args.stocks;
 
@@ -4100,11 +4106,6 @@ function (dojo, declare) {
                     share_value_step: initialShareValueStep,
                 }, 'available_companies');
             this.available_companies.removeFromStockById(shortName);
-
-            for(var index in automationTokens){
-                var automation = automationTokens[index];
-                this.placeAutomationToken(automation);
-            }
 
             for(var index in stocks)
             {
@@ -4121,6 +4122,14 @@ function (dojo, declare) {
             this.updateAppealTokens(appeal, notif.args.order);
 
             this.updateCounters(notif.args.counters);
+        },
+
+        notif_automationTokensCreated: function(notif) {
+            var automationTokens = notif.args.automation_tokens;
+            for(var index in automationTokens){
+                var automation = automationTokens[index];
+                this.placeAutomationToken(automation);
+            }
         },
 
         notif_certificateBought: function(notif) {

@@ -759,6 +759,26 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        // cleanup demand spaces that are empty (demand tile deck is empty)
+        foreach($goods_by_location as $location => $good_ids_array)
+        {
+            if(!array_key_exists($location, $this->board_demand))
+                continue;
+            
+            $demand_material = $this->board_demand[$location];
+            $total_demand = $demand_material['demand'];
+            if(count($good_ids_array) == $total_demand || $demand_material['bonus'] == 0)
+            {
+                $good_ids = implode(',', $good_ids_array);
+                self::DbQuery("DELETE FROM card WHERE card_id IN ($good_ids)");
+
+                // notify
+                self::notifyAllPlayers( "demandDiscarded", "", array(
+                    'demand_number' => $location
+                ));
+            }
+        }
+
         // shift demand right
         $rows = ['food_and_dairy', 'dry_goods', 'meat_packing', 'shoes'];
         $bonuses = ['50', '20', '0'];
@@ -766,14 +786,15 @@ class CityOfTheBigShoulders extends Table
         {
             foreach($bonuses as $bonus)
             {
-                $demand = $demand_by_location["${row}_${bonus}"];
-                if($demand != null)
+                if(array_key_exists("${row}_${bonus}", $demand_by_location))
                     break;
+                
+                $demand = $demand_by_location["${row}_${bonus}"];
                 
                 // when location empty, shift tiles to the left
                 if($bonus == '50')
                 {
-                    if($demand_by_location["${row}_20"] != null)
+                    if(array_key_exists("${row}_20", $demand_by_location))
                     {
                         // check if 20 not empty => shift
                         $demand = $demand_by_location["${row}_20"];
@@ -787,7 +808,7 @@ class CityOfTheBigShoulders extends Table
                             'from' => "${row}_20"
                         ));
                     }
-                    else if($demand_by_location["${row}_0"] != null)
+                    else if(array_key_exists("${row}_0", $demand_by_location))
                     {
                         // else check if 0 not empty => shift
                         $demand = $demand_by_location["${row}_0"];
@@ -822,7 +843,7 @@ class CityOfTheBigShoulders extends Table
                 }
                 else if ($bonus == '20')
                 {
-                    if($demand_by_location["${row}_0"] != null)
+                    if(array_key_exists("${row}_0", $demand_by_location))
                     {
                         // else check if 0 not empty => shift
                         $demand = $demand_by_location["${row}_0"];
@@ -4011,12 +4032,10 @@ class CityOfTheBigShoulders extends Table
         }
 
         // create automation tokens
-        $automation_tokens = [];
         foreach($companyMaterial['factories'] as $factory_number => $factory)
         {
             for($i = 0; $i < $factory['automation']; $i++)
             {
-                $automation_tokens[] = ['owner_type' => 'company', 'primary_type' => 'automation', 'card_type' => $company_short_name.'_automation_'.$factory_number.'_'.$i, 'card_type_arg' => 0, 'card_location' => $company_short_name.'_automation_holder_'.$factory_number.'_'.$i, 'card_location_arg' => $company_id];
                 $values[] = "('company','automation','".$company_short_name."_automation_".$factory_number."_".$i."',0,'".$company_short_name."_automation_holder_".$factory_number."_".$i."','".$company_id."')";
             }
         }
@@ -4028,6 +4047,9 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT * FROM card WHERE primary_type = 'stock' AND card_type_arg = $company_id";
         $stocks = self::getObjectListFromDB($sql);
 
+        // get the automation tokens that were just created
+        $automations = self::getObjectListFromDB("SELECT * FROM card WHERE primary_type = 'automation' AND card_location_arg = $company_id");
+
         // notify players that company started
         $money_id = "money_${player_id}";
         $company_money_id = "money_${company_short_name}";
@@ -4038,7 +4060,6 @@ class CityOfTheBigShoulders extends Table
             'short_name' => $companyMaterial['short_name'],
             'initial_share_value_step' => $initial_share_value_step,
             'owner_id' => $player_id,
-            'automation_tokens' => $automation_tokens,
             'appeal' => $initial_appeal,
             'order' => $query_result['order'],
             'counters' => [
@@ -4046,6 +4067,10 @@ class CityOfTheBigShoulders extends Table
                 $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
             'stocks' => $stocks
         ) );
+
+        self::notifyAllPlayers("automationTokensCreated", "", [
+            'automation_tokens' => $automations
+        ]);
         
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameTurn' );
