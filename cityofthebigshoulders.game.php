@@ -36,7 +36,7 @@ class CityOfTheBigShoulders extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
-        
+
         self::initGameStateLabels( array( 
             "turns_this_phase" => 10,
             "round" => 11,
@@ -4518,13 +4518,11 @@ class CityOfTheBigShoulders extends Table
                 AND card_location <> 'building_discard'";
         $buildings = self::getCollectionFromDB($sql);
 
-        $player_number = self::getPlayersNumber();
-        if(count($buildings) != 2 * $player_number)
-            throw new BgaVisibleSystemException("Expected more buildings to play and discard");
-
         $number_of_workers_to_add = 0;
 
         $new_buildings = [];
+
+        $building_by_player = [];
         
         // update location to track
         foreach($buildings as $building_id => $building)
@@ -4534,8 +4532,17 @@ class CityOfTheBigShoulders extends Table
             $building_action = $split[2];
             $player_id = $split[1];
             $building_number = $building['card_type'];
+
+            if(!array_key_exists($player_id, $building_by_player))
+                $building_by_player[$player_id] = [ 'play' => null, 'discard' => null ];
+
             if($building_action == 'play')
             {
+                if($building_by_player[$player_id]['play'] == null)
+                    $building_by_player[$player_id]['play'] = true;
+                else
+                    throw new BgaVisibleSystemException("You can't play more than one building");
+
                 // compute number of workers to add to board
                 $number_of_workers = $this->building[$building_number]['number_of_workers'];
                 $number_of_workers_to_add += $number_of_workers;
@@ -4547,6 +4554,11 @@ class CityOfTheBigShoulders extends Table
             }
             else if($building_action == 'discard')
             {
+                if($building_by_player[$player_id]['discard'] == null)
+                    $building_by_player[$player_id]['discard'] = true;
+                else
+                    throw new BgaVisibleSystemException("You can't discard more than one building");
+
                 $sql = "UPDATE card SET card_location = 'building_discard' WHERE card_id = $building_id";
             }
             else
@@ -4851,6 +4863,13 @@ class CityOfTheBigShoulders extends Table
     	
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
+                case 'playerSellPhase':
+                    self::incGameStateValue( "consecutive_passes", 1 );
+                    $this->gamestate->nextState( "zombiePass" );
+                case 'playerActionPhase':
+                    self::DbQuery("UPDATE player SET current_number_partners = 0 WHERE player_id = $active_player");
+                    $this->gamestate->nextState( "zombiePass" );
+                    break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
@@ -4861,7 +4880,7 @@ class CityOfTheBigShoulders extends Table
 
         if ($state['type'] === "multipleactiveplayer") {
             // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
+            $this->gamestate->setPlayerNonMultiactive( $active_player, 'gameActionPhaseSetup' );
             
             return;
         }

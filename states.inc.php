@@ -33,7 +33,7 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('${you} must choose a company to start'),
     		"type" => "activeplayer",
     		"possibleactions" => array( "startCompany" ),
-    		"transitions" => array( "gameTurn" => 3 )
+    		"transitions" => array( "gameTurn" => 3, "zombiepass" => 3 )
     ),
 
     3 => array(
@@ -51,7 +51,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "updateGameProgression" => true,
         "possibleactions" => array( "sellShares", "skipSell", "passStockAction" ),
-        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "interruptPriceProtection" => 33 )
+        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "interruptPriceProtection" => 33, "zombiepass" => 5 )
     ),
 
     9 => array(
@@ -127,7 +127,7 @@ $machinestates = array(
         "updateGameProgression" => true,
         "args" => "argsPlayerActionPhase",
         "possibleactions" => array( "buildingAction", "tradeResources", "useAsset" ),
-        "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeAppealBonus" => 25, "loopback" => 11)
+        "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeAppealBonus" => 25, "loopback" => 11, "zombiepass" => 12)
     ),
 
     23 => array(
@@ -189,7 +189,7 @@ $machinestates = array(
         "updateGameProgression" => true,
         "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
-        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13)
+        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13, "zombiepass" => 19)
     ),
 
     14 => array(
