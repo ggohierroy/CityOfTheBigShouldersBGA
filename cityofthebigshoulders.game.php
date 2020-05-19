@@ -3667,9 +3667,14 @@ class CityOfTheBigShoulders extends Table
         $player_number = self::getPlayersNumber();
         $certificate_limit = 14;
         if($player_number == 2)
+        {
             $certificate_limit = 10;
+        }  
         else if($player_number == 3)
-            $certificate_limit == 12;
+        {
+            $certificate_limit = 12;
+        }
+        
         if(count($player_shares) == $certificate_limit)
             throw new BgaUserException( self::_("You have reached your certificate limit") );
         

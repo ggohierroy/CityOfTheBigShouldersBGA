@@ -336,19 +336,20 @@
     margin: 5px 5px;
     padding: 5px 5px;
     display: inline-block;
-    width: 350px;
+    width: 25%;
 }
 
 .owned_companies_area {
     margin: 5px 5px;
     padding: 5px 5px;
     display: inline-block;
+    width: 60%;
 }
 
 .building_track {
     left: 506px;
     height: 50px;
-    width: 267px;
+    width: 270px;
     position: absolute;
 }
 
