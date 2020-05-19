@@ -50,17 +50,33 @@
         <div id="supply_10" class="supply"></div>
         <div id="job_market" class="supply"></div>
         <div id="dry_goods_50" class="demand dry_goods"></div>
-        <div id="dry_goods_20" class="demand dry_goods"></div>
-        <div id="dry_goods_0" class="demand dry_goods"></div>
+        <div id="dry_goods_20" class="demand dry_goods" identifier="27">
+            <div id="demand27_goods"></div>
+        </div>
+        <div id="dry_goods_0" class="demand dry_goods" identifier="28">
+            <div id="demand28_goods"></div>
+        </div>
         <div id="meat_packing_50" class="demand meat_packing"></div>
-        <div id="meat_packing_20" class="demand meat_packing"></div>
-        <div id="meat_packing_0" class="demand meat_packing"></div>
+        <div id="meat_packing_20" class="demand meat_packing" identifier="29">
+            <div id="demand29_goods"></div>
+        </div>
+        <div id="meat_packing_0" class="demand meat_packing" identifier="30">
+            <div id="demand30_goods"></div>
+        </div>
         <div id="food_and_dairy_50" class="demand food_and_dairy"></div>
-        <div id="food_and_dairy_20" class="demand food_and_dairy"></div>
-        <div id="food_and_dairy_0" class="demand food_and_dairy"></div>
+        <div id="food_and_dairy_20" class="demand food_and_dairy" identifier="25">
+            <div id="demand25_goods"></div>
+        </div>
+        <div id="food_and_dairy_0" class="demand food_and_dairy" identifier="26">
+            <div id="demand26_goods"></div>
+        </div>
         <div id="shoes_50" class="demand shoes"> </div>
-        <div id="shoes_20" class="demand shoes"></div>
-        <div id="shoes_0" class="demand shoes"></div>
+        <div id="shoes_20" class="demand shoes" identifier="31">
+            <div id="demand31_goods"></div>
+        </div>
+        <div id="shoes_0" class="demand shoes" identifier="32">
+            <div id="demand32_goods"></div>
+        </div>
         <div id="advertising" class="worker_spot general-action">
             <div id="advertising_holder"></div>
         </div>

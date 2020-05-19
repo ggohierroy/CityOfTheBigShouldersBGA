@@ -160,6 +160,9 @@ function (dojo, declare) {
             // connect appeal bonus spots
             dojo.query(".appeal-bonus").connect( 'onclick', this, 'onAppealBonusClicked' );
 
+            // create demand space zones (for when demand tile deck is empty)
+            this.createDemandSpaceZones();
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
@@ -704,6 +707,26 @@ function (dojo, declare) {
             script.
         
         */
+
+        createDemandSpaceZones: function(){
+            
+            this.createZone('demand27_goods', 13, 22);
+            this.createZone('demand28_goods', 13, 22);
+            this.createZone('demand29_goods', 13, 22);
+            this.createZone('demand30_goods', 13, 22);
+            this.createZone('demand31_goods', 13, 22);
+            this.createZone('demand32_goods', 13, 22);
+            this.createZone('demand25_goods', 13, 22);
+            this.createZone('demand26_goods', 13, 22);
+
+            dojo.query(".demand").connect( 'onclick', this, 'onDemandSpaceClicked' );
+        },
+
+        createZone: function(name, width, height){
+            var zone = new ebg.zone();
+            zone.create( this, name, width, height );
+            this[name] = zone;
+        },
 
         creatAppealBonusTooltips: function(){
             this.addTooltip( "appeal_1", "", _( "Gain a worker from the supply" ));
@@ -2568,10 +2591,89 @@ function (dojo, declare) {
             return numberOfWorkers - workerHolderChilds.length;
         },
 
+        onDemandSpaceClicked: function(event){
+            var demandCards = dojo.query('#' + event.currentTarget.id + '>.demand-card');
+            if(demandCards.length > 0)
+                return;
+            
+            dojo.stopEvent(event);
+
+            if(!this.checkAction('distributeGoods'))
+                return;
+            
+            if(!dojo.hasClass(event.currentTarget, 'active'))
+                return;
+
+            // check if there are goods to distribute
+            var shortName = this.gamedatas.gamestate.args.company_short_name;
+            var goods = this[shortName + '_goods'].getAllItems();
+
+            if(goods.length == 0){
+                this.showMessage(_('No goods to distribute'), 'info');
+                return;
+            }
+
+            var targetId = event.currentTarget.id;
+            var demandId = Number(dojo.attr(event.currentTarget, "identifier"));
+            var demandZoneName = "demand" + demandId + "_goods";
+            var is20BonusSpot = targetId.indexOf('_20') !== -1;
+
+            // this space holds 6 goods
+            // other space holds infinite goods
+            if(is20BonusSpot){
+                var demandGoods = this[demandZoneName].getAllItems();
+                if(demandGoods.length == 6)
+                {
+                    this.showMessage(_('Cannot distribute anymore goods on this demand space'), 'info');
+                    return;
+                }
+            }
+
+            // place good on demand tile
+            var good = goods[0];
+            var card_id = good.split('_')[1]; // good_159
+            this.placeGood({
+                card_location: demandZoneName,
+                card_id: card_id
+            }, 'company', shortName + '_goods')
+
+            var income = this.clientStateArgs.income;
+            // if there is one spot left => add bonus
+            if(is20BonusSpot && demandGoods.length == 5){
+                income += 20;
+            }
+
+            // get salespeople and price of goods
+            var numberOfSalespeople = dojo.query('#company_' + shortName + ' .salesperson').length;
+            var pricePerGood = Number(this.gamedatas.all_companies[shortName].salesperson[numberOfSalespeople]);
+            if(is20BonusSpot){
+                income += pricePerGood;
+            } else {
+                income += pricePerGood/2;
+            }
+
+            // save the demand tile id for when the player confirms
+            // save also good ids if a player cancels
+            this.clientStateArgs.income = income;
+            this.clientStateArgs.goods.push({'demandId': demandId, 'goodId': card_id, 'zoneName': demandZoneName});
+            var count = this.clientStateArgs.goods.length;
+
+            // calculate operating income and switch to client state that displays it
+            this.setClientState("client_playerTurnConfirmDistributeGoods", {
+                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods for $${income}'),{
+                    count: count,
+                    income: income
+                })
+            });
+        },
+
         onDemandClick: function(event){
             dojo.stopEvent(event);
 
             if(!this.checkAction('distributeGoods'))
+                return;
+            
+            if(!dojo.hasClass(event.currentTarget.parentNode, 'active'))
                 return;
 
             // check if there are goods to distribute
@@ -2622,7 +2724,7 @@ function (dojo, declare) {
             var regex = /\d+$/;
             var demandIdentifier = Number(regex.exec(targetId)[0]);
             this.clientStateArgs.income = income;
-            this.clientStateArgs.goods.push({'demandId': demandIdentifier, 'goodId': card_id});
+            this.clientStateArgs.goods.push({'demandId': demandIdentifier, 'goodId': card_id, 'zoneName': targetId + '_goods'});
             var count = this.clientStateArgs.goods.length;
 
             // calculate operating income and switch to client state that displays it
@@ -3386,7 +3488,7 @@ function (dojo, declare) {
             for(var i = 0; i < goods.length; i++){
                 var good = goods[i];
                 this[companyShortName + '_goods'].placeInZone('good_' + good.goodId);
-                this['demand' + good.demandId + '_goods'].removeFromZone('good_' + good.goodId);
+                this[good.zoneName].removeFromZone('good_' + good.goodId);
             }
 
             this.restoreServerGameState();

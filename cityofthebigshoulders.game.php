@@ -2725,18 +2725,38 @@ class CityOfTheBigShoulders extends Table
                 throw new BgaVisibleSystemException("Company type does not match demand type");
         }
 
+        // get all demand tiles and check which locations are empty
+        $all_demand_tiles = self::getCollectionFromDB("SELECT card_location FROM card WHERE primary_type = 'demand'");
+
         // get value of goods
         $number_salespeople = self::getUniqueValueFromDb(
             "SELECT COUNT(card_id) FROM card
             WHERE primary_type = 'salesperson' AND card_location = '$short_name'");
         
-        $value_of_goods = $company_material['salesperson'][$number_salespeople];
-
         // check that is enough space on demand tiles for distributed goods
         foreach($goods_to_distribute_by_location as $demand_id => $number_of_goods_to_distribute)
         {
-            $demand_material = $this->demand["demand${demand_id}"];
-            $total_demand = $demand_material['demand'];
+            $value_of_goods = $company_material['salesperson'][$number_salespeople];
+
+            if(intval($demand_id) > 24)
+            {
+                // this is an empty space on the board
+                $demand_material = $this->board_demand["demand${demand_id}"];
+                $type = $demand_material['type'];
+                $bonus = $demand_material['bonus'];
+                $total_demand = $demand_material['demand'];
+                if($bonus == 0)
+                    $value_of_goods = $value_of_goods / 2;
+
+                // make sure it really is empty
+                if(array_key_exists("${type}_${bonus}", $all_demand_tiles))
+                    throw new BgaVisibleSystemException("This demand space is not empty");
+            }
+            else
+            {
+                $demand_material = $this->demand["demand${demand_id}"];
+                $total_demand = $demand_material['demand'];
+            }
 
             $current_goods = 0;
             if(isset($goods_by_location["demand${demand_id}"]))

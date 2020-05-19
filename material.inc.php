@@ -407,6 +407,49 @@ $this->demand = [
   ]
 ];
 
+$this->board_demand = [
+  "demand25" => [
+    "type" => "food_and_dairy",
+    "bonus" => 20,
+    "demand" => 6,
+  ],
+  "demand26" => [
+    "type" => "food_and_dairy",
+    "bonus" => 0,
+    "demand" => 999,
+  ],
+  "demand27" => [
+    "type" => "dry_goods",
+    "bonus" => 20,
+    "demand" => 6,
+  ],
+  "demand28" => [
+    "type" => "dry_goods",
+    "bonus" => 0,
+    "demand" => 999,
+  ],
+  "demand29" => [
+    "type" => "meat_packing",
+    "bonus" => 20,
+    "demand" => 6,
+  ],
+  "demand30" => [
+    "type" => "meat_packing",
+    "bonus" => 0,
+    "demand" => 999,
+  ],
+  "demand31" => [
+    "type" => "shoes",
+    "bonus" => 20,
+    "demand" => 6,
+  ],
+  "demand32" => [
+    "type" => "shoes",
+    "bonus" => 0,
+    "demand" => 999,
+  ],
+];
+
 $this->capital_asset = [
   "color_catalog" => [ // operating revenue 60
     "starting" => false,
