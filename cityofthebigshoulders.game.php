@@ -453,7 +453,7 @@ class CityOfTheBigShoulders extends Table
 
     function gainGood($company_short_name)
     {
-        $self::DbQuery("UPDATE company SET extra_goods = extra_goods + 1 WHERE short_name = '$company_short_name");
+        self::DbQuery("UPDATE company SET extra_goods = extra_goods + 1 WHERE short_name = '$company_short_name'");
 
         self::notifyAllPlayers( "appealBonusGoodsTokenReceived", clienttranslate( '${company_name} receives an Appeal Bonus Goods token' ), array(
             'company_short_name' => $company_short_name,
@@ -663,12 +663,12 @@ class CityOfTheBigShoulders extends Table
                 throw new BgaVisibleSystemException("Resource is not in haymarket");
             
             $found = false;
-            foreach($resources_gained as $index => $resource_gained)
+            foreach($resources_gained as $i => $resource_gained)
             {
                 if($resource['card_type'] == $resource_gained)
                 {
                     $found = true;
-                    $resources_gained[$index] == null;
+                    $resources_gained[$i] == null;
                     break;
                 }
             }
@@ -676,7 +676,8 @@ class CityOfTheBigShoulders extends Table
             if(!$found)
                 throw new BgaVisibleSystemException("Not a resource that can be gained from this building");
 
-            $resources[$index]['from'] = $resources[$index]['card_location'];
+            $resource_location = $resource['card_location'];
+            $resources[$index]['from'] = $resource_location;
             $resources[$index]['card_location'] = $company_short_name;
         }
 
@@ -1238,6 +1239,7 @@ class CityOfTheBigShoulders extends Table
 
             self::notifyAllPlayers( "assetDiscarded", clienttranslate('${company_name} discards Capital Asset'), array(
                 'asset_name' => $asset['card_type'],
+                'company_name' => $company_name,
                 'asset_id' => $asset['card_id']
             ) );
         }
@@ -1274,7 +1276,7 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
-                if($values[4] == $relocateFactoryNumber)
+                if($values[3] == $relocateFactoryNumber)
                     $automated_in_relocate_factory++;
                 // automated because value = worker
                 $total_automated++;
@@ -2307,11 +2309,13 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
+                // this happens during the operation phase, when asset tiles which gain appeal bonuses are used
                 $this->gamestate->nextState( 'next' );
             }
         }
         else
         {
+            // this means there are more appeal bonuses to gain, go back
             self::setGameStateValue('next_appeal_bonus', $next_appeal_bonus + 1);
             $this->gamestate->nextState( 'loopback' );
         }
@@ -2609,11 +2613,14 @@ class CityOfTheBigShoulders extends Table
                         $resources_gained = true;
                         break;
                     case 'appeal':
-                        $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], $bonus);
+                        $appeal_bonus_gained = self::increaseCompanyAppeal($short_name, $company_id, $company['appeal'], $bonus);
                         break;
                 }
             }
         }
+
+        // update last_factory_produced
+        self::setGameStateValue( "last_factory_produced", $factory_number );
 
         if($factory_number == count($company_material['factories']))
         {
@@ -2642,8 +2649,6 @@ class CityOfTheBigShoulders extends Table
         else
         {
             // else go to next factory, state nextFactory
-            // update last_factory_produced
-            self::setGameStateValue( "last_factory_produced", $factory_number );
 
             if($resources_gained)
             {
@@ -3102,6 +3107,7 @@ class CityOfTheBigShoulders extends Table
 
     function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
     {
+        self::dump('action_args', $action_args);
         self::checkAction( 'buildingAction' );
         $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
 
@@ -3391,8 +3397,8 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'building6':
             case "building24":
-                $relocateFactoryNumber = intval($action_args);
-                self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                $relocate_factory_number = intval($action_args);
+                self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
                 break;
             case "building21": // double automation
             case "building42":
@@ -3401,16 +3407,16 @@ class CityOfTheBigShoulders extends Table
                 {
                     $factory_number = intval($automation_factories[0]);
                     $relocate_factory_number = intval($automation_factories[1]);
-                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
                 }
                 else if(count($automation_factories) == 4)
                 {
                     $factory_number = intval($automation_factories[0]);
                     $relocate_factory_number = intval($automation_factories[2]);
-                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
                     $factory_number = intval($automation_factories[1]);
                     $relocate_factory_number = intval($automation_factories[3]);
-                    self::automateWorker($company_short_name, $factory_number, $relocateFactoryNumber);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
                 } 
                 else 
                 {
@@ -3421,7 +3427,8 @@ class CityOfTheBigShoulders extends Table
             case "building1":
             case "building19":
             case "building40":
-                $should_replace = boolval($action_args[1]);
+                $asset_args = explode(',', $action_args);
+                $should_replace = boolval($asset_args[1]);
                 $bonus = self::gainAsset($company_name, $company, $asset, $should_replace);
 
                 // When buying price protection, there are two bonuses
@@ -3433,15 +3440,15 @@ class CityOfTheBigShoulders extends Table
                 {
                     case 'worker':
                         $this->gamestate->nextState( 'workerBonus' );
-                        break;
+                        return;
                     case 'automation':
                         $this->gamestate->nextState( 'automationBonus' );
-                        break;
+                        return;
                     case 'appeal':
                         $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 2);
                         break;
                 }
-                return;
+                break;
             case 'building15':
             case "building3":
             case "building5":
@@ -3834,16 +3841,16 @@ class CityOfTheBigShoulders extends Table
         $round = self::getGameStateValue( "round" );
         $values = [];
 
-        $price_protection = self::getUniqueValueFromDB("SELECT card_location FROM card WHERE card_type = 'price_protection'");
+        $price_protection = self::getNonEmptyObjectFromDB("SELECT card_location, card_location_arg FROM card WHERE card_type = 'price_protection'");
         $price_protection_can_use = false;
 
         foreach($companies_selling as $company)
         {
             $short_name = $company['short_name'];
             $lost_value = $company['lost_value'];
-            $price_protection_player_id = self::getUniqueValueFromDB("SELECT owner_id FROM company WHERE short_name = $short_name");
+            $price_protection_player_id = self::getUniqueValueFromDB("SELECT owner_id FROM company WHERE short_name = '$short_name'");
 
-            $values[] = "($player_id, $round, $short_name)";
+            $values[] = "($player_id, $round, '$short_name')";
 
             // can only use price protection when
             // 1. it's on the company where the stock price is about to fall
@@ -4021,7 +4028,7 @@ class CityOfTheBigShoulders extends Table
         ) );
         
         self::setGameStateValue( "consecutive_passes", 0 );
-        $this->gamestate->nextState( 'gameStartFirstCompany' );
+        $this->gamestate->nextState( 'gameTurn' );
     }
 
     

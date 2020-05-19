@@ -339,6 +339,7 @@ function (dojo, declare) {
                 case 'playerFreeActionAppealBonus':
                 case 'managerBonusAppeal':
                     if(this.isCurrentPlayerActive()){
+                        this.clientStateArgs.undoMoves = [];
                         var nextAppealBonus = args.args.next_appeal_bonus;
                         dojo.addClass($('appeal_' + nextAppealBonus), 'active');
                     }
@@ -2321,7 +2322,6 @@ function (dojo, declare) {
                 case "building24":
                 case "building21":
                 case "building42":
-                    debugger;
                     if(!this.canAutomateFactory(companyShortName, factoryNumber)){
                         actionOk = false;
                         message = _("This factory can't be automated");
@@ -2407,7 +2407,7 @@ function (dojo, declare) {
                 case "building21": // double automation
                 case "building42":
                     if(this.clientStateArgs.actionArgs.firstFactoryNumber){
-                        this.clientStateArgs.secondFactoryNumber = factoryNumber;
+                        this.clientStateArgs.actionArgs.secondFactoryNumber = factoryNumber;
 
                         var relocate = this.automateWorker(companyShortName, factoryNumber);
 
@@ -2959,10 +2959,12 @@ function (dojo, declare) {
                 case 'job_market_worker':
                     // put back workers in market
                     var selectedFactories = this.clientStateArgs.selectedFactories;
-                    for(var i = 0; i < selectedFactories.length; i++){
-                        var workerId = selectedFactories[i].workerId;
-                        if(workerId != null){
-                            this.job_market.placeInZone(workerId);
+                    if(selectedFactories){
+                        for(var i = 0; i < selectedFactories.length; i++){
+                            var workerId = selectedFactories[i].workerId;
+                            if(workerId != null){
+                                this.job_market.placeInZone(workerId);
+                            }
                         }
                     }
 

@@ -69,7 +69,7 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('${you} must choose a company to start'),
     		"type" => "activeplayer",
     		"possibleactions" => array( "startCompany" ),
-    		"transitions" => array( "gameStartFirstCompany" => 3 )
+    		"transitions" => array( "gameTurn" => 3 )
     ),
 
     3 => array(
@@ -97,7 +97,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "passStockAction" ),
-        "transitions" => array( "gameStockPhase" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5 )
     ),
 
     8 => array(
@@ -245,7 +245,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsManagerBonusResources",
         "possibleactions" => array( "managerBonusGainResources" ),
-        "transitions" => array( "distributeGoods" => 15, "nextFactory" => 14, "managerBonusAppeal" => 30 )
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusAppeal" => 30 )
     ),
 
     // this happens when a manager bonus gives appeal

@@ -225,7 +225,7 @@
     {
       self::setAjaxMode();
 
-      $factory_number = self::getArg( "factoryNumber", AT_posint, true );
+      $factory_number = self::getArg( "factoryNumber", AT_posint, false );
       $relocate_number = self::getArg( "relocateFactoryNumber", AT_posint, false );
 
       $this->game->gainAppealBonus( $factory_number, $relocate_number );
