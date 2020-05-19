@@ -455,7 +455,7 @@ $this->capital_asset = [
     "starting" => false,
     "bonus" => 'worker',
     "name" => clienttranslate("Color Catalog"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by $60. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by \$60. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
   ],
   "brand_recognition" => [ // appeal 2
     "starting" => false,
@@ -467,13 +467,13 @@ $this->capital_asset = [
     "starting" => false,
     "bonus" => 'worker',
     "name" => clienttranslate("Catalogue Empire"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by $80. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by \$80. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
   ],
   "mail_order_catalogue" => [ // operating revenue 40
     "starting" => false,
     "bonus" => 'worker',
     "name" => clienttranslate("Mail Order Catalogue"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by $40. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset to increase its operating revenue by \$40. Immediate bonus: gain 1 Worker for the Company that purchased the Asset.")
   ],
   "popular_partners" => [ // stock bump
     "starting" => false,
@@ -498,7 +498,7 @@ $this->capital_asset = [
     "bonus" => 'automation',
     "resources" => ['livestock', 'livestock'],
     "name" => clienttranslate("Union Stockyards"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the bank to receive 2 livestock(pink) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay \$10 to the bank to receive 2 livestock(pink) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "refrigeration" => [ // 2 livestock
     "starting" => false,
@@ -526,7 +526,7 @@ $this->capital_asset = [
     "bonus" => 'automation',
     "resources" => ['wood', 'wood'],
     "name" => clienttranslate("Michigan Lumber"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 wood(brown) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay \$10 to the Bank to receive 2 wood(brown) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "abattoir" => [ // 1 wood, 1 coal
     "starting" => false,
@@ -540,14 +540,14 @@ $this->capital_asset = [
     "bonus" => 'automation',
     "resources" => ['coal', 'coal'],
     "name" => clienttranslate("Pennsylvania Coal"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 coal(black) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay \$10 to the Bank to receive 2 coal(black) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "cincinnati_steel" => [ // 2 steel (10$)
     "starting" => true,
     "bonus" => 'automation',
     "resources" => ['steel', 'steel'],
     "name" => clienttranslate("Cincinnati Steel"),
-    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay $10 to the Bank to receive 2 steel(blue) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
+    "tooltip" => clienttranslate("Each Decade your Company may exhaust this asset and pay \$10 to the Bank to receive 2 steel(blue) resources from Haymarket Square, if available. Immediate bonus: Automate 1 Worker. A Worker must be employed prior to being automated.")
   ],
   "brilliant_marketing" => [ // appeal 1
     "starting" => true,
@@ -612,7 +612,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 20,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $10 discount.")
+    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$10 discount.")
   ],
   "building2" => [ //salesperson
     "pips" => 1,
@@ -762,7 +762,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 20,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $20 discount.")
+    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$20 discount.")
   ],
   "building20" => [ // same resources
     "pips" => 2,
@@ -842,7 +842,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 30,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays $150 from its treasury to its shareholders at $15 per share. If the company does not have $150 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The company that uses this Building pays \$150 from its treasury to its shareholders at \$15 per share. If the company does not have \$150 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building30" => [ // 200 dividend
     "pips" => 3,
@@ -850,7 +850,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays $200 from its treasury to its shareholders at $20 per share. If the company does not have $200 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The company that uses this Building pays \$200 from its treasury to its shareholders at \$20 per share. If the company does not have \$200 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building31" => [ // 250 dividend
     "pips" => 3,
@@ -858,7 +858,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays $250 from its treasury to its shareholders at $25 per share. If the company does not have $250 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The company that uses this Building pays \$250 from its treasury to its shareholders at \$25 per share. If the company does not have \$250 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building32" => [ // 300 dividend
     "pips" => 3,
@@ -866,7 +866,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 60,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays $300 from its treasury to its shareholders at $30 per share. If the company does not have $300 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The company that uses this Building pays \$300 from its treasury to its shareholders at \$30 per share. If the company does not have \$300 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building33" => [ // double salesperson
     "pips" => 3,
@@ -934,7 +934,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 40,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a $30 discount.")
+    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$30 discount.")
   ],
   "building41" => [ // produce 3 goods
     "pips" => 3,
@@ -972,33 +972,33 @@ $this->building = [
 
 $this->goal = [
   "goal1" => [
-    "tooltip" => clienttranslate("The player with the most Managers, across all of their companies, will receive $200.")
+    "tooltip" => clienttranslate("The player with the most Managers, across all of their companies, will receive \$200.")
   ],
   "goal2" => [
-    "tooltip" => clienttranslate("The player with the most Salespeople, across all of their companies, will receive $200.")
+    "tooltip" => clienttranslate("The player with the most Salespeople, across all of their companies, will receive \$200.")
   ],
   "goal3" => [
-    "tooltip" => clienttranslate("The player whose companies won the most Capital Assets will receive $200.")
+    "tooltip" => clienttranslate("The player whose companies won the most Capital Assets will receive \$200.")
   ],
   "goal4" => [
-    "tooltip" => clienttranslate("The player who currently has the most Workers employed will receive $200.")
+    "tooltip" => clienttranslate("The player who currently has the most Workers employed will receive \$200.")
   ],
   "goal5" => [
-    "tooltip" => clienttranslate("The player who has the most automation tokens activated across all of their companies, will receive $200.")
+    "tooltip" => clienttranslate("The player who has the most automation tokens activated across all of their companies, will receive \$200.")
   ],
   "goal6" => [
-    "tooltip" => clienttranslate("Players with the companies that are highest on the Appeal Track receive $200. For the purposes of this goal, tokens occuppying the same space are tied.")
+    "tooltip" => clienttranslate("Players with the companies that are highest on the Appeal Track receive \$200. For the purposes of this goal, tokens occuppying the same space are tied.")
   ],
   "goal7" => [
-    "tooltip" => clienttranslate("The player who has the most money in their Personal Treasury, prior to cashing out their Stock Certificates, will receive $200.")
+    "tooltip" => clienttranslate("The player who has the most money in their Personal Treasury, prior to cashing out their Stock Certificates, will receive \$200.")
   ],
   "goal8" => [
-    "tooltip" => clienttranslate("The player who has the most Partners will receive $200.")
+    "tooltip" => clienttranslate("The player who has the most Partners will receive \$200.")
   ],
   "goal9" => [
-    "tooltip" => clienttranslate("The player who owns the most 10% Stock Certificates will receive $200.")
+    "tooltip" => clienttranslate("The player who owns the most 10% Stock Certificates will receive \$200.")
   ],
   "goal10" => [
-    "tooltip" => clienttranslate("The player who owns the most 20% Stock Certificates will receive $200.")
+    "tooltip" => clienttranslate("The player who owns the most 20% Stock Certificates will receive \$200.")
   ],
 ];

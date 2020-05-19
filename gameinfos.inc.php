@@ -123,9 +123,9 @@ $gameinfos = array(
 // Each paragraph must be wrapped with totranslate() for translation and should not contain html (plain text without formatting).
 // A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
 'presentation' => array(
-//    totranslate("This wonderful game is about geometric shapes!"),
-//    totranslate("It was awarded best triangle game of the year in 2005 and nominated for the Spiel des Jahres."),
-//    ...
+    totranslate("In City of the Big Shoulders players take on the roles of entrepreneurs and investors seeking to rebuild Chicago into a city fit for the world stage. In this unique merger of 18xx-style stock manipulation mechanics with euro-style gameplay, players start companies, trade in shares, hire employees, equip their factories, produce goods and sell them to be delivered to homes across the Midwest."),
+    totranslate("You will experience Chicago’s rebirth over five Decades. Each Decade consists of five unique phases: A Stock Phase in which you buy and sell stock; a Building Phase in which you place new action spaces on the board; an Action Phase in which you send out your Partners across the city to make deals on behalf of your companies; an Operating Phase in which your companies buy resources, produce Goods, and ship them out of Chicago; and finally a Cleanup Phase in which the board is set up for the following Decade."),
+    totranslate("At the end of the fifth Decade, the game ends. You then exchange shares that you have purchased over the course of the game for cash, receive rewards for public goals you have accomplished, and tally your money to determine who is Chicago's greatest resident, the winner of the game.")
 ),
 
 // Games categories
@@ -135,7 +135,7 @@ $gameinfos = array(
 //  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
 //  IMPORTANT: this list should be ORDERED, with the most important tag first.
 //  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-'tags' => array( 2 ),
+'tags' => array( 4, 12, 102, 203 ),
 
 
 //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)

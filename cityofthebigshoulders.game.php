@@ -1025,7 +1025,7 @@ class CityOfTheBigShoulders extends Table
             self::DbQuery("UPDATE card SET card_location = 'haymarket' WHERE card_id IN ($in_condition)");
 
             // notify resources discarded
-            self::notifyAllPlayers( "resourcesDiscarded", "Discard rightmost supply chain space to Haymarket Square", array(
+            self::notifyAllPlayers( "resourcesDiscarded", clienttranslate("Discard rightmost supply chain space to Haymarket Square"), array(
                 'resource_ids_types' => $resource_ids_types
             ));
         }
@@ -3707,7 +3707,7 @@ class CityOfTheBigShoulders extends Table
         if(isset($companies_sold_shares[$short_name]))
         {
             $name = $this->companies[$short_name]['name'];
-            throw new BgaUserException( self::_("You can't buy shares from ${name} because you sold shares from that company this decade") );
+            throw new BgaUserException( self::_("You can't buy shares from that company because you sold some of its shares this decade") );
         }
 
         $player = self::getPlayer($player_id);

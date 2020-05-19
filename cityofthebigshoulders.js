@@ -2079,7 +2079,7 @@ function (dojo, declare) {
             if(!this.checkAction('produceGoods'))
                 return;
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/produceGoods.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/produceGoods.html", { lock: true }, this, function( result ) {} );
         },
 
         onCompanyClicked: function(event){
@@ -2167,7 +2167,7 @@ function (dojo, declare) {
 
             // this is a special state that happens when a worker is automated because of an asset tile immediate bonus
             if(state == 'client_chooseFactoryRelocateBonus'){
-                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", {
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", { lock: true,
                     companyShortName: companyShortName,
                     factoryNumber: this.clientStateArgs.factoryNumber,
                     relocateNumber: factoryNumber
@@ -2177,7 +2177,7 @@ function (dojo, declare) {
 
             // this is a special state that happens when a player gains a free worker from an asset tile bonus
             if(state == 'playerAssetWorkerBonus'){
-                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/hireWorker.html", {
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/hireWorker.html", { lock: true,
                     companyShortName: companyShortName,
                     factoryNumber: factoryNumber
                 }, this, function( result ) {} );
@@ -2260,7 +2260,7 @@ function (dojo, declare) {
                             descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
                         });
                     } else {
-                        this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", {
+                        this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", { lock: true,
                             companyShortName: companyShortName,
                             factoryNumber: factoryNumber,
                             relocateNumber: null
@@ -2810,7 +2810,7 @@ function (dojo, declare) {
         },
 
         confirmAssetUse: function(assetName){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/useAsset.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/useAsset.html", { lock: true,
                 assetName: assetName,
             }, this, function( result ) {} );
         },
@@ -2931,15 +2931,15 @@ function (dojo, declare) {
         },
 
         onConfirmPayDividends: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/payDividends.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/payDividends.html", { lock: true }, this, function( result ) {} );
         },
 
         onWithhold: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withhold.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withhold.html", { lock: true }, this, function( result ) {} );
         },
 
         onWithholdProtection: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withholdProtection.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withholdProtection.html", { lock: true }, this, function( result ) {} );
         },
 
         onCancelSelectBuildings: function(event){
@@ -2982,7 +2982,7 @@ function (dojo, declare) {
                 for(var i = 0; i < selectedResources.length; i++){
                     args.push(selectedResources[i].id);
                 }
-                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/managerBonusGainResources.html", {
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/managerBonusGainResources.html", { lock: true,
                     resourceIds: args.join(',')
                 }, this, function( result ) {} );
             } else {
@@ -3007,7 +3007,7 @@ function (dojo, declare) {
                 }
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/tradeResources.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/tradeResources.html", { lock: true,
                 haymarketResourceId: selectedHaymarketResource.id,
                 companyResourceId1: this.clientStateArgs.selectedCompanyResources.ids[0],
                 companyResourceId2: this.clientStateArgs.selectedCompanyResources.ids[1]
@@ -3048,15 +3048,15 @@ function (dojo, declare) {
         },
 
         onSkipAssetBonus: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipAssetBonus.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipAssetBonus.html", { lock: true }, this, function( result ) {} );
         },
 
         onPassFreeAction: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passFreeActions.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passFreeActions.html", { lock: true }, this, function( result ) {} );
         },
 
         onForfeitBonus: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/forfeitAppealBonus.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/forfeitAppealBonus.html", { lock: true }, this, function( result ) {} );
         },
 
         onConfirmAssetUse: function(event){
@@ -3248,7 +3248,7 @@ function (dojo, declare) {
             this.supply_20.setSelectionMode(0);
             this.supply_30.setSelectionMode(0);
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyResources.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyResources.html", { lock: true,
                 resourceIds: resourceIds.join(",")
             }, this, function( result ) {} );
         },
@@ -3258,7 +3258,7 @@ function (dojo, declare) {
             {
                 return;
             }
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuyResources.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuyResources.html", { lock: true,
             }, this, function( result ) {} );
         },
 
@@ -3338,7 +3338,7 @@ function (dojo, declare) {
             var splitBuildingToPlay = buildingToPlayId.split('_');
             var splitBuildingToDiscard = buildingToDiscardId.split('_');
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/selectBuildings.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/selectBuildings.html", { lock: true,
                 playedBuildingId: splitBuildingToPlay[5],
                 discardedBuildingId: splitBuildingToDiscard[5]
             }, this, function( result ) {} );
@@ -3410,7 +3410,7 @@ function (dojo, declare) {
             if(items.length == 1){
                 var companyShortName = items[0].id;
 
-                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", {
+                this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/startCompany.html", { lock: true,
                     company_short_name: companyShortName,
                     initialShareValueStep: initialShareValueStep //can be 4,5,6,7 for $35,$40,$50,$60
                 }, this, function( result ) {} );
@@ -3444,7 +3444,7 @@ function (dojo, declare) {
                 ids.push(split[2]);
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/sellShares.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/sellShares.html", { lock: true,
                 selected_shares: ids.join(';') 
             }, this, function( result ) {} );
         },
@@ -3455,7 +3455,7 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuy.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipBuy.html", { lock: true,
             }, this, function( result ) {} );
         },
 
@@ -3465,7 +3465,7 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipSell.html", { lock: true }, this, function( result ) {} );
         },
 
         gainAppealBonus: function(){
@@ -3474,7 +3474,7 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/gainAppealBonus.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/gainAppealBonus.html", { lock: true,
                 factoryNumber: this.clientStateArgs.factoryNumber,
                 relocateFactoryNumber: this.clientStateArgs.relocateFactoryNumber
             }, this, function( result ) {} );
@@ -3487,7 +3487,7 @@ function (dojo, declare) {
                 var good = goods[i];
                 demandIds.push(good.demandId);
             }
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/distributeGoods.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/distributeGoods.html", { lock: true,
                 demandIds: demandIds.join(',')
             }, this, function( result ) {} );
         },
@@ -3506,7 +3506,7 @@ function (dojo, declare) {
         },
 
         onSkipDistributeGoods: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipDistributeGoods.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipDistributeGoods.html", { lock: true }, this, function( result ) {} );
         },
 
         onSkipProduceGoods: function(){
@@ -3515,7 +3515,7 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipProduceGoods.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/skipProduceGoods.html", { lock: true }, this, function( result ) {} );
         },
 
         onConfirmBuy: function(){
@@ -3537,17 +3537,17 @@ function (dojo, declare) {
 
             var item = selectedShares[0];
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", { lock: true,
                 certificate: item.id
             }, this, function( result ) {} );
         },
 
         onPrevent: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/priceProtect.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/priceProtect.html", { lock: true }, this, function( result ) {} );
         },
 
         onPassPriceProtection: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passPriceProtect.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passPriceProtect.html", { lock: true }, this, function( result ) {} );
         },
 
         onStockPass: function(){
@@ -3556,7 +3556,7 @@ function (dojo, declare) {
                 return;
             }
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", {}, this, function( result ) {} );
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passStockAction.html", { lock: true }, this, function( result ) {} );
         },
 
         onSkipToRelocate: function(){
@@ -3598,7 +3598,7 @@ function (dojo, declare) {
 
             var actionArgs = args.join(",");
 
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buildingAction.html", {
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buildingAction.html", { lock: true,
                 buildingAction: this.clientStateArgs.buildingAction,
                 companyShortName: this.clientStateArgs.companyShortName,
                 workerId: this.clientStateArgs.workerId,
