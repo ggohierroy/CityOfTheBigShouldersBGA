@@ -2323,6 +2323,10 @@ class CityOfTheBigShoulders extends Table
 
         if($next_appeal_bonus == $final_appeal_bonus)
         {
+            self::setGameStateValue('current_appeal_bonus', 0);
+            self::setGameStateValue('next_appeal_bonus', 0);
+            self::setGameStateValue('final_appeal_bonus', 0);
+
             $state = $this->gamestate->state();
             if( $state['name'] == 'managerBonusAppeal')
             {
