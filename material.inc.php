@@ -594,7 +594,7 @@ $this->general_action_spaces = [
     "payment" => "companytobank"
   ],
   "capital_investment" => [
-    "player_limit" => true,
+    "player_limit" => false,
     "cost" => 40,
     "payment" => "companytobank"
   ],

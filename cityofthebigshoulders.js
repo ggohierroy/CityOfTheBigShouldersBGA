@@ -2134,12 +2134,12 @@ function (dojo, declare) {
 
             if(state == 'client_chooseFactoryRelocateDoubleAutomation'){
                 if(this.clientStateArgs.secondAutomationSkipped){
-                    // if the sencond automation was skipped, we can confirm action
+                    // if the second automation was skipped, we can confirm action
                     this.clientStateArgs.actionArgs.relocateFactoryNumber = factoryNumber;
                     this.onConfirmAction();
-                } else if (this.clientStateArgs.actionArgs.relocateFactoryNumber1) {
+                } else if (this.clientStateArgs.actionArgs.firstFactoryRelocate) {
                     // if the first worker has been relocated, and we are here, both workers have been relocated => confirm action
-                    this.clientStateArgs.actionArgs.relocateFactoryNumber2 = factoryNumber;
+                    this.clientStateArgs.actionArgs.secondFactoryRelocate = factoryNumber;
                     this.onConfirmAction();
                 } else {
                     // move 1st automated worker temporarily
@@ -2149,10 +2149,11 @@ function (dojo, declare) {
                         return;
                     }
                         
-                    this.clientStateArgs.actionArgs.relocateFactoryNumber1 = factoryNumber;
+                    this.clientStateArgs.actionArgs.firstFactoryRelocate = factoryNumber;
 
-                    if(this.clientStateArgs.actionArgs.secondFactoryRelocate == 0){
+                    if(!this.clientStateArgs.shouldRelocateSecondWorker){
                         // if the second worker cannot be relocated
+                        this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
                         this.onConfirmAction();
                     } else {
                         // else go to 2nd relocation
@@ -2432,17 +2433,20 @@ function (dojo, declare) {
                 case "building21": // double automation
                 case "building42":
                     if(this.clientStateArgs.actionArgs.firstFactoryNumber){
+
+                        // this means that the first factory to automate has been selected
                         this.clientStateArgs.actionArgs.secondFactoryNumber = factoryNumber;
 
                         var relocate = this.automateWorker(companyShortName, factoryNumber);
 
-                        if(this.clientStateArgs.actionArgs.firstFactoryRelocate == 0){
+                        if(!this.clientStateArgs.shouldRelocateFirstWorker){
                             // if there is no spot to put the first worker, there is no spot to put the first either
+                            this.clientStateArgs.actionArgs.firstFactoryRelocate = 0;
                             this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
                             this.onConfirmAction();
                         } else {
                             if(!relocate){
-                                this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
+                                this.clientStateArgs.shouldRelocateSecondWorker = false;
                             }
 
                             this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
@@ -2450,10 +2454,12 @@ function (dojo, declare) {
                             });
                         }
                     } else {
+
+                        // this is the first factory being selected for automation
                         this.clientStateArgs.actionArgs.firstFactoryNumber = factoryNumber;
                         var relocate = this.automateWorker(companyShortName, factoryNumber);
                         if(!relocate){
-                            this.clientStateArgs.actionArgs.firstFactoryRelocate = 0;
+                            this.clientStateArgs.shouldRelocateFirstWorker = false;
                         }
 
                         this.setClientState("client_actionChooseFactorySkipToRelocate", {

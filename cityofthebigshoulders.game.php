@@ -128,8 +128,8 @@ class CityOfTheBigShoulders extends Table
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
-        //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
+        self::initStat( 'table', 'turns_number', 0 );    // Init a table statistics
+        self::initStat( 'player', 'turns_number', 0 );  // Init a player statistics (for all players)
 
         // setup the initial game situation here
         $this->initializeDecks($players);
@@ -3244,7 +3244,6 @@ class CityOfTheBigShoulders extends Table
         if($number_of_partners == 0)
             throw new BgaVisibleSystemException("You don't have any more workers");
         
-        // TODO: change the way we create partners to use total number of partners as well so ID is ascending
         $total_number_partners = $player['number_partners'];
         $worker_number = $total_number_partners - $number_of_partners + 1;
         $worker_id = "worker_${player_id}_${worker_number}";
@@ -4279,18 +4278,18 @@ class CityOfTheBigShoulders extends Table
                     $value_by_company_short_name = self::getObjectListFromDB(
                         "SELECT COUNT(card_id) AS value, card_location AS company_short_name FROM card 
                         WHERE owner_type = 'company' AND primary_type = 'asset' GROUP BY card_location");
-                    $value_by_company = array_map(function($asset) {
+                    $value_by_company = [];
+                    foreach($value_by_company_short_name as $company_short_name)
+                    {
                         $company_id = null;
                         foreach($companies as $company)
                         {
-                            if($company['short_name'] == $asset['company_short_name'])
+                            if($company['short_name'] == $company_short_name['company_short_name'])
                                 $company_id = $company['company_id'];
                         }
-                        return array(
-                            'value' => $asset['value'],
-                            'company_id' => $company_id
-                        );
-                    }, $players);
+
+                        array_push($value_by_company, ['value' => $company_short_name['value'], 'company_id' => $company_id ]);
+                    }
                     $value_by_player = self::sumByPlayer($value_by_company, $companies);
                     break;
                 case 'goal4': // most workers
@@ -4411,8 +4410,7 @@ class CityOfTheBigShoulders extends Table
             if($round == 4)
             {
                 self::stGamePublicGoalScoring();
-                // TODO: change to gameEnd
-                $this->gamestate->nextState( 'cleanup' );
+                $this->gamestate->nextState( 'gameEnd' );
                 return;
             }
 
@@ -4548,18 +4546,22 @@ class CityOfTheBigShoulders extends Table
             $number_of_workers_to_add = 12 - $number_workers_market;
         }
 
-        // add workers to board
-        $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location,card_location_arg) VALUES ";
-        $cards = [];
-        for($i = 0; $i < $number_of_workers_to_add; $i++)
+        $workers = [];
+        if($number_of_workers_to_add > 0)
         {
-            $cards[] = "(NULL,'worker','worker',0,'job_market',0)";
-        }
-        $sql .= implode( $cards, ',' );
-        self::DbQuery( $sql );
+            // add workers to board
+            $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location,card_location_arg) VALUES ";
+            $cards = [];
+            for($i = 0; $i < $number_of_workers_to_add; $i++)
+            {
+                $cards[] = "(NULL,'worker','worker',0,'job_market',0)";
+            }
+            $sql .= implode( $cards, ',' );
+            self::DbQuery( $sql );
 
-        $sql = "SELECT * FROM card WHERE primary_type = 'worker'";
-        $workers = self::getCollectionFromDB($sql);
+            $sql = "SELECT * FROM card WHERE primary_type = 'worker'";
+            $workers = self::getCollectionFromDB($sql);
+        }
 
         // notify players
         self::notifyAllPlayers( "buildingsSelected", clienttranslate( 'New buildings have been played to the board' ), array(

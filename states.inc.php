@@ -284,7 +284,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameOperationPhase",
-        "transitions" => array( "nextCompany" => 13, "cleanup" => 20, "publicGoalScoring" => 32)
+        "transitions" => array( "nextCompany" => 13, "cleanup" => 20, "gameEnd" => 99)
     ),
 
     20 => array(
@@ -293,14 +293,6 @@ $machinestates = array(
         "type" => "game",
         "action" => "stGameCleanup",
         "transitions" => array("nextRound" => 4)
-    ),
-
-    32 => array(
-        "name" => "publicGoalScoring",
-        "description" => "",
-        "type" => "game",
-        "action" => "stGamePublicGoalScoring",
-        "transitions" => array( "gameEnd" => 99)
     ),
 
     // this happens when an asset tile is used during the action phase
