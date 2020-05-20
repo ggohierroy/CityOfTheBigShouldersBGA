@@ -128,8 +128,9 @@ class CityOfTheBigShoulders extends Table
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
-        self::initStat( 'table', 'turns_number', 0 );    // Init a table statistics
-        self::initStat( 'player', 'turns_number', 0 );  // Init a player statistics (for all players)
+        self::initStat( 'player', 'treasury', 0 );
+        self::initStat( 'player', 'share_value', 0 );
+        self::initStat( 'player', 'public_goals', 0 );
 
         // setup the initial game situation here
         $this->initializeDecks($players);
@@ -4268,7 +4269,7 @@ class CityOfTheBigShoulders extends Table
         $goals = self::getObjectListFromDB("SELECT card_type FROM card WHERE primary_type = 'goal'", true);
 
         $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value FROM company");
-        $players = self::getCollectionFromDB("SELECT player_id, player_name, treasury, number_partners FROM player");
+        $players = self::getCollectionFromDB("SELECT player_id, player_name, treasury, number_partners, player_score FROM player");
         $scores = []; //$scores[$player_id] = ['player_id' => $player_id, 'score_delta' => $multiplier * $value_delta];
         foreach($goals as $goal_type)
         {
@@ -4401,11 +4402,18 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        foreach($players as $player_id => $player)
+        {
+            self::setStat( $player['treasury'], 'treasury', $player_id);
+            self::setStat( $player['player_score'] - $player['treasury'], 'share_value', $player_id);
+        }
+
         foreach($scores as $score)
         {
             $score_delta = $score['score_delta'];
             $player_id = $score['player_id'];
-            self::DbQuery("UPDATE player SET player_score = player_score + $score_delta WHERE player_id = $player_id");
+            self::setStat( $score_delta, 'public_goals', $player_id);
+            self::DbQuery("UPDATE player SET player_score = player_score + $score_delta, player_score_aux = $score_delta WHERE player_id = $player_id");
         }
 
         self::notifyAllPlayers( "scoreUpdated", "", array(
