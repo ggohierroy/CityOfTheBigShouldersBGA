@@ -601,7 +601,7 @@ class CityOfTheBigShoulders extends Table
     function gainSameResources($company_short_name, $company_id, $action_args)
     {
         // get the resources and make sure they are in haymarket
-        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
+        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE primary_type = 'resource' AND card_id IN ($action_args)");
 
         if(count($resources) > 2)
             throw new BgaVisibleSystemException("Can only gain two resources from this building");
@@ -624,7 +624,7 @@ class CityOfTheBigShoulders extends Table
             owner_type = 'company',
             card_location = '$company_short_name',
             card_location_arg = $company_id
-            WHERE card_id IN ($resource_ids)");
+            WHERE card_id IN ($action_args)");
 
         $count = count($resources);
         self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
@@ -637,7 +637,7 @@ class CityOfTheBigShoulders extends Table
     function gainDifferentResources($company_short_name, $company_id, $action_args)
     {
         // get the resources and make sure they are in haymarket
-        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
+        $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE primary_type = 'resource' AND card_id IN ($action_args)");
 
         if(count($resources) > 2)
             throw new BgaVisibleSystemException("Can only gain two resources from this building");
@@ -660,7 +660,7 @@ class CityOfTheBigShoulders extends Table
             owner_type = 'company',
             card_location = '$company_short_name',
             card_location_arg = $company_id
-            WHERE card_id IN ($resource_ids)");
+            WHERE card_id IN ($action_args)");
 
         $count = count($resources);
         self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
@@ -2418,6 +2418,10 @@ class CityOfTheBigShoulders extends Table
 
         if($next_appeal_bonus == $final_appeal_bonus)
         {
+            self::setGameStateValue('current_appeal_bonus', 0);
+            self::setGameStateValue('next_appeal_bonus', 0);
+            self::setGameStateValue('final_appeal_bonus', 0);
+
             $state = $this->gamestate->state();
             if( $state['name'] == 'managerBonusAppeal')
             {
@@ -3606,7 +3610,7 @@ class CityOfTheBigShoulders extends Table
                 break;
             case "building26":
                 $worker_factories = explode(',', $action_args);
-                if(count($manager_factories) > 2)
+                if(count($worker_factories) > 2)
                     throw new BgaVisibleSystemException("Can't hire more than 2 workers");
                 foreach($worker_factories as $number)
                 {

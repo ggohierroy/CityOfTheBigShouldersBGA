@@ -256,6 +256,7 @@ function (dojo, declare) {
                     break;
                 case 'playerActionPhase':
                     // reset action args
+                    this.clientStateArgs = {};
                     this.clientStateArgs.actionArgs = {};
                     
                     if(this.isCurrentPlayerActive()){
@@ -2737,11 +2738,11 @@ function (dojo, declare) {
                     }
                     break;
                 case "building26": // double worker
-                    if(this.clientStatesArgs.firstWorkerLocation){
-                        this.clientStatesArgs.secondWorkerLocation = factoryNumber;
+                    if(this.clientStateArgs.actionArgs.firstWorkerLocation){
+                        this.clientStateArgs.actionArgs.secondWorkerLocation = factoryNumber;
                         this.onConfirmAction();
                     } else {
-                        this.clientStatesArgs.firstWorkerLocation = factoryNumber;
+                        this.clientStateArgs.actionArgs.firstWorkerLocation = factoryNumber;
                         this.createTempWorker(companyShortName, factoryNumber);
                         this.setClientState("client_actionChooseFactorySkip", {
                             descriptionmyturn : dojo.string.substitute(_('Choose a factory for the second worker'),{
