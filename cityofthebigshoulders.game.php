@@ -1403,14 +1403,15 @@ class CityOfTheBigShoulders extends Table
             if($automated_in_relocate_factory + $workers_in_relocate_factory == $automation_in_relocate_factory)
                 throw new BgaUserException( self::_("The automated worker cannot be relocated to this factory") );
 
-            // only if relocate factory is different than current factory, move the worker to new factory
+            // only if relocate factory is different than current factory, update the database to move to new factory
             if($relocateFactoryNumber != $factory_number)
             {
                 $worker_id = $to_automate_worker['card_id'];
                 $sql = "UPDATE card SET card_location = '${company_short_name}_${relocateFactoryNumber}' WHERE card_id = '$worker_id'";
                 self::DbQuery($sql);
-                $worker_relocation = "${company_short_name}_${relocateFactoryNumber}";
             }
+
+            $worker_relocation = "${company_short_name}_${relocateFactoryNumber}";
         }
 
         // notify players
