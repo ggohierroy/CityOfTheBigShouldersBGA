@@ -755,7 +755,7 @@ function (dojo, declare) {
                 return;
 
             zone.setPattern('custom');
-            this.job_market.itemIdToCoords = function( i, control_width ) {
+            zone.itemIdToCoords = function( i, control_width ) {
                 if( i==0 )
                     return { x:13,y:8, w:13, h:22 };
                 else if(i==1)
@@ -1872,6 +1872,16 @@ function (dojo, declare) {
                 this.createAssetTileStock(companyShortName + '_asset', this.gamedatas.all_capital_assets);
                 this[companyShortName + '_asset'].onItemCreate = dojo.hitch( this, 'onAssetCreated' ); 
             }
+
+            // add extra goods token zone
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: companyShortName+'_extra_goods',
+                class: 'extra-goods'
+            } ), companyId );
+
+            var zone = new ebg.zone();
+            zone.create( this, companyShortName + '_extra_goods', 26, 26 );
+            this[companyShortName + '_extra_goods'] = zone;
         },
 
         placeGoal(goal){
@@ -2047,6 +2057,22 @@ function (dojo, declare) {
             var hash = this.hashString(company.short_name);
             this['companyArea'+company.owner_id].addToStockWithId(hash, company.short_name, from);
             this.placeShareValue(company.share_value_step, company.short_name, company.owner_id);
+
+            var extraGoods = Number(company.extra_goods);
+            for(var i = 0; i < extraGoods; i++){
+                this.placeExtraGood(company.short_name, i);
+            }
+        },
+
+        placeExtraGood: function(shortName, id, isNotif = false){
+            var elementId = shortName + '_extra_good_' + id;
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: elementId,
+                class: 'extra-goods-token'
+            } ), shortName + '_extra_goods');
+            if(isNotif)
+                this.placeOnObject(elementId, 'main_board');
+            this[shortName + '_extra_goods'].placeInZone(elementId);
         },
 
         placePartner: function(partner){
@@ -2371,7 +2397,7 @@ function (dojo, declare) {
                     if(this.clientStateArgs.bonus == 'automation')
                     {
                         if(this.clientStateArgs.factoryNumber) {
-                            this.clientStateArgs.actionArgs.relocateFactoryNumber = factoryNumber;
+                            this.clientStateArgs.relocateFactoryNumber = factoryNumber;
                             this.gainAppealBonus();
                         } else {
                             if(!this.canAutomateFactory(companyShortName, factoryNumber)){
@@ -3882,6 +3908,9 @@ function (dojo, declare) {
             dojo.subscribe('marketSquareReset', this, "notif_marketSquareReset");
             this.notifqueue.setSynchronous('marketSquareReset', 200);
 
+            dojo.subscribe('appealBonusGoodsTokenReceived', this, "notif_appealBonusGoodsTokenReceived");
+            this.notifqueue.setSynchronous('appealBonusGoodsTokenReceived', 200);
+
             dojo.subscribe('scoreUpdated', this, "notif_scoreUpdated");
 
             dojo.subscribe('newRound', this, "notif_newRound");
@@ -3889,6 +3918,10 @@ function (dojo, declare) {
             dojo.subscribe('newPhase', this, "notif_newPhase");
 
             dojo.subscribe('dealMarkerReceived', this, "notif_dealMarkerReceived");
+        },
+
+        notif_appealBonusGoodsTokenReceived: function(notif){
+            this.placeExtraGood(notif.args.company_short_name, notif.args.total_goods, true);
         },
 
         notif_dealMarkerReceived: function(notif){

@@ -162,7 +162,7 @@ class CityOfTheBigShoulders extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // Gather all information about current game situation (visible by player $current_player_id).
-        $sql = "SELECT id AS id, treasury AS treasury, appeal AS appeal, next_company_id AS next_company_id, share_value_step AS share_value_step, owner_id AS owner_id, short_name AS short_name FROM company";
+        $sql = "SELECT id, treasury, appeal, next_company_id, share_value_step, owner_id, short_name, extra_goods FROM company";
         $owned_companies = self::getCollectionFromDb( $sql );
         $result['owned_companies'] = $owned_companies;
         $result['company_order'] = self::getCurrentCompanyOrder($owned_companies);
@@ -459,7 +459,7 @@ class CityOfTheBigShoulders extends Table
         return false;
     }
 
-    function gainGood($company_id, $company_short_name)
+    function gainGood($company_short_name)
     {
         $total_extra_goods = self::getUniqueValueFromDB("SELECT SUM(extra_goods) FROM company");
         if($total_extra_goods == 10)
@@ -468,10 +468,12 @@ class CityOfTheBigShoulders extends Table
         }
 
         self::DbQuery("UPDATE company SET extra_goods = extra_goods + 1 WHERE short_name = '$company_short_name'");
+        $total_goods = self::getUniqueValueFromDB("SELECT extra_goods FROM company WHERE short_name = '$company_short_name'");
 
         self::notifyAllPlayers( "appealBonusGoodsTokenReceived", clienttranslate( '${company_name} receives an Appeal Bonus Goods token' ), array(
             'company_short_name' => $company_short_name,
-            'company_name' => self::getCompanyName($company_short_name)
+            'company_name' => self::getCompanyName($company_short_name),
+            'total_goods' => $total_goods
         ));
 
         return false;
