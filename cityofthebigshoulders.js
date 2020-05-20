@@ -1345,7 +1345,7 @@ function (dojo, declare) {
             this.player_order = newStock;
         },
 
-        placeManager: function(manager, slideFromSupply = false){
+        placeManager: function(manager, slideFromSupply){
             var tokenId = 'manager_' + manager.card_id;
             var holder = manager.card_location + '_manager_holder';
             dojo.place( this.format_block( 'jstpl_token', {
@@ -1428,7 +1428,7 @@ function (dojo, declare) {
             return hash;
         },
 
-        placeSalesperson: function(salesperson, slideFromSupply = false){
+        placeSalesperson: function(salesperson, slideFromSupply){
             var tokenId = 'salesperson_' + salesperson.card_id;
             var companyShortName = salesperson.card_location;
             
@@ -1694,10 +1694,10 @@ function (dojo, declare) {
                             companyWorkers.push(item);
                         break;
                     case 'manager':
-                        this.placeManager(item);
+                        this.placeManager(item, false);
                         break;
                     case 'salesperson':
-                        this.placeSalesperson(item);
+                        this.placeSalesperson(item, false);
                         break;
                     case 'asset':
                         var hash = this.placeAsset(item)
@@ -2100,11 +2100,11 @@ function (dojo, declare) {
 
             var extraGoods = Number(company.extra_goods);
             for(var i = 0; i < extraGoods; i++){
-                this.placeExtraGood(company.short_name, i);
+                this.placeExtraGood(company.short_name, i, false);
             }
         },
 
-        placeExtraGood: function(shortName, id, isNotif = false){
+        placeExtraGood: function(shortName, id, isNotif){
             var elementId = shortName + '_extra_good_' + id;
             dojo.place( this.format_block( 'jstpl_generic_div', {
                 id: elementId,
