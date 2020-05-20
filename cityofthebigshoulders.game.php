@@ -175,6 +175,7 @@ class CityOfTheBigShoulders extends Table
         $result['goals'] = $this->goal;
         $result['round'] = self::getGameStateValue('round');
         $result['phase'] = self::getGameStateValue('phase');
+        $result['priority_deal_player_id'] = self::getGameStateValue('priority_deal_player_id');
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -4787,7 +4788,8 @@ class CityOfTheBigShoulders extends Table
             self::setGameStateValue('priority_deal_player_id', $next_player_id);
             $player_info = self::loadPlayersBasicInfos()[$next_player_id];
             self::notifyAllPlayers( "dealMarkerReceived", clienttranslate( '${player_name} receives the priority deal marker' ), array(
-                'player_name' => $player_info['player_name']
+                'player_name' => $player_info['player_name'],
+                'player_id' => $next_player_id
             ));
 
             // deal buildings

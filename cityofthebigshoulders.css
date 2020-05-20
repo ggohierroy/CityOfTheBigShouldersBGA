@@ -68,13 +68,15 @@
     clear: both;
  }
 
- .board_item {
-	/* width: 50px; */
-	height: auto;
-	display: inline-block;
-	margin-bottom: 2px;
-	white-space: nowrap;
-	position: relative;
+.board_item {
+    display: inline;
+    margin: 2px;
+}
+
+.company_item {
+    display: inline-block;
+    margin: 2px;
+    position: absolute;
 }
 
 #share_track{
@@ -108,6 +110,7 @@
     background-image: url( 'img/tokens.png' );
     display: inline-block;
     vertical-align: middle;
+    margin: 1px;
 }
 
 .moveable-token {
@@ -119,6 +122,14 @@
     background-position: 0px 0px; 
     width: 28px;
     height: 28px;
+}
+
+.priority-marker {
+    background-image: url( 'img/tokens.png' );
+    position: relative;
+    background-position: -125px -33px; 
+    width: 28px;
+    height: 18px;
 }
 
 .meeple { 

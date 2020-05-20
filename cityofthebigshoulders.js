@@ -170,6 +170,11 @@ function (dojo, declare) {
 
             this.placeRoundAndPhaseMarkers(gamedatas);
 
+            // set priority marker
+            var priority_deal_player_id = gamedatas.priority_deal_player_id;
+            if(priority_deal_player_id != "0")
+                dojo.query("#priority_" + priority_deal_player_id).addClass("priority-marker");
+
             console.log( "Ending game setup" );
         },
        
@@ -3882,6 +3887,15 @@ function (dojo, declare) {
             dojo.subscribe('newRound', this, "notif_newRound");
 
             dojo.subscribe('newPhase', this, "notif_newPhase");
+
+            dojo.subscribe('dealMarkerReceived', this, "notif_dealMarkerReceived");
+        },
+
+        notif_dealMarkerReceived: function(notif){
+            var playerId = notif.args.player_id;
+
+            dojo.query(".priority-holder>").removeClass("priority-marker");
+            dojo.query("#priority_" + playerId).addClass("priority-marker");
         },
 
         notif_marketSquareReset: function(notif){

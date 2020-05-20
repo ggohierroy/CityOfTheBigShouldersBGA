@@ -168,12 +168,13 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 */
 
 var jstpl_player_board = '\<div class="cp_board">\
-    <div class="board_item"><div class="panel-token money"></div><span id="money_${id}">0</span></div>\
-    <div class="board_item"><div class="panel-token meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
+<div class="board_item"><div class="panel-token money"></div><span id="money_${id}">0</span></div>\
+<div class="board_item"><div class="panel-token meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
+<div class="board_item priority-holder"><div id="priority_${id}" class="panel-token"></div></div>\
 </div>';
 
 var jstpl_company_content = '<div id="${id}" class="company-content">\
-    <div class="board_item company_money"><div class="panel-token money"></div><span id="money_${short_name}">0</span></div>\
+    <div class="company_item company_money"><div class="panel-token money"></div><span id="money_${short_name}">0</span></div>\
     </div>';
 
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
