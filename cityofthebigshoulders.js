@@ -87,8 +87,8 @@ function (dojo, declare) {
                 
                 var player_board_div = $('player_board_'+player_id);
                 dojo.place( this.format_block('jstpl_player_board', {
-                    id: player.id,
-                    color: player.color
+                    'id': player.id,
+                    'color': player.color
                 } ), player_board_div );
 
                 if(player.player_order && gamedatas.gamestate.name != 'playerStartFirstCompany'){
@@ -734,13 +734,13 @@ function (dojo, declare) {
             var phase = Number(gamedatas.phase) + 1;
             
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: 'round_marker',
-                class: 'black-marker'
+                'id': 'round_marker',
+                'class': 'black-marker'
             } ), 'round_' + round);
 
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: 'phase_marker',
-                class: 'black-marker'
+                'id': 'phase_marker',
+                'class': 'black-marker'
             } ), 'phase_' + phase);
         },
 
@@ -1349,8 +1349,8 @@ function (dojo, declare) {
             var tokenId = 'manager_' + manager.card_id;
             var holder = manager.card_location + '_manager_holder';
             dojo.place( this.format_block( 'jstpl_token', {
-                token_id: tokenId, 
-                token_class: 'moveable-token meeple meeple-tan'
+                'token_id': tokenId, 
+                'token_class': 'moveable-token meeple meeple-tan'
             } ), holder);
             
             if(slideFromSupply){
@@ -1438,8 +1438,8 @@ function (dojo, declare) {
             }
 
             dojo.place( this.format_block( 'jstpl_token', {
-                token_id: tokenId, 
-                token_class: 'moveable-token meeple meeple-black salesperson'
+                'token_id': tokenId, 
+                'token_class': 'moveable-token meeple meeple-black salesperson'
             } ), originalSpot);
             
             this[companyShortName + '_salesperson_holder'].placeInZone(tokenId);
@@ -1499,14 +1499,14 @@ function (dojo, declare) {
 
             // create the worker spot
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: building,
-                class: 'worker_spot building-action'
+                'id': building,
+                'class': 'worker_spot building-action'
             } ) , item_div );
 
             // create the partner zone
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: building + '_holder',
-                class: ''
+                'id': building + '_holder',
+                'class': ''
             } ) , building );
 
             var zone = new ebg.zone();
@@ -1563,8 +1563,8 @@ function (dojo, declare) {
                 
                 // place the token on the main board
                 dojo.place( this.format_block( 'jstpl_appeal_token', {
-                    id: tokenId,
-                    short_name: company.short_name
+                    'id': tokenId,
+                    'short_name': company.short_name
                 } ) , 'main_board' );
 
                 // move it from the player board
@@ -1605,7 +1605,7 @@ function (dojo, declare) {
 
         placeShareValue: function(share_value_step, short_name, playerId){
             dojo.place( this.format_block( 'jstpl_share_token', {
-                short_name: short_name
+                'short_name': short_name
             } ) , 'main_board' );
 
             this.placeOnObject( 'share_token_'+short_name, 'overall_player_board_'+playerId );
@@ -1739,8 +1739,8 @@ function (dojo, declare) {
 
             if(!dojo.byId(itemId)){
                 dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: itemId, 
-                    token_class: 'worker'
+                    'token_id': itemId, 
+                    'token_class': 'worker'
                 } ), worker.card_location );
             }
 
@@ -1815,8 +1815,8 @@ function (dojo, declare) {
             var companyShortName = array[array.length - 1];
             var companyId = 'company_' + companyShortName;
             dojo.place( this.format_block( 'jstpl_company_content', {
-                id: companyId,
-                short_name: companyShortName
+                'id': companyId,
+                'short_name': companyShortName
             } ), company_div.id );
 
             var company = this.gamedatas.all_companies[companyShortName];
@@ -1831,9 +1831,9 @@ function (dojo, declare) {
                 
                 var factoryId = companyShortName + '_factory_' + factoryNumber;
                 dojo.place( this.format_block( 'jstpl_factory', {
-                    id: factoryId,
-                    left: 65+factoryWidth*(factoryNumber-1), // left of first factory + factory width * factory #
-                    width: factoryWidth
+                    'id': factoryId,
+                    'left': 65+factoryWidth*(factoryNumber-1), // left of first factory + factory width * factory #
+                    'width': factoryWidth
                 } ), companyId );
 
                 dojo.connect( $(factoryId), 'onclick', this, 'onFactoryClicked' );
@@ -1842,10 +1842,10 @@ function (dojo, declare) {
                 var numberOfAutomations = factory.automation;
                 for(var i = 0; i < numberOfAutomations; i++){
                     dojo.place( this.format_block( 'jstpl_automation_holder', {
-                        short_name: companyShortName,
-                        factory: factoryNumber,
-                        number: i,
-                        left: distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
+                        'short_name': companyShortName,
+                        'factory': factoryNumber,
+                        'number': i,
+                        'left': distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
                     } ), factoryId );
                 }
 
@@ -1859,22 +1859,22 @@ function (dojo, declare) {
                 }
                 for(var i = 0; i < numberOfWorkers; i++){
                     dojo.place( this.format_block( 'jstpl_worker_holder', {
-                        id: companyShortName+'_'+factoryNumber+'_worker_holder_'+i,
-                        left: initialWorkerLeft+27*i // left of first factory + factory width * factory # + left of last automation - distance between automation
+                        'id': companyShortName+'_'+factoryNumber+'_worker_holder_'+i,
+                        'left': initialWorkerLeft+27*i // left of first factory + factory width * factory # + left of last automation - distance between automation
                     } ), factoryId );
                 }
 
                 // add manager spots
                 dojo.place( this.format_block( 'jstpl_manager_holder', {
-                    id: companyShortName+'_'+factoryNumber+'_manager_holder'
+                    'id': companyShortName+'_'+factoryNumber+'_manager_holder'
                 } ), factoryId );
             }
 
             // add salesperson spots
 
             dojo.place( this.format_block( 'jstpl_salesperson_holder', {
-                id: companyShortName+'_salesperson_holder',
-                top: 89
+                'id': companyShortName+'_salesperson_holder',
+                'top': 89
             } ), companyId );
 
             var zone = new ebg.zone();
@@ -1887,15 +1887,15 @@ function (dojo, declare) {
 
             // add resource stock
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: companyShortName + '_resources',
-                class: 'company-resources'
+                'id': companyShortName + '_resources',
+                'class': 'company-resources'
             } ), companyId );
             this.createResourceStock(companyShortName + '_resources');
 
             // add goods zone
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: companyShortName+'_goods',
-                class: 'goods-holder'
+                'id': companyShortName+'_goods',
+                'class': 'goods-holder'
             } ), companyId );
             
             var zone = new ebg.zone();
@@ -1905,8 +1905,8 @@ function (dojo, declare) {
             // add stock for asset if any
             if(company.has_asset){
                 dojo.place( this.format_block( 'jstpl_generic_div', {
-                    id: companyShortName + '_asset',
-                    class: 'company-asset'
+                    'id': companyShortName + '_asset',
+                    'class': 'company-asset'
                 } ), companyId );
 
                 this.createAssetTileStock(companyShortName + '_asset', this.gamedatas.all_capital_assets);
@@ -1915,8 +1915,8 @@ function (dojo, declare) {
 
             // add extra goods token zone
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: companyShortName+'_extra_goods',
-                class: 'extra-goods'
+                'id': companyShortName+'_extra_goods',
+                'class': 'extra-goods'
             } ), companyId );
 
             var zone = new ebg.zone();
@@ -1924,7 +1924,7 @@ function (dojo, declare) {
             this[companyShortName + '_extra_goods'] = zone;
         },
 
-        placeGoal(goal){
+        placeGoal: function(goal){
             var hash = this.hashString(goal.card_type);
             this.goals.addToStockWithId(hash, hash);
 
@@ -1933,15 +1933,15 @@ function (dojo, declare) {
             this.addTooltip( itemDivId, _( goalMaterial.tooltip ), "");
         },
 
-        placeDemand(demand){
+        placeDemand: function(demand){
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: demand.card_type, 
-                class: demand.card_type + " demand-card"
+                'id': demand.card_type, 
+                'class': demand.card_type + " demand-card"
             } ), demand.card_location );
 
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: demand.card_type + '_goods', 
-                class: ""
+                'id': demand.card_type + '_goods', 
+                'class': ""
             } ), demand.card_type );
 
             var zone = new ebg.zone();
@@ -2071,8 +2071,8 @@ function (dojo, declare) {
                 // when goods are produced, all goods are returned from the server, so we avoid recreating them
                 if($('good_' + good.card_id) == null){
                     dojo.place( this.format_block( 'jstpl_generic_div', {
-                        id: 'good_' + good.card_id, 
-                        class: 'good_token'
+                        'id': 'good_' + good.card_id, 
+                        'class': 'good_token'
                     } ), 'main_board' );
                 }
 
@@ -2085,8 +2085,8 @@ function (dojo, declare) {
             } else {
                 // page refresh -> create good (in company or on demand tile)
                 dojo.place( this.format_block( 'jstpl_generic_div', {
-                    id: 'good_' + good.card_id, 
-                    class: 'good_token'
+                    'id': 'good_' + good.card_id, 
+                    'class': 'good_token'
                 } ), location + '_goods' );
 
                 this[location + '_goods'].placeInZone('good_' + good.card_id);
@@ -2107,8 +2107,8 @@ function (dojo, declare) {
         placeExtraGood: function(shortName, id, isNotif){
             var elementId = shortName + '_extra_good_' + id;
             dojo.place( this.format_block( 'jstpl_generic_div', {
-                id: elementId,
-                class: 'extra-goods-token'
+                'id': elementId,
+                'class': 'extra-goods-token'
             } ), shortName + '_extra_goods');
             if(isNotif)
                 this.placeOnObject(elementId, 'main_board');
@@ -2122,8 +2122,8 @@ function (dojo, declare) {
                 var playerId = partnerId.split('_')[1];
                 var playerColor = this.gamedatas.players[playerId].color;
                 dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: partnerId, 
-                    token_class: 'moveable-token meeple meeple-'+playerColor
+                    'token_id': partnerId, 
+                    'token_class': 'moveable-token meeple meeple-'+playerColor
                 } ), 'overall_player_board_'+playerId );
             }
 
@@ -2146,8 +2146,8 @@ function (dojo, declare) {
                     // this is an automated worker
                     var workerSpotId = this.getNextAvailableWorkerSpot(companyShortName + '_' + factoryNumber);
                     dojo.place( this.format_block( 'jstpl_token', {
-                        token_id: 'automation_' + automation.card_id,
-                        token_class: 'automation_token'
+                        'token_id': 'automation_' + automation.card_id,
+                        'token_class': 'automation_token'
                     } ), workerSpotId );
                 }
             }
@@ -2155,8 +2155,8 @@ function (dojo, declare) {
                 // fill from right to left and disregard location
                 var automationSpotId = this.getNextAvailableAutomationSpot(companyShortName, factoryNumber);
                 dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: 'automation_' + automation.card_id,
-                    token_class: 'automation_token'
+                    'token_id': 'automation_' + automation.card_id,
+                    'token_class': 'automation_token'
                 } ), automationSpotId );
             }
         },
@@ -2172,8 +2172,8 @@ function (dojo, declare) {
             } else if (from == 'supply'){
                 // some buildings allow hiring workers from the supply
                 dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: tokenId,
-                    token_class: 'worker'
+                    'token_id': tokenId,
+                    'token_class': 'worker'
                 } ), workerSpotId );
                 this.placeOnObject(tokenId, 'main_board');
                 this.slideToObject(tokenId, workerSpotId).play();
@@ -2185,8 +2185,8 @@ function (dojo, declare) {
             } else {
                 // just place worker directly
                 dojo.place( this.format_block( 'jstpl_token', {
-                    token_id: tokenId,
-                    token_class: 'worker'
+                    'token_id': tokenId,
+                    'token_class': 'worker'
                 } ), workerSpotId );
             }
         },
@@ -2489,7 +2489,7 @@ function (dojo, declare) {
             }
         },
 
-        executeActionForCompany(companyShortName, factoryNumber){
+        executeActionForCompany: function(companyShortName, factoryNumber){
             
             var actionOk = true;
             var message = "";
@@ -2776,7 +2776,7 @@ function (dojo, declare) {
             }
         },
 
-        checkCompanyMoney(companyShortName, cost){
+        checkCompanyMoney: function(companyShortName, cost){
             var counterName = 'money_'+companyShortName;
             var companyTreasury = this.gamedatas.counters[counterName]['counter_value'];
             if(companyTreasury >= cost)
@@ -2784,7 +2784,7 @@ function (dojo, declare) {
             return false;
         },
 
-        getCostOfWorkers(numberOfWorkers){
+        getCostOfWorkers: function(numberOfWorkers){
             var workersInMarket = this.job_market.getAllItems().length;
             var totalCost = 0;
             var costConvert = {0: 50, 1: 40, 2: 40, 3: 40, 4: 40, 5: 30, 6: 30, 7: 30, 8: 30, 9: 20, 10: 20, 11: 20, 12: 20};
@@ -2797,7 +2797,7 @@ function (dojo, declare) {
             return totalCost;
         },
 
-        getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber){
+        getEmptyWorkerSpotsInFactory: function(companyShortName, factoryNumber){
             var company = this.gamedatas.all_companies[companyShortName];
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
             var workerHolderChilds = dojo.query(factorySelector + '>.worker-holder>');
@@ -2805,7 +2805,7 @@ function (dojo, declare) {
             return numberOfWorkers - workerHolderChilds.length;
         },
 
-        getEmptyWorkerSpotsInCompany(companyShortName){
+        getEmptyWorkerSpotsInCompany: function(companyShortName){
             var company = this.gamedatas.all_companies[companyShortName];
             var companySelector = '#company_'+companyShortName; //#company_brunswick
             var workerHolderChilds = dojo.query(companySelector + ' .worker-holder>');
