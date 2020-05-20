@@ -412,7 +412,7 @@ class CityOfTheBigShoulders extends Table
                     "SELECT player_name, player_id, number_partners, current_number_partners, appeal_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['appeal_partner_gained'] == true)
-                    return;
+                    return true;
 
                 $counters = [];
                 self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
@@ -434,7 +434,7 @@ class CityOfTheBigShoulders extends Table
                     "SELECT player_name, player_id, number_partners, current_number_partners, company_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['company_partner_gained'] == true)
-                    return;
+                    return true;
 
                 $counters = [];
                 self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
@@ -452,16 +452,26 @@ class CityOfTheBigShoulders extends Table
                 ]);
                 break;
         }
+        
+        return false;
     }
 
-    function gainGood($company_short_name)
+    function gainGood($company_id, $company_short_name)
     {
+        $total_extra_goods = self::getUniqueValueFromDB("SELECT SUM(extra_goods) FROM company");
+        if($total_extra_goods == 10)
+        {
+            return true;
+        }
+
         self::DbQuery("UPDATE company SET extra_goods = extra_goods + 1 WHERE short_name = '$company_short_name'");
 
         self::notifyAllPlayers( "appealBonusGoodsTokenReceived", clienttranslate( '${company_name} receives an Appeal Bonus Goods token' ), array(
             'company_short_name' => $company_short_name,
             'company_name' => self::getCompanyName($company_short_name)
         ));
+
+        return false;
     }
 
     function increaseShareValue($short_name, $value)
@@ -2292,7 +2302,7 @@ class CityOfTheBigShoulders extends Table
         $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
 
-        $company = self::getNonEmptyObjectFromDB("SELECT id, short_name, owner_id FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT treasury, id, short_name, owner_id FROM company WHERE id = $company_id");
         $player_id = $player_id = self::getActivePlayerId();
 
         if($company['owner_id'] != $player_id)
@@ -2300,6 +2310,7 @@ class CityOfTheBigShoulders extends Table
 
         $company_short_name = $company['short_name'];
         $bonus_name = self::BONUS_NAME[$next_appeal_bonus];
+        $auto_forfeited = false;
         switch($bonus_name)
         {
             case 'worker':
@@ -2312,14 +2323,28 @@ class CityOfTheBigShoulders extends Table
                 self::automateWorker($company_short_name, $factory_number, $relocate_number);
                 break;
             case 'partner':
-                self::gainPartner($player_id, 'appeal');
+                $auto_forfeited = self::gainPartner($player_id, 'appeal');
                 break;
             case 'good':
-                self::gainGood($company_short_name);
+                $auto_forfeited = self::gainGood($company_short_name);
                 break;
             case 'bump':
                 self::increaseShareValue($company_short_name, 1);
                 break;
+        }
+
+        if($auto_forfeited)
+        {
+            $new_company_treasury = $company['treasury'] + 25;
+            $counters = [];
+            self::DbQuery("UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id");
+            self::addCounter($counters, "money_${company_short_name}", $new_company_treasury);
+
+            // notify payment
+            self::notifyAllPlayers( "countersUpdated", clienttranslate('${company_name} automatically forfeits appeal bonus and receives $25'), array(
+                'company_name' => self::getCompanyName($short_name),
+                'counters' => $counters
+            ) );
         }
 
         if($next_appeal_bonus == $final_appeal_bonus)
