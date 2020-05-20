@@ -168,6 +168,8 @@ function (dojo, declare) {
 
             this.creatAppealBonusTooltips();
 
+            this.placeRoundAndPhaseMarkers(gamedatas);
+
             console.log( "Ending game setup" );
         },
        
@@ -710,24 +712,58 @@ function (dojo, declare) {
         
         */
 
+        placeRoundAndPhaseMarkers: function(gamedatas){
+            var round = Number(gamedatas.round) + 1;
+            var phase = Number(gamedatas.phase) + 1;
+            
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: 'round_marker',
+                class: 'black-marker'
+            } ), 'round_' + round);
+
+            dojo.place( this.format_block( 'jstpl_generic_div', {
+                id: 'phase_marker',
+                class: 'black-marker'
+            } ), 'phase_' + phase);
+        },
+
         createDemandSpaceZones: function(){
             
-            this.createZone('demand27_goods', 13, 22);
-            this.createZone('demand28_goods', 13, 22);
-            this.createZone('demand29_goods', 13, 22);
-            this.createZone('demand30_goods', 13, 22);
-            this.createZone('demand31_goods', 13, 22);
-            this.createZone('demand32_goods', 13, 22);
-            this.createZone('demand25_goods', 13, 22);
-            this.createZone('demand26_goods', 13, 22);
+            this.createZone('demand27_goods', 13, 22, true);
+            this.createZone('demand28_goods', 13, 22, false);
+            this.createZone('demand29_goods', 13, 22, true);
+            this.createZone('demand30_goods', 13, 22, false);
+            this.createZone('demand31_goods', 13, 22, true);
+            this.createZone('demand32_goods', 13, 22, false);
+            this.createZone('demand25_goods', 13, 22, true);
+            this.createZone('demand26_goods', 13, 22, false);
 
             dojo.query(".demand").connect( 'onclick', this, 'onDemandSpaceClicked' );
         },
 
-        createZone: function(name, width, height){
+        createZone: function(name, width, height, hasPattern){
             var zone = new ebg.zone();
             zone.create( this, name, width, height );
             this[name] = zone;
+
+            if(!hasPattern)
+                return;
+
+            zone.setPattern('custom');
+            this.job_market.itemIdToCoords = function( i, control_width ) {
+                if( i==0 )
+                    return { x:13,y:8, w:13, h:22 };
+                else if(i==1)
+                    return { x:35,y:8, w:13, h:22 };
+                else if(i==2)
+                    return { x:13,y:32, w:13, h:22 };
+                else if(i==3)
+                    return { x:35,y:32, w:13, h:22 };
+                else if(i==4)
+                    return { x:13,y:54, w:13, h:22 };
+                else if(i==5)
+                    return { x:35,y:54, w:13, h:22 };
+            };
         },
 
         creatAppealBonusTooltips: function(){
@@ -1855,6 +1891,118 @@ function (dojo, declare) {
 
             var zone = new ebg.zone();
             zone.create( this, demand.card_type + '_goods', 13, 22 );
+            zone.setPattern('custom');
+
+            // get the custom pattern for the goods
+            var patternFunction = null;
+            var demandMaterial = this.gamedatas.demand[demand.card_type];
+            switch(demandMaterial.demand){
+                case 1:
+                    patternFunction = function( i, control_width ) {
+                        return {  x:24,y:32, w:13, h:22 };
+                    };
+                    break;
+                case 2:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:24,y:17, w:13, h:22 };
+                        else if(i==1)
+                            return { x:24,y:47, w:13, h:22 };
+                    };
+                    break;
+                case 3:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:24,y:8, w:13, h:22 };
+                        else if(i==1)
+                            return { x:24,y:31, w:13, h:22 };
+                        else if(i==2)
+                            return { x:24,y:54, w:13, h:22 };
+                    };
+                    break;
+                case 4:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:13,y:16, w:13, h:22 };
+                        else if(i==1)
+                            return { x:35,y:16, w:13, h:22 };
+                        else if(i==2)
+                            return { x:13,y:45, w:13, h:22 };
+                        else if(i==3)
+                            return { x:35,y:45, w:13, h:22 };
+                    };
+                    break;
+                case 5:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:13,y:10, w:13, h:22 };
+                        else if(i==1)
+                            return { x:35,y:10, w:13, h:22 };
+                        else if(i==2)
+                            return { x:24,y:32, w:13, h:22 };
+                        else if(i==3)
+                            return { x:13,y:53, w:13, h:22 };
+                        else if(i==4)
+                            return { x:35,y:53, w:13, h:22 };
+                    };
+                    break;
+                case 6:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:13,y:8, w:13, h:22 };
+                        else if(i==1)
+                            return { x:35,y:8, w:13, h:22 };
+                        else if(i==2)
+                            return { x:13,y:32, w:13, h:22 };
+                        else if(i==3)
+                            return { x:35,y:32, w:13, h:22 };
+                        else if(i==4)
+                            return { x:13,y:54, w:13, h:22 };
+                        else if(i==5)
+                            return { x:35,y:54, w:13, h:22 };
+                    };
+                    break;
+                case 7:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:24,y:2, w:13, h:22 };
+                        else if(i==1)
+                            return { x:13,y:20, w:13, h:22 };
+                        else if(i==2)
+                            return { x:35,y:20, w:13, h:22 };
+                        else if(i==3)
+                            return { x:13,y:39, w:13, h:22 };
+                        else if(i==4)
+                            return { x:35,y:39, w:13, h:22 };
+                        else if(i==5)
+                            return { x:13,y:58, w:13, h:22 };
+                        else if(i==6)
+                            return { x:35,y:58, w:13, h:22 };
+                    };
+                    break;
+                case 8:
+                    patternFunction = function( i, control_width ) {
+                        if( i==0 )
+                            return { x:13,y:5, w:13, h:22 };
+                        else if(i==1)
+                            return { x:35,y:5, w:13, h:22 };
+                        else if(i==2)
+                            return { x:13,y:23, w:13, h:22 };
+                        else if(i==3)
+                            return { x:35,y:23, w:13, h:22 };
+                        else if(i==4)
+                            return { x:13,y:40, w:13, h:22 };
+                        else if(i==5)
+                            return { x:35,y:40, w:13, h:22 };
+                        else if(i==6)
+                            return { x:13,y:58, w:13, h:22 };
+                        else if(i==7)
+                            return { x:35,y:58, w:13, h:22 };
+                    };
+                    break;
+            }
+
+            zone.itemIdToCoords = patternFunction;
             this[demand.card_type + '_goods'] = zone;
 
             dojo.connect( $(demand.card_type), 'onclick', this, 'onDemandClick' );
@@ -3732,6 +3880,8 @@ function (dojo, declare) {
             dojo.subscribe('scoreUpdated', this, "notif_scoreUpdated");
 
             dojo.subscribe('newRound', this, "notif_newRound");
+
+            dojo.subscribe('newPhase', this, "notif_newPhase");
         },
 
         notif_marketSquareReset: function(notif){
@@ -3755,6 +3905,22 @@ function (dojo, declare) {
 
         notif_newRound: function(notif){
             dojo.query(".asset-tile").removeClass('exhausted');
+
+            var round = notif.args.round + 1;
+            var roundMarker = $('round_marker');
+            var parent = roundMarker.parentNode;
+            dojo.place(roundMarker, 'round_' + round);
+            this.placeOnObject(roundMarker, parent);
+            this.slideToObject(roundMarker, 'round_' + round).play();
+        },
+
+        notif_newPhase: function(notif){
+            var phase = notif.args.phase + 1;
+            var phaseMarker = $('phase_marker');
+            var parent = phaseMarker.parentNode;
+            dojo.place(phaseMarker, 'phase_' + phase);
+            this.placeOnObject(phaseMarker, parent);
+            this.slideToObject(phaseMarker, 'phase_' + phase).play();
         },
 
         notif_assetUsed: function(notif){

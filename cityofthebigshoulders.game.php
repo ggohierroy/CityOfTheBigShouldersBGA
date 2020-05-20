@@ -173,6 +173,8 @@ class CityOfTheBigShoulders extends Table
         $result['all_capital_assets'] = $this->capital_asset;
         $result['demand'] = $this->demand;
         $result['goals'] = $this->goal;
+        $result['round'] = self::getGameStateValue('round');
+        $result['phase'] = self::getGameStateValue('phase');
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -452,7 +454,7 @@ class CityOfTheBigShoulders extends Table
                 ]);
                 break;
         }
-        
+
         return false;
     }
 
@@ -4492,7 +4494,10 @@ class CityOfTheBigShoulders extends Table
 
     function stGameCleanup()
     {
-        self::notifyAllPlayers( "cleanupPhase", clienttranslate("Cleanup phase"), array() );
+        self::setGameStateValue( "phase", 4 );
+        self::notifyAllPlayers( "newPhase", clienttranslate("Start Cleanup Phase"), array(
+            'phase' => 4
+        ) );
 
         // refill supply
         self::refillSupply(true);
@@ -4529,10 +4534,15 @@ class CityOfTheBigShoulders extends Table
 
         // change round
         self::incGameStateValue( "round", 1 );
-        self::notifyAllPlayers( "newRound", clienttranslate("New round"), array() );
+        self::notifyAllPlayers( "newRound", clienttranslate("New round"), array(
+            'round' => self::getGameStateValue("round")
+        ) );
 
         // change phase
         self::setGameStateValue( "phase", 0 );
+        self::notifyAllPlayers( "newPhase", clienttranslate("Start Stock Phase"), array(
+            'phase' => 0
+        ) );
 
         // set active player as player with priority deal marker
         $player_id = self::getGameStateValue("priority_deal_player_id");
@@ -4649,6 +4659,9 @@ class CityOfTheBigShoulders extends Table
         }
 
         self::setGameStateValue( "phase", 2 );
+        self::notifyAllPlayers( "newPhase", clienttranslate("Start Action Phase"), array(
+            'phase' => 2
+        ) );
 
         // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
@@ -4735,6 +4748,9 @@ class CityOfTheBigShoulders extends Table
                 self::setGameStateValue("last_factory_produced", 0);
 
                 self::setGameStateValue( "phase", 3 );
+                self::notifyAllPlayers( "newPhase", clienttranslate("Start Operation Phase"), array(
+                    'phase' => 3
+                ) );
 
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;
@@ -4759,6 +4775,9 @@ class CityOfTheBigShoulders extends Table
             self::setGameStateValue( "consecutive_passes", 0 );
             self::setGameStateValue( "turns_this_phase", 0 );
             self::setGameStateValue( "phase", 1 );
+            self::notifyAllPlayers( "newPhase", clienttranslate("Start Building Phase"), array(
+                'phase' => 1
+            ) );
             
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );

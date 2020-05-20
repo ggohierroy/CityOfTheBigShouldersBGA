@@ -36,6 +36,16 @@
         <div id="haymarket_square">
             <div id="haymarket"></div>
         </div>
+        <div id="round_1" class="round-spot"></div>
+        <div id="round_2" class="round-spot"></div>
+        <div id="round_3" class="round-spot"></div>
+        <div id="round_4" class="round-spot"></div>
+        <div id="round_5" class="round-spot"></div>
+        <div id="phase_1" class="phase-spot"></div>
+        <div id="phase_2" class="phase-spot"></div>
+        <div id="phase_3" class="phase-spot"></div>
+        <div id="phase_4" class="phase-spot"></div>
+        <div id="phase_5" class="phase-spot"></div>
         <div id="appeal_1" bonus="worker" class="appeal-bonus"></div>
         <div id="appeal_2" bonus="manager" class="appeal-bonus"></div>
         <div id="appeal_3" bonus="automation" class="appeal-bonus"></div>

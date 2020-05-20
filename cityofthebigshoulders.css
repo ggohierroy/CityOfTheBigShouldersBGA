@@ -542,3 +542,36 @@
     width: 103px;
     height: 68px;
 }
+
+.black-marker {
+    background-image: url(img/tokens.png);
+    background-position: -150px -54px;
+    height: 29px;
+    width: 29px;
+    position: absolute;
+}
+
+.round-spot {
+    height: 29px;
+    width: 29px;
+    left: 924px;
+    position: absolute;
+}
+
+.phase-spot {
+    height: 29px;
+    width: 29px;
+    left: 921px;
+    position: absolute;
+}
+
+#round_1 { top: 25px; }
+#round_2 { top: 59px; }
+#round_3 { top: 92px; }
+#round_4 { top: 125px; }
+#round_5 { top: 158px; }
+#phase_1 { top: 278px; }
+#phase_2 { top: 316px; }
+#phase_3 { top: 351px; }
+#phase_4 { top: 441px; }
+#phase_5 { top: 475px; }
