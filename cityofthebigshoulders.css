@@ -160,6 +160,14 @@
     top: 193px;
 }
 
+#player_order {
+    width: 19px;
+    height: 53px;
+    position: absolute;
+    left: 926px;
+    top: 382px;
+}
+
 .appeal-bonus {
     position: absolute;
     width: 22px;

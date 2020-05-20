@@ -158,7 +158,7 @@ class CityOfTheBigShoulders extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id AS id, player_score AS score, treasury AS treasury, number_partners AS number_partners, current_number_partners AS current_number_partners FROM player ";
+        $sql = "SELECT player_id AS id, player_score AS score, treasury, number_partners, current_number_partners, player_order FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // Gather all information about current game situation (visible by player $current_player_id).
@@ -4675,7 +4675,7 @@ class CityOfTheBigShoulders extends Table
         $new_active_player = null;
 
         // get all players
-        $sql = "SELECT player_id, player_order, current_number_partners FROM player ORDER BY player_order ASC";
+        $sql = "SELECT player_id, player_order, current_number_partners, player_color AS color, player_name FROM player ORDER BY player_order ASC";
         $players = self::getCollectionFromDB($sql);
         $tmp = array_values($players);
         $last_player = array_pop($tmp);
@@ -4692,7 +4692,9 @@ class CityOfTheBigShoulders extends Table
             if($advertising != null)
             {
                 $player_id_advertising = $advertising['card_type_arg'];
-                $new_active_player = $players[$player_id_advertising];
+                $player_advertising = $players[$player_id_advertising];
+                if($player_advertising['current_number_partners'] > 0)
+                    $new_active_player = $player_advertising;
                 $player_order = 2;
                 $order = 0;
                 foreach($players as $player_id => $player)
@@ -4706,9 +4708,23 @@ class CityOfTheBigShoulders extends Table
                         $order = $player_order++;
                     }
 
+                    $players[$player_id]['player_order'] = $order;
+
                     $sql = "UPDATE player SET player_order = $order WHERE player_id = $player_id";
                     self::DbQuery($sql);
                 }
+
+                // Define the custom sort function
+                function custom_sort($a,$b) {
+                    return $a['player_order']>$b['player_order'];
+                }
+                // Sort the multidimensional array
+                usort($players, "custom_sort");
+
+                self::notifyAllPlayers( "playerOrderChanged", clienttranslate('${player_name} uses Advertising and becomes 1st player'), array(
+                    'player_order' => $players,
+                    'player_name' => $player_advertising['player_name']
+                ) );
             }
         }
 
@@ -4882,6 +4898,11 @@ class CityOfTheBigShoulders extends Table
 
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );
+
+            $player_order = self::getObjectListFromDB("SELECT player_order, player_id, player_color AS color FROM player");
+            self::notifyAllPlayers( "playerOrderInitialized", "", array(
+                'player_order' => $player_order
+            ) );
 
             $this->gamestate->nextState('playerSellPhase');
         }

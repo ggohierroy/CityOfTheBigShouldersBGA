@@ -66,6 +66,9 @@ function (dojo, declare) {
         setup: function( gamedatas )
         {
             console.log( "Starting game setup" );
+
+            this.createPlayerOrderStock();
+            var orderWeight = {};
             
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -88,10 +91,19 @@ function (dojo, declare) {
                     color: player.color
                 } ), player_board_div );
 
+                if(player.player_order && gamedatas.gamestate.name != 'playerStartFirstCompany'){
+                    var hash = this.hashString(player.color);
+                    this.player_order.addToStock(hash);
+                    orderWeight[hash] = Number(player.player_order);
+                }
+
                 // create building tracks
                 this['building_track_'+player_id] = this.createBuildingsStock(gamedatas.all_buildings, 'building_track_'+player_id, 'setupNewTrackBuilding');
                 this['building_track_'+player_id].item_margin=4;
             }
+
+            // adjust player order
+            this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }
 
             this.player_color = gamedatas.players[this.player_id].color;
             this.clientStateArgs = {};
@@ -1303,6 +1315,34 @@ function (dojo, declare) {
             }
 
             this[stockName] = newStock;
+        },
+
+        createPlayerOrderStock: function(){
+            var newStock = new ebg.stock();
+
+            newStock.create( this, $('player_order'), 15.5, 15);
+
+            newStock.image_items_per_row = 8;
+            newStock.setSelectionMode(0);
+            newStock.item_margin=-3;
+
+            // red green blue yellow
+            // "ff0000", "008000", "0000ff", "ffa500"
+            var colorPosition = [ 
+                {'color': 'ff0000', 'position': 62},
+                {'color': '008000', 'position': 57},
+                {'color': '0000ff', 'position': 56},
+                {'color': 'ffa500', 'position': 63} ];
+
+            var i = 0;
+            for(var i = 0; i < colorPosition.length; i++){
+                var item = colorPosition[i];
+                var hash = this.hashString(item.color);
+                var imagePosition = item.position;
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/tokens.png', imagePosition );
+            }
+
+            this.player_order = newStock;
         },
 
         placeManager: function(manager, slideFromSupply = false){
@@ -3918,6 +3958,33 @@ function (dojo, declare) {
             dojo.subscribe('newPhase', this, "notif_newPhase");
 
             dojo.subscribe('dealMarkerReceived', this, "notif_dealMarkerReceived");
+
+            dojo.subscribe('playerOrderInitialized', this, "notif_playerOrderInitialized");
+
+            dojo.subscribe('playerOrderChanged', this, "notif_playerOrderChanged");
+        },
+
+        notif_playerOrderChanged: function(notif){
+            var orderWeight = {};
+            for(var index in notif.args.player_order){
+                var player = notif.args.player_order[index];
+                var hash = this.hashString(player.color);
+                orderWeight[hash] = Number(player.player_order);
+            }
+            
+            this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }
+        },
+
+        notif_playerOrderInitialized: function(notif){
+            var orderWeight = {};
+            for(var index in notif.args.player_order){
+                var player = notif.args.player_order[index];
+                var hash = this.hashString(player.color);
+                this.player_order.addToStock(hash);
+                orderWeight[hash] = Number(player.player_order);
+            }
+            
+            this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }
         },
 
         notif_appealBonusGoodsTokenReceived: function(notif){
