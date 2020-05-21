@@ -2665,9 +2665,7 @@ function (dojo, declare) {
                             this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
                             this.onConfirmAction();
                         } else {
-                            if(!relocate){
-                                this.clientStateArgs.shouldRelocateSecondWorker = false;
-                            }
+                            this.clientStateArgs.shouldRelocateSecondWorker = relocate;
 
                             this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
                                 descriptionmyturn : _('Choose a factory in which to relocate the first automated worker')
@@ -2678,9 +2676,7 @@ function (dojo, declare) {
                         // this is the first factory being selected for automation
                         this.clientStateArgs.actionArgs.firstFactoryNumber = factoryNumber;
                         var relocate = this.automateWorker(companyShortName, factoryNumber);
-                        if(!relocate){
-                            this.clientStateArgs.shouldRelocateFirstWorker = false;
-                        }
+                        this.clientStateArgs.shouldRelocateFirstWorker = relocate;
 
                         this.setClientState("client_actionChooseFactorySkipToRelocate", {
                             descriptionmyturn : dojo.string.substitute(_('Choose a second factory to automate'),{
