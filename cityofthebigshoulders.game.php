@@ -3449,7 +3449,7 @@ class CityOfTheBigShoulders extends Table
             $player_name = $building_owner['player_name'];
             $new_player_treasury = $building_owner['treasury'] + $cost;
 
-            $sql = "UPDATE player SET treasury = $new_player_treasury WHERE player_id = $player_id";
+            $sql = "UPDATE player SET treasury = $new_player_treasury, player_score = player_score + $cost WHERE player_id = $player_id";
             self::DbQuery($sql);
 
             self::notifyAllPlayers( "scoreUpdated", "", array(
