@@ -275,10 +275,15 @@ function (dojo, declare) {
                     break;
                 case 'client_actionChooseFactory':
                 case 'client_actionChooseFactorySkip':
-                case 'client_actionChooseFactorySkipToRelocate':
                 case 'client_actionChooseFactorySkipWorker':
-                    // activate all factories in player area
-                    dojo.query('#player_'+this.player_id+' .factory').addClass('active');
+                    var companyShortName = this.clientStateArgs.companyShortName;
+                    if(companyShortName){
+                        // when this value exists, the rest of the action should be in the same company
+                        this.activateFactoriesInCompany(companyShortName);
+                    } else {
+                        // activate all factories in player area
+                        dojo.query('#player_'+this.player_id+' .factory').addClass('active');
+                    }
                     break;
                 case 'client_actionChooseCompany':
                 case 'client_tradeChooseCompany':
@@ -292,12 +297,13 @@ function (dojo, declare) {
                 case 'client_placeHiredWorkers':
                 case 'client_chooseFactoryRelocateBonus':
                 case 'client_chooseFactoryRelocateDoubleAutomation':
+                case 'client_actionChooseFactorySkipToRelocate':
                     // activate all factories in the current company
                     this.activateFactoriesInCompany(this.clientStateArgs.companyShortName);
                     break;
                 case 'playerBuyResourcesPhase':
                     if(this.isCurrentPlayerActive()){
-                        this.activatePlayerAssets();
+                        this.activateCompanyAsset(args.args.company_short_name);
                         dojo.query('#haymarket_square').addClass('active');
                         this.supply_10.setSelectionMode(2);
                         this.supply_20.setSelectionMode(2);
@@ -309,7 +315,7 @@ function (dojo, declare) {
                     break;
                 case 'playerProduceGoodsPhase':
                     if(this.isCurrentPlayerActive()){
-                        this.activatePlayerAssets();
+                        this.activateCompanyAsset(args.args.company_short_name);
                         dojo.query('#haymarket_square').addClass('active');
                         var currentFactory = Number(args.args.last_factory_produced) + 1;
                         var companyShortName = args.args.company_short_name;
@@ -319,15 +325,17 @@ function (dojo, declare) {
                 case 'playerDistributeGoodsPhase':
                     this.clientStateArgs.goods = [];
                     if(this.isCurrentPlayerActive()){
-                        this.activatePlayerAssets();
+                        this.activateCompanyAsset(args.args.company_short_name);
                         dojo.query('#haymarket_square').addClass('active');
                         this.activateDemandForCompany(args.args.company_short_name);
                         this.clientStateArgs.income = Number(args.args.income);
                     }
                     break;
                 case 'playerDividendsPhase':
-                    this.activatePlayerAssets();
-                    dojo.query('#haymarket_square').addClass('active');
+                    if(this.isCurrentPlayerActive()){
+                        this.activateCompanyAsset(args.args.company_short_name);
+                        dojo.query('#haymarket_square').addClass('active');
+                    }
                     break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     this.activateDemandForCompany(args.args.company_short_name);
@@ -846,7 +854,17 @@ function (dojo, declare) {
         },
 
         activateCompany: function(companyShortName){
-            dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
+            var companyElement = $('company_'+companyShortName);
+            dojo.addClass(companyElement.parentNode, 'active');
+        },
+
+        activateCompanyAsset: function(companyShortName){
+            var assetTiles = dojo.query('#company_'+companyShortName +' .asset-tile');
+            for(var i = 0; i<assetTiles.length; i++){
+                var assetTile = assetTiles[i];
+                if(!dojo.hasClass(assetTile, 'exhausted'))
+                    dojo.addClass(assetTile, 'active');
+            }
         },
 
         activatePlayerAssets: function(){
@@ -3394,10 +3412,16 @@ function (dojo, declare) {
                 this.showMessage( _('Haymarket Square is empty'), 'info' );
                 return;
             }
-            
-            this.setClientState("client_tradeChooseCompany", {
-                descriptionmyturn : _('Choose a company'),
-            });
+
+            var stateName = this.gamedatas.gamestate.name;
+            if(stateName == 'playerBuyResourcesPhase' || stateName == 'playerProduceGoodsPhase'){
+                var companyShortName = this.gamedatas.gamestate.
+                this.createResourceOptions(companyShortName);
+            } else {
+                this.setClientState("client_tradeChooseCompany", {
+                    descriptionmyturn : _('Choose a company'),
+                });
+            }
         },
 
         onAssetSelected: function(control_name, item_id){
@@ -4273,7 +4297,7 @@ function (dojo, declare) {
 
             if(notif.args.worker_relocation == 'job_market'){
                 this.placeWorker(item)
-            } else if (notif.args.worker_reloaction == 'supply') {
+            } else if (notif.args.worker_relocation == 'supply') {
                 this.fadeOutAndDestroy( worker );
             } else {
                 this.placeWorkerInFactory(item, 'factory', worker.parentNode.id)
