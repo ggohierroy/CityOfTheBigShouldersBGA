@@ -3655,7 +3655,7 @@ class CityOfTheBigShoulders extends Table
                     throw new BgaVisibleSystemException("Can't hire more than 1 worker and 1 manager");
                 
                 $number = intval($factories[0]);
-                if($number1 != 0)
+                if($number != 0)
                     self::hireWorkerFromSupply($company_short_name, $company_id, $number);
                 
                 if(count($factories) > 1)

@@ -2523,7 +2523,8 @@ function (dojo, declare) {
                     }
                     break;
                 case "building43":
-                    if(this.clientStateArgs.actionArgs.workerFactoryNumber){
+                    var workerFactoryNumber = this.clientStateArgs.actionArgs.workerFactoryNumber;
+                    if(typeof workerFactoryNumber !== 'undefined'){
                         if(this.doesFactoryEmployManager(companyShortName, factoryNumber)){
                             actionOk = false;
                             message = _("This factory already employs a manager");
@@ -2537,7 +2538,8 @@ function (dojo, declare) {
                     }
                     break;
                 case "building44":
-                    if(!this.clientStateArgs.actionArgs.workerFactoryNumber){
+                    var workerFactoryNumber = this.clientStateArgs.actionArgs.workerFactoryNumber
+                    if(typeof workerFactoryNumber === 'undefined'){
                         var emptyWorkerSpots = this.getEmptyWorkerSpotsInFactory(companyShortName, factoryNumber);
                         if(emptyWorkerSpots == 0){
                             actionOk = false;
@@ -2747,17 +2749,21 @@ function (dojo, declare) {
                     }
                     break;
                 case "building43": // worker + manager
-                    if(this.clientStateArgs.actionArgs.workerFactoryNumber){
+                    var workerFactoryNumber = this.clientStateArgs.actionArgs.workerFactoryNumber;
+                    if(typeof workerFactoryNumber !== 'undefined'){
                         this.clientStateArgs.actionArgs.managerFactoryNumber = factoryNumber;
                         this.onConfirmAction();
                     } else {
                         this.clientStateArgs.actionArgs.workerFactoryNumber = factoryNumber;
+                        this.createTempWorker(companyShortName, factoryNumber);
                         this.chooseFactorySkip(_("Choose a factory to put hired manager"));
                     }
                     break;
                 case "building44": // worker + salesperson
-                    if(!this.clientStateArgs.actionArgs.workerFactoryNumber){
+                    var workerFactoryNumber = this.clientStateArgs.actionArgs.workerFactoryNumber
+                    if(typeof workerFactoryNumber === 'undefined'){
                         this.clientStateArgs.actionArgs.workerFactoryNumber = factoryNumber;
+                        this.createTempWorker(companyShortName, factoryNumber);
                         if(this.getSalespersonEmptySpots(companyShortName) == 0){
                             this.setClientState("client_confirmGainLessSalespeople", {
                                 descriptionmyturn : _('Confirm gain 0 salesperson')
@@ -2765,6 +2771,9 @@ function (dojo, declare) {
                         } else {
                             this.onConfirmAction();
                         }
+                    } else {
+                        // happens when hire worker is skipped
+                        this.onConfirmAction();
                     }
                     break;
                 default:
@@ -3319,6 +3328,7 @@ function (dojo, declare) {
                     break;
                 case "building26":
                 case "building43":
+                case "building44":
                     dojo.query('.worker.temp').forEach(dojo.destroy);
                     break;
             }
@@ -3783,13 +3793,13 @@ function (dojo, declare) {
         },
 
         onSkipReceiveWorker: function(){
-            this.clientStateArgs.workerFactoryLocation = 0;
-            var message = null;
-            if(this.clientStateArgs.buildingAction == "building43")
-                message = _("Choose a factory to put hired manager");
-            else if(this.clientStateArgs.buildingAction == "building43")
-                message = _("Choose a factory to put hired salesperson");
-            this.chooseFactorySkip(message)
+            this.clientStateArgs.actionArgs.workerFactoryNumber = 0;
+            if(this.clientStateArgs.buildingAction == "building43"){
+                this.chooseFactorySkip(_("Choose a factory to put hired manager"));
+            }
+            else if(this.clientStateArgs.buildingAction == "building44"){
+                this.chooseCompany();
+            }
         },
 
         onConfirmAction: function(){
