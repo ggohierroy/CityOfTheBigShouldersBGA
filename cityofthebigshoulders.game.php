@@ -1768,12 +1768,12 @@ class CityOfTheBigShoulders extends Table
             $automation_count = 0;
             $automation_key = "${company_short_name}_worker_holder_${factory_number}";
             if(array_key_exists($automation_key, $automations_by_factory))
-                $automation_count = $automations_by_factory[$automation_key];
+                $automation_count = $automations_by_factory[$automation_key]['automation_count'];
             
             $worker_key = "${company_short_name}_${factory_number}";
             $worker_count = 0;
             if(array_key_exists($worker_key, $workers_by_factory))
-                $worker_count = $workers_by_factory[$worker_key];
+                $worker_count = $workers_by_factory[$worker_key]['worker_count'];
             
             $total_spots = $factories_material[$factory_number]['workers'];
 
