@@ -1830,6 +1830,13 @@ function (dojo, declare) {
             dojo.connect( $(item_div), 'onclick', this, 'onAssetClicked' );
         },
 
+        setupNewStock: function(stock_div, stock_type_id, stock_id){
+            var stockId = stock_id.split('_')[6];
+            dojo.place( this.format_block( 'jstpl_stock_content', {
+                'stock_id': 'stock_' + stockId,
+            } ), stock_div.id );
+        },
+
         setupCompany: function(company_div, company_type_id, item_id){
             // Add some custom HTML content INSIDE the Stock item:
             // company_div_id looks like this : company_area_2319930_item_libby or available_companies_item_libby
@@ -2291,6 +2298,8 @@ function (dojo, declare) {
 
                 i++;
             }
+
+            newStock.onItemCreate = dojo.hitch( this, 'setupNewStock' ); 
         },
 
         hashString: function(value){
@@ -4459,6 +4468,8 @@ function (dojo, declare) {
             {
                 var stock = stocks[index];
                 this.placeStock(stock, 'available_companies');
+                var counterName = "stock_" + stock.card_id;
+                this.gamedatas.counters[counterName] = { 'counter_name': counterName, 'counter_value': 0 };
             }
 
             this.placeAppealToken({

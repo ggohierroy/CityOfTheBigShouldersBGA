@@ -197,6 +197,8 @@ var jstpl_temp_worker = '<div class="worker temp"</div>';
 
 var jstpl_temp_manager = '<div class="moveable-token meeple meeple-tan manager temp"</div>';
 
+var jstpl_stock_content = '<div class="stock-content"><span>$</span><span id="${stock_id}">0</span></div>';
+
 </script>  
 
 {OVERALL_GAME_FOOTER}

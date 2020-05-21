@@ -191,7 +191,11 @@ class CityOfTheBigShoulders extends Table
             OR
                 ((card_location LIKE 'player_$current_player_id%' OR card_location LIKE 'building_track_%') AND
                 primary_type = 'building')";
-        $result['items'] = self::getCollectionFromDb( $sql );
+        $items = self::getCollectionFromDb( $sql );
+        $result['items'] = $items;
+
+        // add counters for each stock with its value to show on each stock in UI
+        self::updateStockCounters($result['counters'], $items, $owned_companies);
 
         // add a counter for each company (because all counters must exist on setup)
         foreach($this->companies as $short_name => $company){
@@ -246,6 +250,31 @@ class CityOfTheBigShoulders extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
+
+    function updateStockCounters(&$counters, $stocks, $companies)
+    {
+        foreach($stocks as $stock)
+        {
+            if($stock['primary_type'] != 'stock')
+                continue;
+            
+            $company = $companies[$stock['card_type_arg']];
+            $share_value = self::getShareValue($company['share_value_step']);
+
+            $stock_type = explode('_', $stock['card_type'])[1];
+
+            $multiplier = 1;
+            if($stock_type == 'director')
+                $multiplier = 3;
+            else if($stock_type == 'preferred')
+                $multiplier = 2;
+            
+            $certificate_value = $share_value * $multiplier;
+            $stock_id = $stock['card_id'];
+            $counter_id = "stock_$stock_id";
+            $counters[$counter_id] = array ('counter_name' => $counter_id, 'counter_value' => $certificate_value );
+        }
+    }
 
     function maxByPlayer($value_by_company, $companies)
     {
@@ -517,7 +546,7 @@ class CityOfTheBigShoulders extends Table
         
         // get stocks of company owned by players
         $stocks = self::getObjectListFromDB(
-            "SELECT card_id, card_type, card_location_arg FROM card 
+            "SELECT card_id, card_type, card_type_arg, card_location_arg, primary_type FROM card 
             WHERE primary_type = 'stock' AND owner_type = 'player' AND card_type_arg = $company_id");
         foreach($stocks as $stock)
         {
@@ -546,6 +575,16 @@ class CityOfTheBigShoulders extends Table
             $player_id = $score['player_id'];
             self::DbQuery("UPDATE player SET player_score = player_score + $score_delta WHERE player_id = $player_id");
         }
+
+        $counters = [];
+        $companies = [];
+        $company['share_value_step'] = $new_share_value_step;
+        $companies[$company_id] = $company;
+        self::updateStockCounters($counters, $stocks, $companies);
+
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $counters
+        ) );
 
         self::notifyAllPlayers( "scoreUpdated", "", array(
             'scores' => $scores
@@ -4229,6 +4268,16 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers("automationTokensCreated", "", [
             'automation_tokens' => $automations
         ]);
+
+        $counters = [];
+        $companies = [];
+        $company['share_value_step'] = $initial_share_value_step;
+        $companies[$company_id] = $company;
+        self::updateStockCounters($counters, $stocks, $companies);
+
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $counters
+        ) );
         
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameTurn' );
