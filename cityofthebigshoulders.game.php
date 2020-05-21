@@ -3364,6 +3364,9 @@ class CityOfTheBigShoulders extends Table
                 if($building_action == 'building40')
                     $asset_cost -= 30;
                 
+                if($company['treasury'] < $asset_cost)
+                    throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this asset");
+
                 $new_company_treasury -= $asset_cost;
                 self::notifyAllPlayers( "additionalCost", clienttranslate('${company_name} pays the bank $${cost}'), array(
                     'cost' => $asset_cost,
@@ -3371,6 +3374,34 @@ class CityOfTheBigShoulders extends Table
                 ) );
             }
         } 
+        else if ($building_action == 'building29' ||
+            $building_action == 'building30' ||
+            $building_action == 'building31' ||
+            $building_action == 'building32')
+        {
+            // bank pays the player
+            $cost = $building_material['cost'];
+            
+            // but there is an additionnal cost (cost of dividends)
+            $dividend_cost = 0;
+            if($building_action == 'building29')
+                $dividend_cost = 150;
+            else if ($building_action == 'building30')
+                $dividend_cost = 200;
+            else if ($building_action == 'building31')
+                $dividend_cost = 250;
+            else if ($building_action == 'building32')
+                $dividend_cost = 300;
+            
+            if($company['treasury'] < $dividend_cost)
+                throw new BgaVisibleSystemException("Company doesn't have enough money to pay shareholders");
+            
+            $new_company_treasury -= $dividend_cost;
+            self::notifyAllPlayers( "additionalCost", clienttranslate('${company_name} pays the bank $${cost}'), array(
+                'cost' => $dividend_cost,
+                'company_name' => $company_name,
+            ) );
+        }
         else 
         {
             $cost = $building_material['cost'];
