@@ -48,6 +48,14 @@
 
 /********* You can start writing your CSS below this line: **********/
 
+#main_board_wrapper {
+    overflow: auto;
+}
+
+.player-area {
+    overflow: auto;
+}
+
 #main_board {
     background-image: url(img/board_small.png);
     width: 980px;

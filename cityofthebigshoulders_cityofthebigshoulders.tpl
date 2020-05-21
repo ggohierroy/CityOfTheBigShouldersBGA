@@ -131,7 +131,7 @@
 
 <div id=player_area_wrapper>
     <!-- BEGIN player_area -->
-    <div id="player_{PLAYER_ID}" class="whiteblock">
+    <div id="player_{PLAYER_ID}" class="whiteblock player-area">
         <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
         <div id="building_area_{PLAYER_ID}"></div>
         <div class="personal_share_area">
