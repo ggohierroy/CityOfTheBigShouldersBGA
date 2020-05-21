@@ -3415,7 +3415,7 @@ function (dojo, declare) {
 
             var stateName = this.gamedatas.gamestate.name;
             if(stateName == 'playerBuyResourcesPhase' || stateName == 'playerProduceGoodsPhase'){
-                var companyShortName = this.gamedatas.gamestate.
+                var companyShortName = this.gamedatas.gamestate.args.company_short_name;
                 this.createResourceOptions(companyShortName);
             } else {
                 this.setClientState("client_tradeChooseCompany", {
