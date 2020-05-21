@@ -2264,6 +2264,13 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function undo()
+    {
+        self::checkAction( 'undo' );
+
+        self::undoRestorePoint();
+    }
+
     function priceProtect()
     {
         self::checkAction( 'priceProtect' );
@@ -4527,6 +4534,8 @@ class CityOfTheBigShoulders extends Table
             self::setGameStateValue("last_factory_produced", 0);
             break;
         }
+
+        self::undoSavepoint();
         
         $this->gamestate->nextState( 'nextCompany' );
     }
@@ -4806,6 +4815,8 @@ class CityOfTheBigShoulders extends Table
                 self::notifyAllPlayers( "newPhase", clienttranslate("Start Operation Phase"), array(
                     'phase' => 3
                 ) );
+
+                self::undoSavepoint();
 
                 $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 return;

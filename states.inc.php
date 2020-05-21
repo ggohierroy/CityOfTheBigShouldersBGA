@@ -188,7 +188,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "updateGameProgression" => true,
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources" ),
+        "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources", "undo"  ),
         "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13, "zombiepass" => 19)
     ),
 
@@ -198,7 +198,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may produce goods in its factories'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods" ),
+        "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods", "undo" ),
         "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27, "loopback" => 14)
     ),
 
@@ -229,7 +229,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may distribute goods'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset" ),
+        "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset", "undo" ),
         "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16)
     ),
 
@@ -239,7 +239,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders with its earnings ($${income})'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "payDividends", "withhold", "useAsset", "withholdProtection" ),
+        "possibleactions" => array( "payDividends", "withhold", "useAsset", "withholdProtection", "undo" ),
         "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17)
     ),
 

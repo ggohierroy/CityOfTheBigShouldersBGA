@@ -598,12 +598,15 @@ function (dojo, declare) {
                         break;
                     case 'playerBuyResourcesPhase':
                         this.addActionButton( 'skip_buy_resources', _('Skip'), 'onSkipBuyResources');
+                        this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'playerProduceGoodsPhase':
                         this.addActionButton( 'skip_produce_goods', _('Skip'), 'onSkipProduceGoods');
+                        this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'playerDistributeGoodsPhase':
                         this.addActionButton( 'skip_distribute_goods', _('Skip'), 'onSkipDistributeGoods');
+                        this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_playerTurnConfirmDistributeGoods':
                         this.addActionButton( 'confirm_distribute_goods', _('Confirm'), 'onConfirmDistributeGoods');
@@ -626,6 +629,7 @@ function (dojo, declare) {
                                 }
                             }
                         }
+                        this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_confirmGainLessResources':
                         this.addActionButton( 'confirm_gain_resource', _('Confirm'), 'onConfirmAction');
@@ -3171,6 +3175,10 @@ function (dojo, declare) {
                     this.chooseCompany();
                     break;
             }
+        },
+
+        onUndo: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/undo.html", { lock: true }, this, function( result ) {} );
         },
 
         onConfirmPayDividends: function(){
