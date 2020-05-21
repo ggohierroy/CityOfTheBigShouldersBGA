@@ -1832,9 +1832,14 @@ function (dojo, declare) {
 
         setupNewStock: function(stock_div, stock_type_id, stock_id){
             var stockId = stock_id.split('_')[6];
-            dojo.place( this.format_block( 'jstpl_stock_content', {
-                'stock_id': 'stock_' + stockId,
+            var elementId = 'stock_' + stockId;
+            var element = dojo.place( this.format_block( 'jstpl_stock_content', {
+                'stock_id': elementId,
             } ), stock_div.id );
+
+            if(this.gamedatas.counters[elementId]){
+                element.lastChild.innerText = this.gamedatas.counters[elementId].counter_value;
+            }
         },
 
         setupCompany: function(company_div, company_type_id, item_id){
