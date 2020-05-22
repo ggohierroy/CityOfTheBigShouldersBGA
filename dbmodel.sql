@@ -11,6 +11,7 @@ ALTER TABLE `player` ADD `treasury` SMALLINT UNSIGNED NOT NULL DEFAULT '175';
 ALTER TABLE `player` ADD `number_partners` SMALLINT UNSIGNED NOT NULL DEFAULT '2';
 ALTER TABLE `player` ADD `current_number_partners` SMALLINT UNSIGNED NOT NULL DEFAULT '2';
 ALTER TABLE `player` ADD `player_order` TINYINT(3) UNSIGNED;
+ALTER TABLE `player` ADD `next_sequence_order` TINYINT(3) UNSIGNED;
 ALTER TABLE `player` ADD `appeal_partner_gained` BOOLEAN NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `company_partner_gained` BOOLEAN NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `initial_company_id` INT(10) UNSIGNED;

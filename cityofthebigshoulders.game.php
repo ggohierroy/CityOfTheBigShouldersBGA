@@ -251,6 +251,33 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function adjustNextSequenceOrder($new_first_player_id)
+    {
+        $players = self::getCollectionFromDB("SELECT player_id, next_sequence_order AS color, player_name FROM player ORDER BY next_sequence_order ASC");
+        $player_order = 2;
+        $order = 0;
+        $player = $players[$new_first_player_id];
+
+        foreach($players as $player_id => $player)
+        {
+            if($player_id == $new_first_player_id)
+            {
+                $order = 1;
+            }
+            else
+            {
+                $order = $player_order++;
+            }
+
+            $sql = "UPDATE player SET next_sequence_order = $order WHERE player_id = $player_id";
+            self::DbQuery($sql);
+        }
+
+        self::notifyAllPlayers( "playerFirst", clienttranslate('${player_name} uses Advertising and becomes 1st player for the next action sequence'), array(
+            'player_name' => $player['player_name']
+        ) );
+    }
+
     function updateStockCounters(&$counters, $stocks, $companies)
     {
         foreach($stocks as $stock)
@@ -3538,6 +3565,7 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'advertising':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
+                self::adjustNextSequenceOrder($player_id);
                 break;
             case 'building4':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
@@ -4756,6 +4784,9 @@ class CityOfTheBigShoulders extends Table
         $player = self::getNonEmptyObjectFromDB($sql);
         $this->gamestate->changeActivePlayer( $player['player_id'] ); 
 
+        // adjust next sequence order, which is required for using advertising
+        self::DbQuery("UPDATE player SET next_sequence_order = player_order");
+
         // if round = 2 => add partner to player inventory
         $round = self::getGameStateValue("round");
         if($round == 2)
@@ -4777,7 +4808,7 @@ class CityOfTheBigShoulders extends Table
         $new_active_player = null;
 
         // get all players
-        $sql = "SELECT player_id, player_order, current_number_partners, player_color AS color, player_name FROM player ORDER BY player_order ASC";
+        $sql = "SELECT player_id, player_order, current_number_partners, player_color AS color, player_name, next_sequence_order FROM player ORDER BY player_order ASC";
         $players = self::getCollectionFromDB($sql);
         $tmp = array_values($players);
         $last_player = array_pop($tmp);
@@ -4786,47 +4817,36 @@ class CityOfTheBigShoulders extends Table
         $active_player_id = $this->getActivePlayerId();
         $active_player_order = $players[$active_player_id]['player_order'];
 
+        // if the current sequence is over
         if($last_player['player_id'] == $active_player_id)
-        {
-            // check if advertising was used and adjust turn order
-            $sql = "SELECT card_id, card_type_arg FROM card WHERE primary_type = 'partner' AND card_location = 'advertising'";
-            $advertising = self::getObjectFromDB( $sql );
-            if($advertising != null)
+        {            
+            // the first player for the next sequence is the last player that used advertising
+            // if other players used it, they are next in reverse order of using advertising
+            foreach($players as $player_id => $player)
             {
-                $player_id_advertising = $advertising['card_type_arg'];
-                $player_advertising = $players[$player_id_advertising];
-                if($player_advertising['current_number_partners'] > 0)
-                    $new_active_player = $player_advertising;
-                $player_order = 2;
-                $order = 0;
-                foreach($players as $player_id => $player)
+                $players[$player_id]['player_order'] = $player['next_sequence_order'];
+                $sql = "UPDATE player SET player_order = next_sequence_order WHERE player_id = $player_id";
+                self::DbQuery($sql);
+            }
+
+            // Define the custom sort function
+            function custom_sort($a,$b) {
+                return $a['player_order']>$b['player_order'];
+            }
+            // Sort the multidimensional array
+            usort($players, "custom_sort");
+
+            self::notifyAllPlayers( "playerOrderChanged", clienttranslate('Player order adjusted for next sequence'), array(
+                'player_order' => $players
+            ) );
+
+            foreach($players as $player_id => $player)
+            {
+                if($player['current_number_partners'] > 0)
                 {
-                    if($player_id == $player_id_advertising)
-                    {
-                        $order = 1;
-                    }
-                    else
-                    {
-                        $order = $player_order++;
-                    }
-
-                    $players[$player_id]['player_order'] = $order;
-
-                    $sql = "UPDATE player SET player_order = $order WHERE player_id = $player_id";
-                    self::DbQuery($sql);
-                }
-
-                // Define the custom sort function
-                function custom_sort($a,$b) {
-                    return $a['player_order']>$b['player_order'];
-                }
-                // Sort the multidimensional array
-                usort($players, "custom_sort");
-
-                self::notifyAllPlayers( "playerOrderChanged", clienttranslate('${player_name} uses Advertising and becomes 1st player'), array(
-                    'player_order' => $players,
-                    'player_name' => $player_advertising['player_name']
-                ) );
+                    $new_active_player = $player;
+                    break;
+                }    
             }
         }
 
@@ -5093,13 +5113,15 @@ class CityOfTheBigShoulders extends Table
         // $from_version is equal to 1404301345
         
         // Example:
-//        if( $from_version <= 1404301345 )
-//        {
-//            // ! important ! Use DBPREFIX_<table_name> for all tables
-//
-//            $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
-//            self::applyDbUpgradeToAllDB( $sql );
-//        }
+        if( $from_version <= 2005221902 )
+        {
+            // ! important ! Use DBPREFIX_<table_name> for all tables
+
+            $sql = "ALTER TABLE DBPREFIX_player ADD next_sequence_order TINYINT(3) UNSIGNED";
+            self::applyDbUpgradeToAllDB( $sql );
+            $sql = "UPDATE DBPREFIX_player SET next_sequence_order = player_order";
+            self::applyDbUpgradeToAllDB( $sql );
+        }
 //        if( $from_version <= 1405061421 )
 //        {
 //            // ! important ! Use DBPREFIX_<table_name> for all tables
