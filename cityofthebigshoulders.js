@@ -4182,6 +4182,10 @@ function (dojo, declare) {
                 var itemId = dealtBuilding.card_type+'_'+dealtBuilding.card_id;
 
                 this.buildings.addToStockWithId(hashBuildingType, itemId, 'main_board');
+                var div = this.buildings.getItemDivId(itemId);
+
+                var buildingMaterial = this.gamedatas.all_buildings[dealtBuilding.card_type];
+                this.addTooltip( div, _( buildingMaterial.tooltip ), "");
             }
         },
 
