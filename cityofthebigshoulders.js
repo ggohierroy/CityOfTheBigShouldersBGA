@@ -522,6 +522,9 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'client_appealBonusChooseFactory':
+                        this.addActionButton( 'concel', _('Cancel'), 'onCancelAppealBonus');
+                        break;
                     case 'client_confirmGainLessSalespeople':
                         this.addActionButton( 'confirm_gain_salesperson', _('Confirm'), 'onConfirmAction');
                         this.addActionButton( 'concel_gain_salesperson', _('Cancel'), 'onCancelAction');
@@ -532,6 +535,7 @@ function (dojo, declare) {
                         break;
                     case 'playerSkipSellBuyPhase':
                         this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
+                        this.addActionButton( 'undo', _('Undo Skip Sell'), 'onUndo', null, false, 'red');
                         break;
                     case 'playerBuyPhase':
                         this.addActionButton( 'skip_buy', _('Skip'), 'onSkipBuy');
@@ -1840,6 +1844,63 @@ function (dojo, declare) {
             if(this.gamedatas.counters[elementId]){
                 element.lastChild.innerText = this.gamedatas.counters[elementId].counter_value;
             }
+        },
+
+        slideVertically : function(token, finalPlace, tlen) {
+            var box = this.attachToNewParentNoDestroy(token, finalPlace);
+            var left = dojo.style(token, "left");
+            var anim = this.slideToObjectPos(token, finalPlace, left, box.t, tlen, 0);
+
+            dojo.connect(anim, "onEnd", dojo.hitch(this, function(token) {
+                this.stripPosition(token);
+                this.available_companies.resetItemsPosition();
+                this.available_shares_bank.resetItemsPosition();
+                this.available_shares_company.resetItemsPosition();
+            }));
+
+            anim.play();
+        },
+
+        // This method will attach mobile to a new_parent without destroying, unlike original attachToNewParent which destroys mobile and
+        // all its connectors (onClick, etc)
+        attachToNewParentNoDestroy : function(mobile, new_parent) {
+            if (mobile === null) {
+                console.error("attachToNewParent: mobile obj is null");
+                return;
+            }
+            if (new_parent === null) {
+                console.error("attachToNewParent: new_parent is null");
+                return;
+            }
+            if (typeof mobile == "string") {
+                mobile = $(mobile);
+            }
+            if (typeof new_parent == "string") {
+                new_parent = $(new_parent);
+            }
+
+            var src = dojo.position(mobile);
+            dojo.style(mobile, "position", "absolute");
+            dojo.place(mobile, new_parent, "last");
+            var tgt = dojo.position(mobile);
+            var box = dojo.marginBox(mobile);
+            var cbox = dojo.contentBox(mobile);
+            var left = box.l + src.x - tgt.x;
+            var top = box.t + src.y - tgt.y;
+            dojo.style(mobile, "top", top + "px");
+            dojo.style(mobile, "left", left + "px");
+            box.l += box.w - cbox.w;
+            box.t += box.h - cbox.h;
+            return box;
+        },
+
+        stripPosition : function(token) {
+            // console.log(token + " STRIPPING");
+            // remove added positioning style
+            dojo.style(token, "display", null);
+            dojo.style(token, "top", null);
+            dojo.style(token, "left", null);
+            dojo.style(token, "position", null);
         },
 
         setupCompany: function(company_div, company_type_id, item_id){
@@ -3326,6 +3387,16 @@ function (dojo, declare) {
 
         onConfirmAssetUse: function(event){
             this.confirmAssetUse(this.clientStateArgs.assetName);
+        },
+
+        onCancelAppealBonus: function(event){
+            if(this.clientStateArgs.undoMoves){
+                dojo.forEach(this.clientStateArgs.undoMoves, function(item){
+                    dojo.place(item.element, item.to);
+                });
+            }
+
+            this.restoreServerGameState();
         },
 
         onCancelAction: function(event){

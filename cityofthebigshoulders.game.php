@@ -3787,6 +3787,11 @@ class CityOfTheBigShoulders extends Table
     function passStockAction()
     {
         self::checkAction( 'passStockAction' );
+
+        self::notifyAllPlayers( "stockActionPassed", clienttranslate( '${player_name} passes' ), array(
+            'player_name' => self::getActivePlayerName(),
+        ) );
+
         self::incGameStateValue( "consecutive_passes", 1 );
         $this->gamestate->nextState( 'gameStockPhase' );
     }
@@ -4646,6 +4651,7 @@ class CityOfTheBigShoulders extends Table
         self::giveExtraTime( $player_id );
         $this->gamestate->changeActivePlayer( $player_id );
 
+        self::undoSavepoint();
         $this->gamestate->nextState( 'nextRound' );
     }
 
@@ -4999,6 +5005,8 @@ class CityOfTheBigShoulders extends Table
             self::notifyAllPlayers( "playerOrderInitialized", "", array(
                 'player_order' => $player_order
             ) );
+
+            self::undoSavepoint();
 
             $this->gamestate->nextState('playerSellPhase');
         }

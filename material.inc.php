@@ -215,7 +215,7 @@ $this->companies = [
     "type" => "food_and_dairy",
     "initial_appeal" => 1,
     "has_asset" => false,
-    "salesperson" => [0 => 30, 1 => 40, 2=> 100, 3 => 50],
+    "salesperson" => [0 => 30, 1 => 40, 2 => 50],
     "salesperson_number" => 4,
     "factories" => [
       1 => [
@@ -612,7 +612,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 20,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$10 discount.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$20. The Company that uses this Building may purchase a Capital Asset at a \$10 discount.")
   ],
   "building2" => [ //salesperson
     "pips" => 1,
@@ -620,7 +620,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 20,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Salesperson.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$20. The Company that uses this Building will receive 1 Salesperson.")
   ],
   "building3" => [ // wood + livestock
     "pips" => 1,
@@ -629,7 +629,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['wood', 'livestock'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 wood(brown) and 1 livestock(pink) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns the Building \$20. The Company that uses this Building will receive 1 wood(brown) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building4" => [ // appeal +1
     "pips" => 1,
@@ -637,7 +637,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 10,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will move up 1 space on the Appeal Track. Receive any bonuses immediately.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$10. The Company that uses this Building will move up 1 space on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building5" => [ // wood + coal
     "pips" => 1,
@@ -646,7 +646,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['wood', 'coal'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$20. The Company that uses this Building will receive 1 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
   ],
   "building6" => [ // automation
     "pips" => 1,
@@ -654,7 +654,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$40. The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
   ],
   "building7" => [ // wood + steel
     "pips" => 1,
@@ -663,7 +663,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['wood', 'steel'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$20. The Company that uses this Building will receive 1 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
   ],
   "building8" => [ // different resources
     "pips" => 1,
@@ -671,7 +671,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 10,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$10. The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
   ],
   "building9" => [ // appeal +2
     "pips" => 1,
@@ -679,7 +679,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 30,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$30. The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building10" => [ // produce good
     "pips" => 1,
@@ -687,7 +687,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 20,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building immediately produces 1 good.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$20. The Company that uses this Building immediately produces 1 good.")
   ],
   "building11" => [ // manager
     "pips" => 1,
@@ -695,7 +695,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 20,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive a Manager.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$20. The Company that uses this Building will receive a Manager.")
   ],
   "building12" => [ // same resources
     "pips" => 1,
@@ -703,7 +703,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 10,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$10. The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
   ],
   "building13" => [ // livestock + steel
     "pips" => 2,
@@ -712,7 +712,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['steel', 'livestock'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$20. The Company that uses this Building will receive 1 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building14" => [ // manager
     "pips" => 2,
@@ -720,7 +720,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 30,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Manager.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$30. The Company that uses this Building will receive 1 Manager.")
   ],
   "building15" => [ // coal + steel
     "pips" => 2,
@@ -729,7 +729,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['coal', 'steel'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 coal(black) and 1 steel(blue) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns the Building \$20. The Company that uses this Building will receive 1 coal(black) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building16" => [ // appeal + 2
     "pips" => 2,
@@ -737,7 +737,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 30,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$30. The Company that uses this Building will move up 2 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building17" => [ // coal + livestock
     "pips" => 2,
@@ -746,7 +746,7 @@ $this->building = [
     "cost" => 20,
     "payment" => "banktoplayer",
     "resources" => ['coal', 'livestock'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$20. The Company that uses this Building will receive 1 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building18" => [ // different resources
     "pips" => 2,
@@ -754,7 +754,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 10,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$10. The Company that uses this Building will receive two unlike resources from Haymarket Square, if available.")
   ],
   "building19" => [ // capital asset discount
     "pips" => 2,
@@ -762,7 +762,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 20,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$20 discount.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns the Building \$20. The Company that uses this Building may purchase a Capital Asset at a \$20 discount.")
   ],
   "building20" => [ // same resources
     "pips" => 2,
@@ -770,7 +770,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 10,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$10. The Company that uses this Building will receive two like resources from Haymarket Square, if available.")
   ],
   "building21" => [ // double automation
     "pips" => 2,
@@ -778,7 +778,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 90,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$90. The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
   ],
   "building22" => [ // salesperson
     "pips" => 2,
@@ -786,7 +786,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Salesperson.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$40. The Company that uses this Building will receive 1 Salesperson.")
   ],
   "building23" => [ // double manager
     "pips" => 2,
@@ -794,7 +794,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 60,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Managers.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$60. The Company that uses this Building will receive 2 Managers.")
   ],
   "building24" => [ // automation
     "pips" => 2,
@@ -802,7 +802,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$40. The Company that uses this Building may automate 1 Worker in any of their factories. A Worker must be employed in the space prior to being automated.")
   ],
   "building25" => [ // double salesperson
     "pips" => 2,
@@ -810,7 +810,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 80,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Salespeople.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$80. The Company that uses this Building will receive 2 Salespeople.")
   ],
   "building26" => [ // double worker
     "pips" => 2,
@@ -818,7 +818,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building receives 2 Workers from the General Supply.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$50. The Company that uses this Building receives 2 Workers from the General Supply.")
   ],
   "building27" => [ // produce 2 goods
     "pips" => 2,
@@ -826,7 +826,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("immediately produces 2 Goods.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building \$40. The company that uses this Building immediately produces 2 Goods.")
   ],
   "building28" => [ // appeal + 3
     "pips" => 2,
@@ -834,7 +834,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 50,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building \$50. The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building29" => [ // 150 dividend
     "pips" => 3,
@@ -842,7 +842,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 30,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays \$150 from its treasury to its shareholders at \$15 per share. If the company does not have \$150 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$30. The company that uses this Building pays \$150 from its treasury to its shareholders at \$15 per share. If the company does not have \$150 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building30" => [ // 200 dividend
     "pips" => 3,
@@ -850,7 +850,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays \$200 from its treasury to its shareholders at \$20 per share. If the company does not have \$200 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$40. The company that uses this Building pays \$200 from its treasury to its shareholders at \$20 per share. If the company does not have \$200 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building31" => [ // 250 dividend
     "pips" => 3,
@@ -858,7 +858,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays \$250 from its treasury to its shareholders at \$25 per share. If the company does not have \$250 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$50.The company that uses this Building pays \$250 from its treasury to its shareholders at \$25 per share. If the company does not have \$250 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building32" => [ // 300 dividend
     "pips" => 3,
@@ -866,7 +866,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 60,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The company that uses this Building pays \$300 from its treasury to its shareholders at \$30 per share. If the company does not have \$300 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building \$60.The company that uses this Building pays \$300 from its treasury to its shareholders at \$30 per share. If the company does not have \$300 in its treasury it cannot use this space. Adjust the Company's share value on the Stock Track after dividends are paid.")
   ],
   "building33" => [ // double salesperson
     "pips" => 3,
@@ -874,7 +874,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Salespeople.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building $50. The Company that uses this Building will receive 2 Salespeople.")
   ],
   "building34" => [ // 2 coal + 1 livestock
     "pips" => 3,
@@ -883,7 +883,7 @@ $this->building = [
     "cost" => 40,
     "payment" => "companytoplayer",
     "resources" => ['coal', 'coal', 'livestock'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $40. The Company that uses this Building will receive 2 coal(black) and 1 livestock(pink) resource from Haymarket Square, if available.")
   ],
   "building35" => [ // double manager
     "pips" => 3,
@@ -891,7 +891,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 Managers.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building $40. The Company that uses this Building will receive 2 Managers.")
   ],
   "building36" => [ // 2 livestock + 1 steel
     "pips" => 3,
@@ -900,7 +900,7 @@ $this->building = [
     "cost" => 40,
     "payment" => "companytoplayer",
     "resources" => ['livestock', 'livestock', 'steel'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $40. The Company that uses this Building will receive 2 livestock(pink) and 1 steel(blue) resource from Haymarket Square, if available.")
   ],
   "building37" => [ // 2 wood + 1 coal
     "pips" => 3,
@@ -909,7 +909,7 @@ $this->building = [
     "cost" => 40,
     "payment" => "companytoplayer",
     "resources" => ['wood', 'wood', 'coal'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $40. The Company that uses this Building will receive 2 wood(brown) and 1 coal(black) resource from Haymarket Square, if available.")
   ],
   "building38" => [ // 2 steel + 1 wood
     "pips" => 3,
@@ -918,7 +918,7 @@ $this->building = [
     "cost" => 40,
     "payment" => "companytoplayer",
     "resources" => ['wood', 'steel', 'steel'],
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 2 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $40. The Company that uses this Building will receive 2 steel(blue) and 1 wood(brown) resource from Haymarket Square, if available.")
   ],
   "building39" => [ // appeal +3
     "pips" => 3,
@@ -926,7 +926,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 60,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $60. The Company that uses this Building will move up 3 spaces on the Appeal Track. Receive any bonuses immediately.")
   ],
   "building40" => [ // capital asset discount
     "pips" => 3,
@@ -934,7 +934,7 @@ $this->building = [
     "number_of_workers" => 2,
     "cost" => 40,
     "payment" => "banktoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may purchase a Capital Asset at a \$30 discount.")
+    "tooltip" => clienttranslate("The Bank pays the Player who owns this Building $40. The Company that uses this Building may purchase a Capital Asset at a \$30 discount.")
   ],
   "building41" => [ // produce 3 goods
     "pips" => 3,
@@ -942,7 +942,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 60,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will immediately produce 3 Goods.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building $60. The Company that uses this Building will immediately produce 3 Goods.")
   ],
   "building42" => [ // double automation
     "pips" => 3,
@@ -950,7 +950,7 @@ $this->building = [
     "number_of_workers" => 1,
     "cost" => 90,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns the Building $90. The Company that uses this Building may automate 2 Workers in any of their factories. A Worker must be employed in each space prior to being automated.")
   ],
   "building43" => [ // worker + manager
     "pips" => 3,
@@ -958,7 +958,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Worker and 1 Manager from the General Supply to place in any of their factories.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $40. The Company that uses this Building will receive 1 Worker and 1 Manager from the General Supply to place in any of their factories.")
   ],
   "building44" => [ // worker + salesperson
     "pips" => 3,
@@ -966,7 +966,7 @@ $this->building = [
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "companytoplayer",
-    "tooltip" => clienttranslate("The Company that uses this Building will receive 1 Worker and 1 Salesperson from the General Supply to place in any of their factories.")
+    "tooltip" => clienttranslate("The Company pays the Player who owns this Building $50. The Company that uses this Building will receive 1 Worker and 1 Salesperson from the General Supply to place in any of their factories.")
   ]
 ];
 

@@ -135,9 +135,11 @@
         <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
         <div id="building_area_{PLAYER_ID}"></div>
         <div class="personal_share_area">
+            <h3>Personal Shares</h3>
             <div id="personal_area_{PLAYER_ID}"></div>
         </div>
         <div class="owned_companies_area">
+            <h3>Owned Companies</h3>
             <div id="company_area_{PLAYER_ID}"></div>
         </div>
     </div>
@@ -145,7 +147,7 @@
 </div>
 
 <div class="whiteblock" >
-    <h3>Company Shares</h3>
+    <h3>Shares on Company Charters</h3>
     <div id="available_shares_company"></div>
     <h3>Bank Pool</h3>
     <div id="available_shares_bank"></div>
