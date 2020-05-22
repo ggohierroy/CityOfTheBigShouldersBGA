@@ -27,106 +27,111 @@
 
 <!--<a href="#" id="start_company" class="bgabutton bgabutton_blue"><span>Start Company</span></a>-->
 
-<div id="main_board_wrapper" class="whiteblock">
-    <div id="main_board" class="center">
-        <div id="capital_assets"></div>
-        <div id="job_market_worker" class="worker_spot">
-            <div id="job_market_worker_holder"></div>
+<div id="shares_top"></div>
+<div id="companies_top"></div>
+
+<div id="board_top">
+    <div id="main_board_wrapper" class="whiteblock">
+        <div id="main_board" class="center">
+            <div id="capital_assets"></div>
+            <div id="job_market_worker" class="worker_spot">
+                <div id="job_market_worker_holder"></div>
+            </div>
+            <div id="haymarket_square">
+                <div id="haymarket"></div>
+            </div>
+            <div id="player_order"></div>
+            <div id="round_1" class="round-spot"></div>
+            <div id="round_2" class="round-spot"></div>
+            <div id="round_3" class="round-spot"></div>
+            <div id="round_4" class="round-spot"></div>
+            <div id="round_5" class="round-spot"></div>
+            <div id="phase_1" class="phase-spot"></div>
+            <div id="phase_2" class="phase-spot"></div>
+            <div id="phase_3" class="phase-spot"></div>
+            <div id="phase_4" class="phase-spot"></div>
+            <div id="phase_5" class="phase-spot"></div>
+            <div id="appeal_1" bonus="worker" class="appeal-bonus"></div>
+            <div id="appeal_2" bonus="manager" class="appeal-bonus"></div>
+            <div id="appeal_3" bonus="automation" class="appeal-bonus"></div>
+            <div id="appeal_4" bonus="partner" class="appeal-bonus"></div>
+            <div id="appeal_5" bonus="good" class="appeal-bonus"></div>
+            <div id="appeal_6" bonus="bump" class="appeal-bonus"></div>
+            <div id="appeal_7" bonus="good" class="appeal-bonus"></div>
+            <div id="appeal_8" bonus="bump" class="appeal-bonus"></div>
+            <div id="supply_x" class="supply"></div>
+            <div id="supply_30" class="supply"></div>
+            <div id="supply_20" class="supply"></div>
+            <div id="supply_10" class="supply"></div>
+            <div id="job_market" class="supply"></div>
+            <div id="dry_goods_50" class="demand dry_goods"></div>
+            <div id="dry_goods_20" class="demand dry_goods" identifier="27">
+                <div id="demand27_goods"></div>
+            </div>
+            <div id="dry_goods_0" class="demand dry_goods" identifier="28">
+                <div id="demand28_goods"></div>
+            </div>
+            <div id="meat_packing_50" class="demand meat_packing"></div>
+            <div id="meat_packing_20" class="demand meat_packing" identifier="29">
+                <div id="demand29_goods"></div>
+            </div>
+            <div id="meat_packing_0" class="demand meat_packing" identifier="30">
+                <div id="demand30_goods"></div>
+            </div>
+            <div id="food_and_dairy_50" class="demand food_and_dairy"></div>
+            <div id="food_and_dairy_20" class="demand food_and_dairy" identifier="25">
+                <div id="demand25_goods"></div>
+            </div>
+            <div id="food_and_dairy_0" class="demand food_and_dairy" identifier="26">
+                <div id="demand26_goods"></div>
+            </div>
+            <div id="shoes_50" class="demand shoes"> </div>
+            <div id="shoes_20" class="demand shoes" identifier="31">
+                <div id="demand31_goods"></div>
+            </div>
+            <div id="shoes_0" class="demand shoes" identifier="32">
+                <div id="demand32_goods"></div>
+            </div>
+            <div id="advertising" class="worker_spot general-action">
+                <div id="advertising_holder"></div>
+            </div>
+            <div id="fundraising_40" class="worker_spot general-action">
+                <div id="fundraising_40_holder"></div>
+            </div>
+            <div id="fundraising_60" class="worker_spot general-action">
+                <div id="fundraising_60_holder"></div>
+            </div>
+            <div id="fundraising_80" class="worker_spot general-action">
+                <div id="fundraising_80_holder"></div>
+            </div>
+            <div id="hire_manager" class="worker_spot general-action">
+                <div id="hire_manager_holder"></div>
+            </div>
+            <div id="hire_salesperson" class="worker_spot general-action">
+                <div id="hire_salesperson_holder"></div>
+            </div>
+            <div id="capital_investment" class="worker_spot general-action">
+                <div id="capital_investment_holder"></div>
+            </div>
+            <div id="extra_dividends" class="worker_spot general-action">
+                <div id="extra_dividends_holder"></div>
+            </div>
+            <!-- BEGIN building_track -->
+            <div id="building_track_{PLAYER_ID}" class="building_track" style="top: {TOP}px"></div>
+            <!-- END building_track -->
+            <div id="share_track">
+                <!-- BEGIN share_track -->
+                <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
+                <!-- END share_track -->
+            </div>
+            <div id="appeal_track">
+                <!-- BEGIN appeal_track -->
+                <div id="appeal_zone_{ZONE_ID}" class="appeal_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
+                <!-- END appeal_track -->
+            </div>
         </div>
-        <div id="haymarket_square">
-            <div id="haymarket"></div>
-        </div>
-        <div id="player_order"></div>
-        <div id="round_1" class="round-spot"></div>
-        <div id="round_2" class="round-spot"></div>
-        <div id="round_3" class="round-spot"></div>
-        <div id="round_4" class="round-spot"></div>
-        <div id="round_5" class="round-spot"></div>
-        <div id="phase_1" class="phase-spot"></div>
-        <div id="phase_2" class="phase-spot"></div>
-        <div id="phase_3" class="phase-spot"></div>
-        <div id="phase_4" class="phase-spot"></div>
-        <div id="phase_5" class="phase-spot"></div>
-        <div id="appeal_1" bonus="worker" class="appeal-bonus"></div>
-        <div id="appeal_2" bonus="manager" class="appeal-bonus"></div>
-        <div id="appeal_3" bonus="automation" class="appeal-bonus"></div>
-        <div id="appeal_4" bonus="partner" class="appeal-bonus"></div>
-        <div id="appeal_5" bonus="good" class="appeal-bonus"></div>
-        <div id="appeal_6" bonus="bump" class="appeal-bonus"></div>
-        <div id="appeal_7" bonus="good" class="appeal-bonus"></div>
-        <div id="appeal_8" bonus="bump" class="appeal-bonus"></div>
-        <div id="supply_x" class="supply"></div>
-        <div id="supply_30" class="supply"></div>
-        <div id="supply_20" class="supply"></div>
-        <div id="supply_10" class="supply"></div>
-        <div id="job_market" class="supply"></div>
-        <div id="dry_goods_50" class="demand dry_goods"></div>
-        <div id="dry_goods_20" class="demand dry_goods" identifier="27">
-            <div id="demand27_goods"></div>
-        </div>
-        <div id="dry_goods_0" class="demand dry_goods" identifier="28">
-            <div id="demand28_goods"></div>
-        </div>
-        <div id="meat_packing_50" class="demand meat_packing"></div>
-        <div id="meat_packing_20" class="demand meat_packing" identifier="29">
-            <div id="demand29_goods"></div>
-        </div>
-        <div id="meat_packing_0" class="demand meat_packing" identifier="30">
-            <div id="demand30_goods"></div>
-        </div>
-        <div id="food_and_dairy_50" class="demand food_and_dairy"></div>
-        <div id="food_and_dairy_20" class="demand food_and_dairy" identifier="25">
-            <div id="demand25_goods"></div>
-        </div>
-        <div id="food_and_dairy_0" class="demand food_and_dairy" identifier="26">
-            <div id="demand26_goods"></div>
-        </div>
-        <div id="shoes_50" class="demand shoes"> </div>
-        <div id="shoes_20" class="demand shoes" identifier="31">
-            <div id="demand31_goods"></div>
-        </div>
-        <div id="shoes_0" class="demand shoes" identifier="32">
-            <div id="demand32_goods"></div>
-        </div>
-        <div id="advertising" class="worker_spot general-action">
-            <div id="advertising_holder"></div>
-        </div>
-        <div id="fundraising_40" class="worker_spot general-action">
-            <div id="fundraising_40_holder"></div>
-        </div>
-        <div id="fundraising_60" class="worker_spot general-action">
-            <div id="fundraising_60_holder"></div>
-        </div>
-        <div id="fundraising_80" class="worker_spot general-action">
-            <div id="fundraising_80_holder"></div>
-        </div>
-        <div id="hire_manager" class="worker_spot general-action">
-            <div id="hire_manager_holder"></div>
-        </div>
-        <div id="hire_salesperson" class="worker_spot general-action">
-            <div id="hire_salesperson_holder"></div>
-        </div>
-        <div id="capital_investment" class="worker_spot general-action">
-            <div id="capital_investment_holder"></div>
-        </div>
-        <div id="extra_dividends" class="worker_spot general-action">
-            <div id="extra_dividends_holder"></div>
-        </div>
-        <!-- BEGIN building_track -->
-        <div id="building_track_{PLAYER_ID}" class="building_track" style="top: {TOP}px"></div>
-        <!-- END building_track -->
-        <div id="share_track">
-            <!-- BEGIN share_track -->
-            <div id="share_zone_{ZONE_ID}" class="share_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
-            <!-- END share_track -->
-        </div>
-        <div id="appeal_track">
-            <!-- BEGIN appeal_track -->
-            <div id="appeal_zone_{ZONE_ID}" class="appeal_zone" style="top: {TOP}px; z-index: {Z_INDEX}"></div>
-            <!-- END appeal_track -->
-        </div>
+        <div id="goals"></div>
     </div>
-    <div id="goals"></div>
 </div>
 
 <div id=player_area_wrapper>
@@ -146,16 +151,22 @@
     <!-- END player_area -->
 </div>
 
-<div class="whiteblock" >
-    <h3>Shares on Company Charters</h3>
-    <div id="available_shares_company"></div>
-    <h3>Bank Pool</h3>
-    <div id="available_shares_bank"></div>
+<div id="shares_bottom">
+    <div id="available_shares_wrapper" class="whiteblock" >
+        <h3>Shares on Company Charters</h3>
+        <div id="available_shares_company"></div>
+        <h3>Bank Pool</h3>
+        <div id="available_shares_bank"></div>
+    </div>
 </div>
 
-<div class="whiteblock">
-    <div id="available_companies"></div>
+<div id="companies_bottom">
+    <div id="available_companies_wrapper" class="whiteblock">
+        <div id="available_companies"></div>
+    </div>
 </div>
+
+<div id="board_bottom"></div>
 
 <script type="text/javascript">
 

@@ -576,11 +576,13 @@ class CityOfTheBigShoulders extends Table
             self::DbQuery("UPDATE player SET player_score = player_score + $score_delta WHERE player_id = $player_id");
         }
 
+        $all_stocks = self::getObjectListFromDB("SELECT card_id, card_type, card_type_arg, card_location_arg, primary_type FROM card 
+            WHERE primary_type = 'stock' AND card_type_arg = $company_id");
         $counters = [];
         $companies = [];
         $company['share_value_step'] = $new_share_value_step;
         $companies[$company_id] = $company;
-        self::updateStockCounters($counters, $stocks, $companies);
+        self::updateStockCounters($counters, $all_stocks, $companies);
 
         self::notifyAllPlayers( "countersUpdated", "", array(
             'counters' => $counters

@@ -204,6 +204,8 @@ function (dojo, declare) {
             switch( stateName )
             {
                 case 'playerStartFirstCompany':
+                    this.slideVertically('available_companies_wrapper', 'companies_top');
+                    this.slideVertically('main_board_wrapper', 'board_bottom');
                     if(this.isCurrentPlayerActive())
                     {
                         this.available_companies.setSelectionMode(1);
@@ -219,6 +221,9 @@ function (dojo, declare) {
                     this.available_companies.setSelectionMode(0);
                     break;
                 case 'playerSellPhase':
+                    this.slideVertically('available_shares_wrapper', 'shares_top');
+                    this.slideVertically('available_companies_wrapper', 'companies_bottom');
+                    this.slideVertically('main_board_wrapper', 'board_bottom');
                     if(this.isCurrentPlayerActive()) {
                         var playerId = this.player_id;
                         this['personal_area_'+playerId].setSelectionMode(2);
@@ -226,9 +231,14 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerSkipSellBuyPhase':
+                    this.slideVertically('available_shares_wrapper', 'shares_top');
+                    if(args.args.round > 0)
+                        this.slideVertically('available_companies_wrapper', 'companies_top');
                     if(this.isCurrentPlayerActive()) {
-                        this.available_companies.setSelectionMode(1);
-                        dojo.query('#available_companies>.company').addClass('active');
+                        if(args.args.round > 0){
+                            this.available_companies.setSelectionMode(1);
+                            dojo.query('#available_companies>.company').addClass('active');
+                        }
                         this.available_shares_company.setSelectionMode(1);
                         this.available_shares_bank.setSelectionMode(1);
                         dojo.query('#available_shares_company>.stockitem').addClass('active');
@@ -236,9 +246,14 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerBuyPhase':
+                    this.slideVertically('available_shares_wrapper', 'shares_top');
+                    if(args.args.round > 0)
+                        this.slideVertically('available_companies_wrapper', 'companies_top');
                     if(this.isCurrentPlayerActive()) {
-                        this.available_companies.setSelectionMode(1);
-                        dojo.query('#available_companies>.company').addClass('active');
+                        if(args.args.round > 0){
+                            this.available_companies.setSelectionMode(1);
+                            dojo.query('#available_companies>.company').addClass('active');
+                        }
                         this.available_shares_company.setSelectionMode(1);
                         this.available_shares_bank.setSelectionMode(1);
                         dojo.query('#available_shares_company>.stockitem').addClass('active');
@@ -246,6 +261,9 @@ function (dojo, declare) {
                     }
                     break;
                 case 'playerBuildingPhase':
+                    this.slideVertically('main_board_wrapper', 'board_top');
+                    this.slideVertically('available_shares_wrapper', 'shares_bottom');
+                    this.slideVertically('available_companies_wrapper', 'companies_bottom');
                     dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
                     break;
                 case 'clientPlayerDiscardBuilding':
@@ -1847,6 +1865,8 @@ function (dojo, declare) {
         },
 
         slideVertically : function(token, finalPlace, tlen) {
+            if($(token).parentNode.id === finalPlace)
+                return;
             var box = this.attachToNewParentNoDestroy(token, finalPlace);
             var left = dojo.style(token, "left");
             var anim = this.slideToObjectPos(token, finalPlace, left, box.t, tlen, 0);
@@ -1906,19 +1926,18 @@ function (dojo, declare) {
         setupCompany: function(company_div, company_type_id, item_id){
             // Add some custom HTML content INSIDE the Stock item:
             // company_div_id looks like this : company_area_2319930_item_libby or available_companies_item_libby
-
             var array = item_id.split('_');
             var companyShortName = array[array.length - 1];
             var companyId = 'company_' + companyShortName;
-            dojo.place( this.format_block( 'jstpl_company_content', {
+            var companyElement = dojo.place( this.format_block( 'jstpl_company_content', {
                 'id': companyId,
                 'short_name': companyShortName
-            } ), company_div.id );
+            } ), company_div );
 
             var company = this.gamedatas.all_companies[companyShortName];
 
             dojo.addClass(company_div, 'company');
-            dojo.connect( $(company_div), 'onclick', this, 'onCompanyClicked' );
+            dojo.connect(company_div, 'onclick', this, 'onCompanyClicked' );
             
             var factoryWidth = companyShortName == 'henderson' ? 93 : 97;
             var distanceToLastAutomation = companyShortName == 'henderson' ? 76 : 80;
@@ -1926,13 +1945,13 @@ function (dojo, declare) {
                 var factory = company.factories[factoryNumber];
                 
                 var factoryId = companyShortName + '_factory_' + factoryNumber;
-                dojo.place( this.format_block( 'jstpl_factory', {
+                var factoryElement = dojo.place( this.format_block( 'jstpl_factory', {
                     'id': factoryId,
                     'left': 65+factoryWidth*(factoryNumber-1), // left of first factory + factory width * factory #
                     'width': factoryWidth
-                } ), companyId );
+                } ), companyElement );
 
-                dojo.connect( $(factoryId), 'onclick', this, 'onFactoryClicked' );
+                dojo.connect(factoryElement, 'onclick', this, 'onFactoryClicked');
 
                 // add automation token spots
                 var numberOfAutomations = factory.automation;
@@ -1942,7 +1961,7 @@ function (dojo, declare) {
                         'factory': factoryNumber,
                         'number': i,
                         'left': distanceToLastAutomation-20*(numberOfAutomations-i-1) // left of first factory + factory width * factory # + left of last automation - distance between automation
-                    } ), factoryId );
+                    } ), factoryElement );
                 }
 
                 // add worker spots
@@ -1957,13 +1976,13 @@ function (dojo, declare) {
                     dojo.place( this.format_block( 'jstpl_worker_holder', {
                         'id': companyShortName+'_'+factoryNumber+'_worker_holder_'+i,
                         'left': initialWorkerLeft+27*i // left of first factory + factory width * factory # + left of last automation - distance between automation
-                    } ), factoryId );
+                    } ), factoryElement );
                 }
 
                 // add manager spots
                 dojo.place( this.format_block( 'jstpl_manager_holder', {
                     'id': companyShortName+'_'+factoryNumber+'_manager_holder'
-                } ), factoryId );
+                } ), factoryElement );
             }
 
             // add salesperson spots
@@ -1971,7 +1990,7 @@ function (dojo, declare) {
             dojo.place( this.format_block( 'jstpl_salesperson_holder', {
                 'id': companyShortName+'_salesperson_holder',
                 'top': 89
-            } ), companyId );
+            } ), companyElement );
 
             var zone = new ebg.zone();
             zone.create( this, companyShortName + '_salesperson_holder', 15, 15 );
@@ -1985,14 +2004,14 @@ function (dojo, declare) {
             dojo.place( this.format_block( 'jstpl_generic_div', {
                 'id': companyShortName + '_resources',
                 'class': 'company-resources'
-            } ), companyId );
+            } ), companyElement );
             this.createResourceStock(companyShortName + '_resources');
 
             // add goods zone
             dojo.place( this.format_block( 'jstpl_generic_div', {
                 'id': companyShortName+'_goods',
                 'class': 'goods-holder'
-            } ), companyId );
+            } ), companyElement );
             
             var zone = new ebg.zone();
             zone.create( this, companyShortName + '_goods', 13, 22 );
@@ -2003,7 +2022,7 @@ function (dojo, declare) {
                 dojo.place( this.format_block( 'jstpl_generic_div', {
                     'id': companyShortName + '_asset',
                     'class': 'company-asset'
-                } ), companyId );
+                } ), companyElement );
 
                 this.createAssetTileStock(companyShortName + '_asset', this.gamedatas.all_capital_assets);
                 this[companyShortName + '_asset'].onItemCreate = dojo.hitch( this, 'onAssetCreated' ); 
@@ -2013,7 +2032,7 @@ function (dojo, declare) {
             dojo.place( this.format_block( 'jstpl_generic_div', {
                 'id': companyShortName+'_extra_goods',
                 'class': 'extra-goods'
-            } ), companyId );
+            } ), companyElement );
 
             var zone = new ebg.zone();
             zone.create( this, companyShortName + '_extra_goods', 26, 26 );
