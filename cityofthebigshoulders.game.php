@@ -5007,6 +5007,8 @@ class CityOfTheBigShoulders extends Table
             self::incGameStateValue( "turns_this_phase", 1 );
             // Activate next player
             $player_id = $this->activeNextPlayer();
+
+            self::undoSavepoint();
             
             self::giveExtraTime( $player_id );
             $this->gamestate->nextState( 'playerStockPhase' );
