@@ -3573,6 +3573,9 @@ function (dojo, declare) {
                     this.clientStateArgs.actionArgs.replace = 1;
                     this.onConfirmAction();
                 }
+            } else {
+                this.clientStateArgs.actionArgs.replace = 1;
+                this.onConfirmAction();
             }
         },
 

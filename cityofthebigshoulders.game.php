@@ -1320,35 +1320,49 @@ class CityOfTheBigShoulders extends Table
         $company_short_name = $company['short_name'];
         $company_id = $company['id'];
         $asset_material = $this->capital_asset[$asset['card_type']];
+        $company_material = $this->companies[$company_short_name];
         
         // save current company since we're going in a transit state and we'll need it
         self::setGameStateValue('bonus_company_id', $company_id);
 
         $asset_id = $asset['card_id'];
-        if($should_replace)
+        if($company_material['has_asset'])
         {
-            $current_asset = self::getObjectFromDB("SELECT card_id, card_type FROM card WHERE primary_type = 'asset' AND card_location = '$company_short_name'");
-            if($current_asset != null)
+            if($should_replace)
             {
-                $current_asset_id = $current_asset['card_id'];
-                self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $current_asset_id");
+                $current_asset = self::getObjectFromDB("SELECT card_id, card_type FROM card WHERE primary_type = 'asset' AND card_location = '$company_short_name'");
+                if($current_asset != null)
+                {
+                    $current_asset_id = $current_asset['card_id'];
+                    self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $current_asset_id");
 
-                self::notifyAllPlayers( "companyAssetDiscarded", clienttranslate('${company_name} discards current Capital Asset'), array(
-                    'asset' => $current_asset,
+                    self::notifyAllPlayers( "companyAssetDiscarded", clienttranslate('${company_name} discards current Capital Asset'), array(
+                        'asset' => $current_asset,
+                        'company_name' => $company_name,
+                        'short_name' => $company_short_name
+                    ) );
+                }
+
+                self::DbQuery("UPDATE card SET card_location = '$company_short_name', owner_type = 'company' WHERE card_id = $asset_id");
+                $asset['card_location'] = $company_short_name;
+                self::notifyAllPlayers( "assetGained", clienttranslate('${company_name} gains Capital Asset'), array(
+                    'asset' => $asset,
                     'company_name' => $company_name,
                     'short_name' => $company_short_name
                 ) );
             }
+            else
+            {
+                self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $asset_id");
 
-            self::DbQuery("UPDATE card SET card_location = '$company_short_name', owner_type = 'company' WHERE card_id = $asset_id");
-            $asset['card_location'] = $company_short_name;
-            self::notifyAllPlayers( "assetGained", clienttranslate('${company_name} gains Capital Asset'), array(
-                'asset' => $asset,
-                'company_name' => $company_name,
-                'short_name' => $company_short_name
-            ) );
+                self::notifyAllPlayers( "assetDiscarded", clienttranslate('${company_name} discards Capital Asset'), array(
+                    'asset_name' => $asset['card_type'],
+                    'company_name' => $company_name,
+                    'asset_id' => $asset['card_id']
+                ) );
+            }
         }
-        else
+        else 
         {
             self::DbQuery("UPDATE card SET card_location = 'discard', owner_type = NULL WHERE card_id = $asset_id");
 
