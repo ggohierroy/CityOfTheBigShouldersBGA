@@ -71,7 +71,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy" ),
-        "transitions" => array( "gameStockPhase" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5 )
     ),
 
     5 => array(
