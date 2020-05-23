@@ -4596,6 +4596,13 @@ function (dojo, declare) {
             this.updateAppealTokens(appeal, notif.args.order);
 
             this.updateCounters(notif.args.counters);
+
+            // this is a hack because when the companies are in transit between stocks
+            // there is momentarily two companies with contents that have the same ids
+            // because of that, we need to update the company treasury manually
+            debugger;
+            var companyTreasuryElement = dojo.query('#company_area_'+playerId+'_item_'+shortName+' #money_'+shortName)[0];
+            companyTreasuryElement.innerText = this.gamedatas.counters['money_' + shortName].counter_value;
         },
 
         notif_automationTokensCreated: function(notif) {
