@@ -52,7 +52,7 @@
             <div id="phase_4" class="phase-spot"></div>
             <div id="phase_5" class="phase-spot"></div>
             <div id="appeal_1" bonus="worker" class="appeal-bonus"></div>
-            <div id="appeal_2" bonus="manager" class="appeal-bonus"></div>
+            <div id="appeal_2" bonus="salesperson" class="appeal-bonus"></div>
             <div id="appeal_3" bonus="automation" class="appeal-bonus"></div>
             <div id="appeal_4" bonus="partner" class="appeal-bonus"></div>
             <div id="appeal_5" bonus="good" class="appeal-bonus"></div>

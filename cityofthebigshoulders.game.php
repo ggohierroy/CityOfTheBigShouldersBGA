@@ -25,7 +25,7 @@ class CityOfTheBigShoulders extends Table
     const STEP_TO_VALUE = [0=>10, 1=>15, 2=>20, 3=>25, 4=>35, 5=>40, 6=>50, 7=>60, 8=>80, 9=>100, 10=>120, 11=>140, 12=>160, 13=>190, 14=>220, 15=>250, 16=>280, 17=>320, 18=>360, 19=>400, 20=>450];
     const REFILL_AMOUNT = [0 => 3, 1 => 4, 2 => 4, 3 => 5, 4 => 6];
     const BONUS_LOOKUP = [0 => 0, 1 => 0, 2 => 0, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 4, 10 => 4, 11 => 5, 12 => 5, 13 => 6, 14 => 6, 15 => 7, 16 => 8];
-    const BONUS_NAME = [1 => 'worker', 2 => 'manager', 3 => 'automation', 4 => 'partner', 5 => 'good', 6 => 'bump', 7 => 'good', 8 => 'bump'];
+    const BONUS_NAME = [1 => 'worker', 2 => 'salesperson', 3 => 'automation', 4 => 'partner', 5 => 'good', 6 => 'bump', 7 => 'good', 8 => 'bump'];
 
 	function __construct( )
 	{
@@ -2397,8 +2397,8 @@ class CityOfTheBigShoulders extends Table
             case 'worker':
                 self::hireWorkerFromSupply($company_short_name, $company_id, $factory_number);
                 break;
-            case 'manager':
-                self::hire_manager($company_short_name, $company_id, $factory_number);
+            case 'salesperson':
+                self::hire_salesperson($company_short_name, $company_id);
                 break;
             case 'automation':
                 self::automateWorker($company_short_name, $factory_number, $relocate_number);

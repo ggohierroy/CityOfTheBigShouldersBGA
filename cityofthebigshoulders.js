@@ -547,6 +547,10 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_gain_salesperson', _('Confirm'), 'onConfirmAction');
                         this.addActionButton( 'concel_gain_salesperson', _('Cancel'), 'onCancelAction');
                         break;
+                    case 'client_confirmGainLessSalespeopleAppealBonus':
+                        this.addActionButton( 'confirm_gain_salesperson', _('Confirm'), 'gainAppealBonus');
+                        this.addActionButton( 'concel_gain_salesperson', _('Cancel'), 'onCancelAppealBonus');
+                        break;
                     case 'playerPriceProtection':
                         this.addActionButton( 'prevent', _('Prevent'), 'onPrevent');
                         this.addActionButton( 'pass', _('Pass'), 'onPassPriceProtection');
@@ -820,7 +824,7 @@ function (dojo, declare) {
 
         creatAppealBonusTooltips: function(){
             this.addTooltip( "appeal_1", "", _( "Gain a worker from the supply" ));
-            this.addTooltip( "appeal_2", "", _( "Gain a manager from the supply" ));
+            this.addTooltip( "appeal_2", "", _( "Gain a salesperson from the supply" ));
             this.addTooltip( "appeal_3", "", _( "Automate a factory" ));
             this.addTooltip( "appeal_4", "", _( "Gain a partner" ));
             this.addTooltip( "appeal_5", "", _( "Gain an Appeal Goods Bonus token, which produces 1 good at the end of the company's production step" ));
@@ -3171,12 +3175,21 @@ function (dojo, declare) {
             switch(bonus)
             {
                 case 'worker':
-                case 'manager':
                 case 'automation':
                     this.clientStateArgs.bonus = bonus;
                     this.setClientState("client_appealBonusChooseFactory", {
                         descriptionmyturn : _('Choose a factory for the appeal bonus')
                     });
+                    break;
+                case 'salesperson':
+                    var companyShortName = this.gamedatas.gamestate.args.company_short_name;
+                    if(this.getSalespersonEmptySpots(companyShortName) == 0){
+                        this.setClientState("client_confirmGainLessSalespeopleAppealBonus", {
+                            descriptionmyturn : _('Confirm gain 0 salesperson')
+                        });
+                    } else {
+                        this.gainAppealBonus();
+                    }
                     break;
                 case 'partner':
                 case 'good':
