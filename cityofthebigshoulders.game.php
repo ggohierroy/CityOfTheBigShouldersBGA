@@ -559,11 +559,12 @@ class CityOfTheBigShoulders extends Table
 
         $new_share_value = self::getShareValue($new_share_value_step);
         $share_value = self::getShareValue($share_value_step);
-        self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} changed to $${share_value}' ), array(
+        self::notifyAllPlayers( "shareValueChange", clienttranslate( 'The share value of ${company_name} changed from $${previous_share_value} to $${share_value}' ), array(
             'company_short_name' => $short_name,
             'company_name' => self::getCompanyName($short_name),
             'share_value' => $new_share_value,
             'share_value_step' => $new_share_value_step,
+            'previous_share_value' => $share_value,
             'previous_share_value_step' => $share_value_step
         ));
 
