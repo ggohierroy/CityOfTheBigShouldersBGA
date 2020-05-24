@@ -546,6 +546,9 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'playerActionPhase':
+                        this.addActionButton( 'undo', _('Undo Whole Action Phase'), 'onUndo', null, false, 'red');
+                        break;
                     case 'client_appealBonusChooseFactory':
                         this.addActionButton( 'concel', _('Cancel'), 'onCancelAppealBonus');
                         break;
@@ -682,6 +685,7 @@ function (dojo, declare) {
                     case 'playerAssetWorkerBonus':
                     case 'playerAssetAutomationBonus':
                         this.addActionButton( 'skip_bonus', _('Skip'), 'onSkipAssetBonus');
+                        this.addActionButton( 'undo', _('Undo Whole Action Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_tradeChooseCompanyResources':
                         var options = this.clientStateArgs.options;
@@ -705,9 +709,13 @@ function (dojo, declare) {
                         break;
                     case 'playerFreeActionPhase':
                         this.addActionButton( 'pass_free_action', _('Pass'), 'onPassFreeAction');
+                        this.addActionButton( 'undo', _('Undo Whole Action Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'playerAssetAppealBonus':
                     case 'playerActionAppealBonus':
+                        this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
+                        this.addActionButton( 'undo', _('Undo Whole Action Phase'), 'onUndo', null, false, 'red');
+                        break;
                     case 'playerBuyResourceAppealBonus':
                     case 'playerProduceGoodsAppealBonus':
                     case 'playerDistributeAppealBonus':

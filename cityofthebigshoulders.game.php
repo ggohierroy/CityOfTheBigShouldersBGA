@@ -4813,6 +4813,8 @@ class CityOfTheBigShoulders extends Table
             'phase' => 2
         ) );
 
+        self::undoSavePoint();
+
         // start action phase
         $this->gamestate->nextState( 'playerActionPhase' );
     }
@@ -4919,6 +4921,8 @@ class CityOfTheBigShoulders extends Table
         $new_player_id = $new_active_player['player_id'];
         $this->gamestate->changeActivePlayer( $new_player_id );
         self::giveExtraTime( $new_player_id );
+
+        self::undoSavePoint();
         $this->gamestate->nextState( 'playerActionPhase' );
     }
 

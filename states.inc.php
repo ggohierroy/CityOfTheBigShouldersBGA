@@ -126,7 +126,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "updateGameProgression" => true,
         "args" => "argsPlayerActionPhase",
-        "possibleactions" => array( "buildingAction", "tradeResources", "useAsset" ),
+        "possibleactions" => array( "buildingAction", "tradeResources", "useAsset", "undo" ),
         "transitions" => array( "freeActions" => 23, "workerBonus" => 21, "automationBonus" => 22, "appealBonus" => 24, "freeAppealBonus" => 25, "loopback" => 11, "zombiepass" => 12)
     ),
 
@@ -135,7 +135,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} may trade with Haymarket Square or use Capital Assets'),
         "descriptionmyturn" => clienttranslate('${you} may trade with Haymarket Square or use Capital Assets'),
         "type" => "activeplayer",
-        "possibleactions" => array( "tradeResources", "useAsset", "passFreeActions" ),
+        "possibleactions" => array( "tradeResources", "useAsset", "passFreeActions", "undo" ),
         "transitions" => array( "pass" => 12, "freeAppealBonus" => 31, "loopback" => 23)
     ),
 
@@ -154,7 +154,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may choose a factory in which to hire a worker for free'),
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
-        "possibleactions" => array( "hireWorker", "skipAssetBonus" ),
+        "possibleactions" => array( "hireWorker", "skipAssetBonus", "undo" ),
         "transitions" => array( "freeActions" => 23 )
     ),
 
@@ -165,7 +165,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may automate a factory'),
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
-        "possibleactions" => array( "automateFactory", "skipAssetBonus" ),
+        "possibleactions" => array( "automateFactory", "skipAssetBonus", "undo" ),
         "transitions" => array( "freeActions" => 23 )
     ),
 
@@ -177,7 +177,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain or forfeit appeal bonus'),
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
-        "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
+        "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus", "undo" ),
         "transitions" => array( "loopback" => 24, "next" => 23 )
     ),
 
@@ -266,7 +266,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain or forfeit appeal bonus'),
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
-        "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
+        "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus", "undo" ),
         "transitions" => array( "loopback" => 25, "next" => 11 )
     ),
 
