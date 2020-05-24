@@ -105,7 +105,8 @@ function (dojo, declare) {
             // adjust player order
             this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }
 
-            this.player_color = gamedatas.players[this.player_id].color;
+            if(!this.isSpectator)
+                this.player_color = gamedatas.players[this.player_id].color;
             this.clientStateArgs = {};
             this.clientStateArgs.actionArgs = {};
             this.clientStateArgs.goods = [];
@@ -137,7 +138,8 @@ function (dojo, declare) {
             dojo.connect( this.available_companies, 'onChangeSelection', this, 'onCompanySelected' );
 
             // create buildings personal stock
-            this.buildings = this.createBuildingsStock(gamedatas.all_buildings, 'building_area_'+this.player_id, 'setupNewBuilding');
+            if(!this.isSpectator)
+                this.buildings = this.createBuildingsStock(gamedatas.all_buildings, 'building_area_'+this.player_id, 'setupNewBuilding');
             
             // place owned in the game
             for(var i in gamedatas.owned_companies){
@@ -264,10 +266,12 @@ function (dojo, declare) {
                     this.slideVertically('main_board_wrapper', 'board_top');
                     this.slideVertically('available_shares_wrapper', 'shares_bottom');
                     this.slideVertically('available_companies_wrapper', 'companies_bottom');
-                    dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
+                    if(!this.isSpectator)
+                        dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
                     break;
                 case 'clientPlayerDiscardBuilding':
-                    dojo.query('#building_area_'+this.player_id+'>.stockitem').forEach(function(item){
+                    if(!this.isSpectator)
+                        dojo.query('#building_area_'+this.player_id+'>.stockitem').forEach(function(item){
                     if(!dojo.hasClass(item, 'building_to_play'))
                         dojo.addClass(item, 'active');
                     })
@@ -434,7 +438,8 @@ function (dojo, declare) {
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerSellPhase':
-                    dojo.query('#personal_area_'+this.player_id+'>.stockitem').removeClass('active');
+                    if(!this.isSpectator)
+                        dojo.query('#personal_area_'+this.player_id+'>.stockitem').removeClass('active');
                     break;
                 case 'client_playerStockPhaseSellShares':
                     var playerId = this.getActivePlayerId();
@@ -522,7 +527,8 @@ function (dojo, declare) {
                     break;
                 case 'playerBuildingPhase':
                 case 'clientPlayerDiscardBuilding':
-                    dojo.query('#building_area_'+this.player_id+'>.stockitem').removeClass('active');
+                    if(!this.isSpectator)
+                        dojo.query('#building_area_'+this.player_id+'>.stockitem').removeClass('active');
                     break;
             case 'dummmy':
                 break;
@@ -4627,7 +4633,6 @@ function (dojo, declare) {
         },
 
         notif_buildingsSelected: function(notif){
-            var currentPlayerId = this.player_id;
             var currentPlayerBuilding = null;
             for(var i in notif.args.buildings){
                 var building = notif.args.buildings[i];
@@ -4635,23 +4640,27 @@ function (dojo, declare) {
                 var split = building.card_location.split('_'); // pattern building_track_playerId
                 var playerId = split[2];
 
-                if(playerId != currentPlayerId)
+                if(this.isSpectator)
+                    this.placeBuilding(building, 'main_board');
+                else if(playerId != this.player_id)
                     this.placeBuilding(building, 'building_area_'+playerId);
                 else
                     currentPlayerBuilding = building;
             }
 
-            var items = this.buildings.getAllItems();
-            for(var index in items){
-                var item = items[index];
-                var divId = this.buildings.getItemDivId(item.id);
-                if(dojo.hasClass(divId, 'building_to_discard')){
-                    // remove discarded building
-                    this.buildings.removeFromStockById(item.id);
-                } else if (dojo.hasClass(divId, 'building_to_play')){
-                    // remove building that was moved to the building track
-                    this.placeBuilding(currentPlayerBuilding, divId);
-                    this.buildings.removeFromStockById(item.id);
+            if(!this.isSpectator){
+                var items = this.buildings.getAllItems();
+                for(var index in items){
+                    var item = items[index];
+                    var divId = this.buildings.getItemDivId(item.id);
+                    if(dojo.hasClass(divId, 'building_to_discard')){
+                        // remove discarded building
+                        this.buildings.removeFromStockById(item.id);
+                    } else if (dojo.hasClass(divId, 'building_to_play')){
+                        // remove building that was moved to the building track
+                        this.placeBuilding(currentPlayerBuilding, divId);
+                        this.buildings.removeFromStockById(item.id);
+                    }
                 }
             }
         }
