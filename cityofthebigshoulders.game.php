@@ -1679,7 +1679,7 @@ class CityOfTheBigShoulders extends Table
         // check that company can hire more salesperson
         $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'salesperson' AND card_location = '$company_short_name'";
         $value = self::getUniqueValueFromDB( $sql );
-        $salesperson_number = $this->companies[$company_short_name]['salesperson_number'];
+        $salesperson_number = $this->companies[$company_short_name]['salesperson_number'] - 1;
 
         if($salesperson_number <= $value)
             return;
