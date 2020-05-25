@@ -3320,6 +3320,9 @@ class CityOfTheBigShoulders extends Table
                 $resources_gained = $asset_material['resources'];
                 self::gainResourcesAsset($short_name, $company_id, $resources_gained);
                 break;
+            default:
+                throw new BgaVisibleSystemException("This asset is not supported");
+                break;
         }
 
         // exhaust asset tile
