@@ -205,6 +205,13 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'playerEmergencyFundraise':
+                    this.slideVertically('available_shares_wrapper', 'shares_top');
+                    if(this.isCurrentPlayerActive()) {
+                        this.available_shares_company.setSelectionMode(2);
+                        this.activateCompanyShares(args.args.company_short_name);
+                    }
+                    break;
                 case 'playerStartFirstCompany':
                     this.slideVertically('available_companies_wrapper', 'companies_top');
                     this.slideVertically('main_board_wrapper', 'board_bottom');
@@ -324,6 +331,7 @@ function (dojo, declare) {
                     this.activateFactoriesInCompany(this.clientStateArgs.companyShortName);
                     break;
                 case 'playerBuyResourcesPhase':
+                    this.slideVertically('available_shares_wrapper', 'shares_bottom');
                     if(this.isCurrentPlayerActive()){
                         this.activateCompanyAsset(args.args.company_short_name);
                         dojo.query('#haymarket_square').addClass('active');
@@ -780,6 +788,16 @@ function (dojo, declare) {
             script.
         
         */
+
+        activateCompanyShares(shortName){
+            var stockElements = dojo.query('#available_shares_company>.stockitem');
+            for(var i = 0; i < stockElements.length; i++){
+                var stockElement = stockElements[i];
+                if(stockElement.indexOf(shortName) !== -1){
+                    dojo.addClass(stockElement, 'active');
+                }
+            }
+        },
 
         placeRoundAndPhaseMarkers: function(gamedatas){
             var round = Number(gamedatas.round) + 1;

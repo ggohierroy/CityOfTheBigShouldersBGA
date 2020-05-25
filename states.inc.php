@@ -181,6 +181,16 @@ $machinestates = array(
         "transitions" => array( "loopback" => 24, "next" => 23 )
     ),
 
+    34 => array(
+        "name" => "playerEmergencyFundraise",
+        "description" => clienttranslate('${company_name} (${actplayer}) may perform Emergency Fundraising by selling shares to the bank'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may perform Emergency Fundraising by selling shares to the bank'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "emergencyFundraise", "passEmergencyFundraise"  ),
+        "transitions" => array( "playerBuyResourcesPhase" => 13)
+    ),
+
     13 => array(
         "name" => "playerBuyResourcesPhase",
         "description" => clienttranslate('${company_name} (${actplayer}) may purchase resources from the supply chain'),

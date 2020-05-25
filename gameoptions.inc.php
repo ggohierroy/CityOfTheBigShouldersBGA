@@ -63,7 +63,8 @@ $game_options = array(
         'values' => array(
 
                     // A simple value for this option:
-                    1 => array( 'name' => totranslate('No') )
+                    1 => array( 'name' => totranslate('No') ),
+                    2 => array( 'name' => totranslate('Yes') )
                 )
     ),
 

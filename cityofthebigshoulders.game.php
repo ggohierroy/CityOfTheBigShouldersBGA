@@ -4909,8 +4909,14 @@ class CityOfTheBigShoulders extends Table
 
                 self::undoSavepoint();
 
-                $this->gamestate->nextState( 'playerBuyResourcesPhase' );
-                return;
+                if(self::getGameStateValue("advanced_rules") == 2)
+                {
+                    $this->gamestate->nextState( 'playerEmergencyFundraise' );
+                }
+                else
+                {
+                    $this->gamestate->nextState( 'playerBuyResourcesPhase' );
+                }
             }
         }
 
