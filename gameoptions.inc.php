@@ -50,6 +50,23 @@ $game_options = array(
 
     */
 
+    100 => array(
+        'name' => totranslate('Public Goals'),    
+        'values' => array(
+
+                    // A simple value for this option:
+                    1 => array( 'name' => totranslate('Yes') )
+                )
+    ),
+    101 => array(
+        'name' => totranslate('Advanced Rules'),    
+        'values' => array(
+
+                    // A simple value for this option:
+                    1 => array( 'name' => totranslate('No') )
+                )
+    ),
+
 );
 
 

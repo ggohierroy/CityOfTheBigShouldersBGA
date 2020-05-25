@@ -53,14 +53,9 @@ class CityOfTheBigShoulders extends Table
             "final_appeal_bonus" => 22,
             "trigger_protection_id" => 23,
             "lost_value" => 24,
-            "owner_protection_id" => 25
-            //"round_marker" => 10,
-            //"phase_marker" => 11,
-            //"workers_in_market" => 12,
-            //"priority_deal_player_id" => 13
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
+            "owner_protection_id" => 25,
+            "public_goals" => 100,
+            "advanced_rules" => 101,
         ) ); 
         
         $this->cards = self::getNew( "module.common.deck" );
@@ -109,7 +104,6 @@ class CityOfTheBigShoulders extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
         self::setGameStateInitialValue( 'turns_this_phase', 0 );
         self::setGameStateInitialValue( 'round', 0 );
         self::setGameStateInitialValue( 'consecutive_passes', 0 );
