@@ -4733,27 +4733,30 @@ class CityOfTheBigShoulders extends Table
 
             if($building_action == 'play')
             {
-                if($building_by_player[$player_id]['play'] == null)
-                    $building_by_player[$player_id]['play'] = true;
-                else
+                if($building_by_player[$player_id]['play'] != null)
                     throw new BgaVisibleSystemException("You can't play more than one building");
 
                 // compute number of workers to add to board
                 $number_of_workers = $this->building[$building_number]['number_of_workers'];
                 $number_of_workers_to_add += $number_of_workers;
 
+                $building['card_location'] = "building_track_${player_id}";
+                $building['card_location_arg'] = $round;
+
+                $building_by_player[$player_id]['play'] = $building;
                 $new_buildings[$building_id] = $building;
-                $new_buildings[$building_id]['card_location'] = "building_track_${player_id}";
-                $new_buildings[$building_id]['card_location_arg'] = $round;
 
                 $sql = "UPDATE card SET card_location = 'building_track_${player_id}', card_location_arg = $round WHERE card_id = $building_id";
             }
             else if($building_action == 'discard')
             {
-                if($building_by_player[$player_id]['discard'] == null)
-                    $building_by_player[$player_id]['discard'] = true;
-                else
+                if($building_by_player[$player_id]['discard'] != null)
                     throw new BgaVisibleSystemException("You can't discard more than one building");
+                
+                $building['card_location'] = "building_track_${player_id}";
+                $building['card_location_arg'] = $round;
+
+                $building_by_player[$player_id]['discard'] = $building;
 
                 $sql = "UPDATE card SET card_location = 'building_discard' WHERE card_id = $building_id";
             }
@@ -4798,6 +4801,14 @@ class CityOfTheBigShoulders extends Table
             'workers_added' => $number_of_workers_to_add,
             'all_workers' => $workers
         ) );
+
+        // notify individual players to play and discard buildings
+        $players = self::loadPlayersBasicInfos();
+        foreach($building_by_player as $player_id => $buildings)
+        {
+            self::notifyPlayer($player_id, "buildingsRemoved", "", array(
+                'buildings' => $buildings));
+        }
 
         // get first player in turn order and set as active player
         $sql = "SELECT player_id FROM player WHERE player_order = 1";

@@ -4047,6 +4047,8 @@ function (dojo, declare) {
             dojo.subscribe ('buildingsSelected', this, "notif_buildingsSelected");
             this.notifqueue.setSynchronous( 'buildingsSelected', 500 );
 
+            dojo.subscribe ('buildingsRemoved', this, "notif_buildingsRemoved");
+
             dojo.subscribe ('workersAdded', this, "notif_workersAdded");
             this.notifqueue.setSynchronous( 'workersAdded', 500 );
 
@@ -4661,8 +4663,25 @@ function (dojo, declare) {
             }
         },
 
+        notif_buildingsRemoved: function(notif){
+            var buildingToDiscard = notif.args.buildings.discard;
+            var buildingToPlay = notif.args.buildings.play;
+            var items = this.buildings.getAllItems();
+            for(var index in items){
+                var item = items[index];
+                var divId = this.buildings.getItemDivId(item.id);
+                if(item.id == buildingToDiscard.card_type + '_' + buildingToDiscard.card_id){
+                    // remove discarded building
+                    this.buildings.removeFromStockById(item.id);
+                } else if (item.id == buildingToPlay.card_type + '_' + buildingToPlay.card_id){
+                    // remove building that was moved to the building track
+                    this.placeBuilding(buildingToPlay, divId);
+                    this.buildings.removeFromStockById(item.id);
+                }
+            }
+        },
+
         notif_buildingsSelected: function(notif){
-            var currentPlayerBuilding = null;
             for(var i in notif.args.buildings){
                 var building = notif.args.buildings[i];
                 
@@ -4673,24 +4692,6 @@ function (dojo, declare) {
                     this.placeBuilding(building, 'main_board');
                 else if(playerId != this.player_id)
                     this.placeBuilding(building, 'building_area_'+playerId);
-                else
-                    currentPlayerBuilding = building;
-            }
-
-            if(!this.isSpectator){
-                var items = this.buildings.getAllItems();
-                for(var index in items){
-                    var item = items[index];
-                    var divId = this.buildings.getItemDivId(item.id);
-                    if(dojo.hasClass(divId, 'building_to_discard')){
-                        // remove discarded building
-                        this.buildings.removeFromStockById(item.id);
-                    } else if (dojo.hasClass(divId, 'building_to_play')){
-                        // remove building that was moved to the building track
-                        this.placeBuilding(currentPlayerBuilding, divId);
-                        this.buildings.removeFromStockById(item.id);
-                    }
-                }
             }
         }
    });             
