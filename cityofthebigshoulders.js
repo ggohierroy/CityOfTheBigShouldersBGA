@@ -1819,6 +1819,9 @@ function (dojo, declare) {
 
             var div = null;
             if (location.indexOf('building_track') !== -1){
+                var weights = {};
+                weights[hashBuildingType] = Number(building.card_location_arg);
+                this[location].changeItemsWeight(weights);
                 this[location].addToStockWithId(hashBuildingType, itemId, from);
                 div = this[location].getItemDivId(itemId);
             } else {
@@ -3511,7 +3514,7 @@ function (dojo, declare) {
         },
 
         onCancelBuyCertificate: function(event){
-            
+
             this.available_shares_bank.unselectAll();
             this.available_shares_company.unselectAll();
 

@@ -4714,6 +4714,8 @@ class CityOfTheBigShoulders extends Table
         $new_buildings = [];
 
         $building_by_player = [];
+
+        $round = self::getGameStateValue("round");
         
         // update location to track
         foreach($buildings as $building_id => $building)
@@ -4740,8 +4742,9 @@ class CityOfTheBigShoulders extends Table
 
                 $new_buildings[$building_id] = $building;
                 $new_buildings[$building_id]['card_location'] = "building_track_${player_id}";
+                $new_buildings[$building_id]['card_location_arg'] = $round;
 
-                $sql = "UPDATE card SET card_location = 'building_track_${player_id}' WHERE card_id = $building_id";
+                $sql = "UPDATE card SET card_location = 'building_track_${player_id}', card_location_arg = $round WHERE card_id = $building_id";
             }
             else if($building_action == 'discard')
             {
