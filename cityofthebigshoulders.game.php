@@ -3011,6 +3011,14 @@ class CityOfTheBigShoulders extends Table
     function skipProduceGoods()
     {
         self::checkAction( 'skipProduceGoods' );
+
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, appeal, extra_goods FROM company WHERE id = $company_id");
+        if($company['extra_goods'] > 0)
+        {
+            self::companyProduceGoods($company['short_name'], $company_id, $company['extra_goods']);
+        }
+
         $this->gamestate->nextState( 'distributeGoods' );
     }
 
