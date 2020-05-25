@@ -1056,7 +1056,7 @@ class CityOfTheBigShoulders extends Table
         {
             $id = $new_asset['card_id'];
             $new_asset['card_location'] = '80';
-            self::DbQuery("UPDATE card SET card_location = '80' WHERE card_id = $id");
+            self::DbQuery("UPDATE card SET card_location = '80', card_location_arg = 0 WHERE card_id = $id");
         }
 
         self::notifyAllPlayers( "assetsShifted", "", array(
@@ -1338,7 +1338,7 @@ class CityOfTheBigShoulders extends Table
                     ) );
                 }
 
-                self::DbQuery("UPDATE card SET card_location = '$company_short_name', owner_type = 'company' WHERE card_id = $asset_id");
+                self::DbQuery("UPDATE card SET card_location = '$company_short_name', owner_type = 'company', card_location_arg = 0 WHERE card_id = $asset_id");
                 $asset['card_location'] = $company_short_name;
                 self::notifyAllPlayers( "assetGained", clienttranslate('${company_name} gains Capital Asset'), array(
                     'asset' => $asset,
