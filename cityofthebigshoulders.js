@@ -522,8 +522,7 @@ function (dojo, declare) {
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'client_playerTurnBuyCertificate':
-                    this.available_shares_company.unselectAll();
-                    this.available_shares_bank.unselectAll();
+                    
                     break;
                 case 'playerBuildingPhase':
                 case 'clientPlayerDiscardBuilding':
@@ -580,7 +579,7 @@ function (dojo, declare) {
                         break;
                     case 'client_playerTurnBuyCertificate':
                         this.addActionButton( 'confirm_buy', _('Confirm'), 'onConfirmBuy');
-                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancel');
+                        this.addActionButton( 'concel_buy', _('Cancel'), 'onCancelBuyCertificate');
                         break;
                     case 'playerSellPhase':
                         this.addActionButton( 'skip_sell', _('Skip to Buy'), 'onSkipSell');
@@ -3509,6 +3508,15 @@ function (dojo, declare) {
             } else {
                 this.ajaxAction('selectCancel', {});
             }
+        },
+
+        onCancelBuyCertificate: function(event){
+            
+            this.available_shares_bank.unselectAll();
+            this.available_shares_company.unselectAll();
+
+            this.restoreServerGameState();
+            dojo.stopEvent(event);
         },
 
         onResourceSelected: function(control_name, item_id){
