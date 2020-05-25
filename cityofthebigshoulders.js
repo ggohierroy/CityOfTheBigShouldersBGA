@@ -266,7 +266,7 @@ function (dojo, declare) {
                     this.slideVertically('main_board_wrapper', 'board_top');
                     this.slideVertically('available_shares_wrapper', 'shares_bottom');
                     this.slideVertically('available_companies_wrapper', 'companies_bottom');
-                    if(!this.isSpectator)
+                    if(!this.isSpectator && this.isCurrentPlayerActive())
                         dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
                     break;
                 case 'clientPlayerDiscardBuilding':
