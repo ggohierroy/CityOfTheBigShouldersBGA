@@ -51,9 +51,6 @@ class CityOfTheBigShoulders extends Table
             "current_appeal_bonus" => 26,
             "next_appeal_bonus" => 21,
             "final_appeal_bonus" => 22,
-            "trigger_protection_id" => 23,
-            "lost_value" => 24,
-            "owner_protection_id" => 25,
             "public_goals" => 100,
             "advanced_rules" => 101,
         ) ); 
@@ -116,9 +113,6 @@ class CityOfTheBigShoulders extends Table
         self::setGameStateInitialValue( "current_appeal_bonus", 0);
         self::setGameStateInitialValue( "next_appeal_bonus", 0);
         self::setGameStateInitialValue( "final_appeal_bonus", 0);
-        self::setGameStateInitialValue( "trigger_protection_id", 0);
-        self::setGameStateInitialValue( "lost_value", 0);
-        self::setGameStateInitialValue( "owner_protection_id", 0);
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -2351,42 +2345,6 @@ class CityOfTheBigShoulders extends Table
         self::undoRestorePoint();
     }
 
-    function priceProtect()
-    {
-        self::checkAction( 'priceProtect' );
-
-        // exhaust asset
-        $asset_name = 'price_protection';
-        self::DbQuery("UPDATE card SET card_location_arg = 1 WHERE card_type = '$asset_name'");
-
-        $company_id = self::getGameStateValue("bonus_company_id");
-        $short_name = self::getUniqueValueFromDB("SELECT short_name FROM company WHERE id = $company_id");
-        $asset_material = $this->capital_asset[$asset_name];
-        self::notifyAllPlayers( "assetUsed", clienttranslate('${company_name} uses ${asset_name}'), array(
-            'company_name' => self::getCompanyName($short_name),
-            'asset_name' => $asset_material['name'],
-            'asset_short_name' => $asset_name
-        ) );
-
-        self::setGameStateValue('trigger_protection_id', 0);
-        $this->gamestate->nextState( 'interruptReturn' );
-    }
-
-    function passPriceProtect()
-    {
-        self::checkAction( 'passPriceProtect' );
-
-        $company_id = self::getGameStateValue("bonus_company_id");
-        $lost_value = self::getGameStateValue("lost_value");
-
-        $short_name = self::getUniqueValueFromDB("SELECT short_name FROM company WHERE id = $company_id");
-
-        self::increaseShareValue($short_name, -$lost_value);
-
-        self::setGameStateValue('trigger_protection_id', 0);
-        $this->gamestate->nextState( 'interruptReturn' );
-    }
-
     function gainAppealBonus( $factory_number, $relocate_number )
     {
         self::checkAction( 'gainAppealBonus' );
@@ -2606,8 +2564,9 @@ class CityOfTheBigShoulders extends Table
         $this->gamestate->nextState( 'loopback' );
     }
 
-    function withholdEarnings($company_id, $protect = false)
+    function withholdEarnings($company_id)
     {
+        $protect = false;
         $company = self::getNonEmptyObjectFromDB("SELECT short_name, income, treasury, share_value_step FROM company WHERE id = $company_id");
         $short_name = $company['short_name'];
         $income = $company['income'];
@@ -2615,6 +2574,11 @@ class CityOfTheBigShoulders extends Table
         $newTreasury = $treasury + $income;
         $share_value_step = $company['share_value_step'];
         $previous_share_value_step = $share_value_step;
+
+        // check if company has price protection
+        $price_protection = self::getUniqueValueFromDB("SELECT card_location FROM card WHERE card_type = 'price_protection'");
+        if($price_protection['card_location'] == $short_name)
+            $protect = true;
 
         $message = "";
         if($protect)
@@ -2638,7 +2602,8 @@ class CityOfTheBigShoulders extends Table
             'counters' => $counters
         ) );
 
-        self::increaseShareValue($short_name, -1);
+        if(!$protect)
+            self::increaseShareValue($short_name, -1);
 
         $this->gamestate->nextState( 'gameOperationPhase' );
     }
@@ -2666,24 +2631,6 @@ class CityOfTheBigShoulders extends Table
         $company_id = self::getGameStateValue( 'current_company_id');
         
         self::withholdEarnings($company_id);
-    }
-
-    function withholdProtection()
-    {
-        self::checkAction( 'withholdProtection' );
-
-        $company_id = self::getGameStateValue( 'current_company_id');
-        $price_protection = self::getUniqueValueFromDB("SELECT card_location FROM card WHERE card_type = 'price_protection'");
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income FROM company WHERE id = $company_id");
-        $short_name = $company['short_name'];
-
-        if($price_protection['card_location'] != $short_name)
-            throw new BgaVisibleSystemException("Company does not own Price Protection");
-        
-        if($price_protection['card_location_arg'] != 0)
-            throw new BgaVisibleSystemException("Price Protection is exhausted");
-
-        self::withholdEarnings($company_id, true);
     }
 
     function produceGoods()
@@ -3030,7 +2977,7 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'skipDistributeGoods' );
 
         $company_id = self::getGameStateValue( 'current_company_id');
-        
+
         self::withholdEarnings($company_id);
     }
 
@@ -4121,7 +4068,6 @@ class CityOfTheBigShoulders extends Table
         $values = [];
 
         $price_protection = self::getNonEmptyObjectFromDB("SELECT card_location, card_location_arg FROM card WHERE card_type = 'price_protection'");
-        $price_protection_can_use = false;
 
         foreach($companies_selling as $company)
         {
@@ -4139,11 +4085,7 @@ class CityOfTheBigShoulders extends Table
                 $price_protection['card_location_arg'] == 0 &&
                 $price_protection_player_id != $player_id)
             {
-                $price_protection_can_use = true;
-                self::setGameStateValue('trigger_protection_id', $player_id);
-                self::setGameStateValue('lost_value', $lost_value);
-                self::setGameStateValue('bonus_company_id', $company['company_id']);
-                self::setGameStateValue('owner_protection_id', $price_protection_player_id);
+                self::notifyAllPlayers( "priceProtectionUsed", "Price Protection used against share value drop", array() );
             }
             else
             {
@@ -4168,15 +4110,7 @@ class CityOfTheBigShoulders extends Table
         ) );
 
         self::setGameStateValue( "consecutive_passes", 0 );
-
-        if($price_protection_can_use)
-        {
-            $this->gamestate->nextState( 'interruptPriceProtection' );
-        }
-        else
-        {
-            $this->gamestate->nextState( 'playerBuyPhase' );
-        }
+        $this->gamestate->nextState( 'playerBuyPhase' );
     }
 
     function startCompany($company_short_name, $initial_share_value_step)
@@ -4352,19 +4286,6 @@ class CityOfTheBigShoulders extends Table
         game state.
     */
 
-    function argPriceProtection()
-    {
-        $lost_value_step = self::getGameStateValue( "lost_value" );
-        $id = self::getGameStateValue( "bonus_company_id" );
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id=$id");
-        $short_name = $company['short_name'];
-        return [
-            "lost_value_step" => $lost_value_step,
-            'company_name' => self::getCompanyName($short_name),
-            'company_short_name' => $short_name
-        ];
-    }
-
     // need the round to not show start company action during first round
     function argPlayerBuyPhase()
     {
@@ -4423,26 +4344,6 @@ class CityOfTheBigShoulders extends Table
         Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
         The action method of state X is called everytime the current game state is set to X.
     */
-
-    function stGameInterruptPriceProtection()
-    {
-        $owner_id = self::getGameStateValue('owner_protection_id');
-
-        if($owner_id != 0)
-        {
-            // go to player with opportunity to use price protection
-            self::giveExtraTime( $owner_id );
-            $this->gamestate->changeActivePlayer( $owner_id );
-            $this->gamestate->nextState( 'playerPriceProtection' );
-        }
-        else
-        {
-            // go back to player that sold shares
-            $previous_player_id = self::getGameStateValue('trigger_protection_id');
-            $this->gamestate->changeActivePlayer( $previous_player_id );
-            $this->gamestate->nextState( 'buyPhase' );
-        }
-    }
 
     function stGamePublicGoalScoring()
     {

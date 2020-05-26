@@ -559,10 +559,6 @@ function (dojo, declare) {
                         this.addActionButton( 'confirm_gain_salesperson', _('Confirm'), 'gainAppealBonus');
                         this.addActionButton( 'concel_gain_salesperson', _('Cancel'), 'onCancelAppealBonus');
                         break;
-                    case 'playerPriceProtection':
-                        this.addActionButton( 'prevent', _('Prevent'), 'onPrevent');
-                        this.addActionButton( 'pass', _('Pass'), 'onPassPriceProtection');
-                        break;
                     case 'playerSkipSellBuyPhase':
                         this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
                         this.addActionButton( 'undo', _('Undo Skip Sell'), 'onUndo', null, false, 'red');
@@ -649,20 +645,6 @@ function (dojo, declare) {
                     case 'playerDividendsPhase':
                         this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
                         this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
-                        var companyShortName = args.company_short_name;
-                        var assetStock = this[companyShortName + '_asset'];
-                        if(assetStock){
-                            var assets = assetStock.getAllItems();
-                            if(assets.length > 0){
-                                var asset = assets[0];
-                                if(asset.id.indexOf('price_protection') !== -1){
-                                    var itemDivId = this[companyShortName + '_asset'].getItemDivId(asset.id);
-                                    if(!dojo.hasClass(itemDivId, 'exhausted')){
-                                        this.addActionButton( 'withhold_protect', _('Withhold with Price Protection'), 'onWithholdProtection');
-                                    }
-                                }
-                            }
-                        }
                         this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_confirmGainLessResources':
@@ -3323,10 +3305,6 @@ function (dojo, declare) {
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withhold.html", { lock: true }, this, function( result ) {} );
         },
 
-        onWithholdProtection: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/withholdProtection.html", { lock: true }, this, function( result ) {} );
-        },
-
         onCancelSelectBuildings: function(event){
             dojo.stopEvent(event);
             dojo.query('.building_to_play').removeClass('building_to_play');
@@ -3954,14 +3932,6 @@ function (dojo, declare) {
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buyCertificate.html", { lock: true,
                 certificate: item.id
             }, this, function( result ) {} );
-        },
-
-        onPrevent: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/priceProtect.html", { lock: true }, this, function( result ) {} );
-        },
-
-        onPassPriceProtection: function(){
-            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passPriceProtect.html", { lock: true }, this, function( result ) {} );
         },
 
         onStockPass: function(){
