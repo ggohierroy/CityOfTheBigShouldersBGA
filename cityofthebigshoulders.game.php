@@ -1780,7 +1780,10 @@ class CityOfTheBigShoulders extends Table
 
         $total_spots = $this->companies[$company_short_name]['factories'][$factory_number]['workers'];
         $location = "${company_short_name}_${factory_number}";
-        $sql = "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location LIKE '$location%'";
+        $automation_location = "${company_short_name}_worker_holder_${factory_number}";
+        $sql = "SELECT COUNT(card_id) FROM card 
+            WHERE (primary_type = 'worker' AND card_location = '$location') OR
+                (primary_type = 'automation' AND card_location = '$automation_location')";
         $number_of_workers_in_factory = self::getUniqueValueFromDB($sql);
         
         $available_spots = $total_spots - $number_of_workers_in_factory;
