@@ -2338,6 +2338,74 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function emergencyFundraise($stock_ids)
+    {
+        $stocks = self::getObjectListFromDB("SELECT card_id, card_type, card_location, owner_type, card_type_arg FROM card
+            WHERE primary_type = 'stock' AND card_id IN ($stock_ids)");
+
+        $id = self::getGameStateValue( "current_company_id" );
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, treasury, share_value_step FROM company WHERE id=$id");
+        $short_name = $company['short_name'];
+
+        $share_value = self::getShareValue($company['share_value_step']);
+        
+        $money_gained = 0;
+        $value_lost = 0;
+        foreach($stocks as $stock_id => $stock)
+        {
+            if($stock['owner_type'] != 'company')
+                throw new BgaVisibleSystemException("Can only sell stocks that are on the company charter");
+            
+            if($stock['card_type_arg'] != $id)
+                throw new BgaVisibleSystemException("Can only sell stocks that belong to the company being operated");
+
+            $card_id = $stock['card_id'];
+            $card_type = $stock['card_type'];
+            $split = explode('_', $card_type);
+            $stock_type = $split[1];
+
+            $multiplier = 1;
+            if($stock_type == 'director')
+                throw new BgaVisibleSystemException("Company should never have the director's certificate");
+            else if($stock_type == 'preferred')
+                $multiplier = 2;
+
+            $money_gained += $share_value*$multiplier;
+            $value_lost += $multiplier;
+
+            $stocks[$stock_id]['card_location'] = 'bank';
+            $stocks[$stock_id]['owner_type'] = 'bank';
+            $stocks[$stock_id]['card_location_arg'] = 0;
+        }
+
+        // update card location to bank
+        self::DbQuery( "UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id IN ($stock_ids)" );
+
+        // update company
+        $new_treasury = $company['treasury'] + $money_gained;
+        self::DbQuery("UPDATE company SET treasury = $new_treasury WHERE id = $id");
+        $counters = [];
+        self::addCounter($counters, "money_${short_name}", $new_treasury);
+
+        self::notifyAllPlayers( "emergencyFundraise", clienttranslate( '${company_name} sells ${count} certificates to the bank during emergency fundraise and raises $${money_gained}' ), array(
+            'count' => count($stocks),
+            'money_gained' => $money_gained,
+            'company_name' => self::getCompanyName($short_name),
+            'stocks' => $stocks,
+            'counters' => $counters
+        ) );
+        
+        // update stock value
+        self::increaseShareValue($short_name, -($value_lost + 1));
+
+        $this->gamestate->nextState( 'playerBuyResourcesPhase' );
+    }
+    
+    function passEmergencyFundraise()
+    {
+        $this->gamestate->nextState( 'playerBuyResourcesPhase' );
+    }
+
     function undo()
     {
         self::checkAction( 'undo' );
@@ -2717,7 +2785,7 @@ class CityOfTheBigShoulders extends Table
         self::companyProduceGoods($short_name, $company_id, $goods_produced);
 
         // check if second factory to gain partner
-        if($factory_number == 2 || ($factory_number == 3 && $short_name == 'henderson'))
+        if(($factory_number == 2 && $short_name != 'henderson') || ($factory_number == 3 && $short_name == 'henderson'))
         {
             $initial_company_id = self::getUniqueValueFromDB("SELECT initial_company_id FROM player WHERE player_id = $player_id");
             if($initial_company_id == $company_id)
@@ -4840,6 +4908,7 @@ class CityOfTheBigShoulders extends Table
                 {
                     $this->gamestate->nextState( 'playerBuyResourcesPhase' );
                 }
+                return;
             }
         }
 

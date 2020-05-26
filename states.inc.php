@@ -126,7 +126,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameActionPhase",
-        "transitions" => array( "playerActionPhase" => 11, "playerBuyResourcesPhase" => 13)
+        "transitions" => array( "playerActionPhase" => 11, "playerBuyResourcesPhase" => 13, "playerEmergencyFundraise" => 34)
     ),
 
     // this happens when immediate bonus is gained when purchasing asset tile

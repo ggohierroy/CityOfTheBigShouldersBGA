@@ -312,6 +312,21 @@
       self::ajaxResponse( );
     }
 
+    public function passEmergencyFundraise()
+    {
+      self::setAjaxMode();
+      $this->game->passEmergencyFundraise();
+      self::ajaxResponse( );
+    }
+
+    public function emergencyFundraise()
+    {
+      self::setAjaxMode();
+      $stock_ids = self::getArg( "stockIds", AT_numberlist, true );
+      $this->game->emergencyFundraise($stock_ids);
+      self::ajaxResponse( );
+    }
+
   }
   
 

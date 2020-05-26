@@ -432,6 +432,12 @@ function (dojo, declare) {
             
             switch( stateName )
             {
+                case 'client_playerConfirmEmergencyFundraise':
+                    
+                    break;
+                case 'playerEmergencyFundraise':
+                    dojo.query('#available_shares_company>.stockitem').removeClass('active');
+                    break;
                 case 'client_playerTurnConfirmBuyResources':
                     
                     break;
@@ -553,6 +559,13 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'client_playerConfirmEmergencyFundraise':
+                        this.addActionButton( 'confirm', _('Confirm'), 'onConfirmEmergencyFundraise');
+                        this.addActionButton( 'concel', _('Cancel'), 'onCancelEmergencyFundraise');
+                        break;
+                    case 'playerEmergencyFundraise':
+                        this.addActionButton( 'pass', _('pass'), 'onPassEmergencyFundraise');
+                        break;
                     case 'playerActionPhase':
                         this.addActionButton( 'undo', _('Undo Whole Action Phase'), 'onUndo', null, false, 'red');
                         break;
@@ -775,7 +788,7 @@ function (dojo, declare) {
             var stockElements = dojo.query('#available_shares_company>.stockitem');
             for(var i = 0; i < stockElements.length; i++){
                 var stockElement = stockElements[i];
-                if(stockElement.indexOf(shortName) !== -1){
+                if(stockElement.id.indexOf(shortName) !== -1){
                     dojo.addClass(stockElement, 'active');
                 }
             }
@@ -3444,6 +3457,27 @@ function (dojo, declare) {
             this.confirmAssetUse(this.clientStateArgs.assetName);
         },
 
+        onConfirmEmergencyFundraise: function(){
+            var selectedShares = this.available_shares_company.getSelectedItems();
+            var stockIds = [];
+            for(var i = 0; i < selectedShares.length; i++){
+                var selectedShare = selectedShares[i]; // spalding_common_3
+                var stockId = selectedShare.id.split('_')[2];
+                stockIds.push(stockId);
+            }
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/emergencyFundraise.html", { lock: true, 
+                'stockIds': stockIds.join(',')
+            }, this, function( result ) {} );
+        },
+
+        onCancelEmergencyFundraise: function(){
+            this.available_shares_company.unselectAll();
+        },
+
+        onPassEmergencyFundraise: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/passEmergencyFundraise.html", { lock: true }, this, function( result ) {} );
+        },
+
         onCancelAppealBonus: function(event){
             if(this.clientStateArgs.undoMoves){
                 dojo.forEach(this.clientStateArgs.undoMoves, function(item){
@@ -3675,38 +3709,66 @@ function (dojo, declare) {
         // control_name = available_shares_company (or bank)
         // item_id = brunswick_common_134
         onAvailableShareSelected: function(control_name, item_id){
-            if(!this.checkAction('buyCertificate'))
-            {
-                return;
-            }
+            if(this.checkAction('emergencyFundraise')){
+                var companyItems = this.available_shares_company.getSelectedItems();
+                if(companyItems.length == 0){
+                    this.restoreServerGameState();
+                    return;
+                }
+                var split = item_id.split('_'); // brunswick_common_3
+                if(this.available_shares_company.isSelected(item_id)){
+                    var stockCompany = split[0];
+                    var operatedCompany = this.gamedatas.gamestate.args.company_short_name;
+                    if(stockCompany != operatedCompany){
+                        this.showMessage( _('Can only sell shares from the company being operated'), 'info' );
+                        this.available_shares_company.unselectItem(item_id);
+                        return;
+                    }
+                }
 
-            var bankItems = this.available_shares_bank.getSelectedItems();
-            var companyItems = this.available_shares_company.getSelectedItems();
+                var totalValue = 0;
+                var selectedShares = this.available_shares_company.getSelectedItems();
+                var stockId =  split[2];
+                for(var i = 0; i < selectedShares.length; i++){
+                    totalValue += this.gamedatas.counters['stock_' + stockId].counter_value;
+                }
 
-            if(bankItems.length + companyItems.length == 0){
-                this.restoreServerGameState();
-                return;
-            }
-
-            var items = [];
-            if(control_name == 'available_shares_company' && companyItems.length != 0){
-                items = companyItems;
-                this.available_shares_bank.unselectAll();
-            } else if (control_name == 'available_shares_bank' && bankItems.length != 0){
-                items = bankItems;
-                this.available_shares_company.unselectAll();
-            }
-
-            if(items.length == 1){
-                this.available_companies.unselectAll();
-                var item_id = items[0].id; // brunswick_common_3
-                var companyShortName = item_id.split('_')[0];
-                var companyName = this.gamedatas.all_companies[companyShortName].name;
-                this.setClientState("client_playerTurnBuyCertificate", {
-                    descriptionmyturn : dojo.string.substitute(_('Buy certificate for ${companyName}'),{
-                        companyName: companyName
+                this.setClientState("client_playerConfirmEmergencyFundraise", {
+                    descriptionmyturn : dojo.string.substitute(_('Sell ${count} certificates for $${funds}'),{
+                        'count': selectedShares.length,
+                        'funds': totalValue
                     })
                 });
+                
+            } else if (this.checkAction('buyCertificate')) {
+                var bankItems = this.available_shares_bank.getSelectedItems();
+                var companyItems = this.available_shares_company.getSelectedItems();
+
+                if(bankItems.length + companyItems.length == 0){
+                    this.restoreServerGameState();
+                    return;
+                }
+
+                var items = [];
+                if(control_name == 'available_shares_company' && companyItems.length != 0){
+                    items = companyItems;
+                    this.available_shares_bank.unselectAll();
+                } else if (control_name == 'available_shares_bank' && bankItems.length != 0){
+                    items = bankItems;
+                    this.available_shares_company.unselectAll();
+                }
+
+                if(items.length == 1){
+                    this.available_companies.unselectAll();
+                    var item_id = items[0].id; // brunswick_common_3
+                    var companyShortName = item_id.split('_')[0];
+                    var companyName = this.gamedatas.all_companies[companyShortName].name;
+                    this.setClientState("client_playerTurnBuyCertificate", {
+                        descriptionmyturn : dojo.string.substitute(_('Buy certificate for ${companyName}'),{
+                            companyName: companyName
+                        })
+                    });
+                }
             }
         },
 
@@ -4112,6 +4174,9 @@ function (dojo, declare) {
             dojo.subscribe('shareSold', this, "notif_shareSold");
             this.notifqueue.setSynchronous('shareSold', 200);
 
+            dojo.subscribe('emergencyFundraise', this, "notif_emergencyFundraise");
+            this.notifqueue.setSynchronous('emergencyFundraise', 200);
+
             dojo.subscribe('buildingsDealt', this, "notif_buildingsDealt");
             this.notifqueue.setSynchronous('buildingsDealt', 200);
 
@@ -4258,6 +4323,19 @@ function (dojo, declare) {
             this.placeResource(toHaymarket1, toCompany.card_location + '_resources', toCompany.card_location + '_resources_item_' + toHaymarket1.card_id);
             this.placeResource(toHaymarket2, toCompany.card_location + '_resources', toCompany.card_location + '_resources_item_' + toHaymarket2.card_id);
             this.placeResource(toCompany, 'haymarket', 'haymarket_item_' + toCompany.card_id);
+        },
+
+        notif_emergencyFundraise: function(notif){
+            for(var index in notif.args.stocks){
+                var stock = notif.args.stocks[index];
+                var item_id = stock.card_type + '_' + stock.card_id;
+                var hashStockType = this.hashString(stock.card_type);
+                var from = 'available_shares_company_item_' + item_id;
+                this.available_shares_bank.addToStockWithId(hashStockType, item_id, from);
+                this.available_shares_company.removeFromStockById(item_id);
+            }
+
+            this.updateCounters(notif.args.counters);
         },
 
         notif_shareSold: function(notif){
