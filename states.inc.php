@@ -51,7 +51,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "updateGameProgression" => true,
         "possibleactions" => array( "sellShares", "skipSell", "passStockAction" ),
-        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "interruptPriceProtection" => 33, "zombiepass" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "playerBuyPhase" => 8, "playerSkipSellBuyPhase" => 9, "zombiepass" => 5 )
     ),
 
     9 => array(
@@ -80,24 +80,6 @@ $machinestates = array(
         "type" => "game",
         "action" => "stGameStockPhase",
         "transitions" => array( "playerStockPhase" => 4, "playerBuildingPhase" => 7 )
-    ),
-
-    33 => array(
-        "name" => "gameInterruptPriceProtection",
-        "description" => "",
-        "type" => "game",
-        "action" => "stGameInterruptPriceProtection",
-        "transitions" => array( "playerPriceProtection" => 6, "buyPhase" => 8 )
-    ),
-
-    6 => array(
-        "name" => "playerPriceProtection",
-        "description" => clienttranslate('${company_name}\'s share price is about to drop ${lost_value_step}. ${actplayer} may choose to use Price Protection to prevent it'),
-        "descriptionmyturn" => clienttranslate('${company_name}\'s share price is about to drop ${lost_value_step}. ${you} may choose to use Price Protection to prevent it'),
-        "type" => "activeplayer",
-        "args" => "argPriceProtection",
-        "possibleactions" => array( "priceProtect", "passPriceProtect" ),
-        "transitions" => array( "interruptReturn" => 33 )
     ),
 
     7 => array(
@@ -166,7 +148,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
         "possibleactions" => array( "automateFactory", "skipAssetBonus", "undo" ),
-        "transitions" => array( "freeActions" => 23 )
+        "transitions" => array( "freeActions" => 23, "appealBonus" => 24 /* this only happens with price protection*/)
     ),
 
     // this happens when immediate bonus is gained when purchasing asset tile
@@ -249,7 +231,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders with its earnings ($${income})'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "payDividends", "withhold", "useAsset", "withholdProtection", "undo" ),
+        "possibleactions" => array( "payDividends", "withhold", "useAsset", "undo" ),
         "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17)
     ),
 
