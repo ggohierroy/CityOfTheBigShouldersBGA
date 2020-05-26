@@ -2567,17 +2567,15 @@ class CityOfTheBigShoulders extends Table
     function withholdEarnings($company_id)
     {
         $protect = false;
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income, treasury, share_value_step FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, income, treasury FROM company WHERE id = $company_id");
         $short_name = $company['short_name'];
         $income = $company['income'];
         $treasury = $company['treasury'];
         $newTreasury = $treasury + $income;
-        $share_value_step = $company['share_value_step'];
-        $previous_share_value_step = $share_value_step;
 
         // check if company has price protection
-        $price_protection = self::getUniqueValueFromDB("SELECT card_location FROM card WHERE card_type = 'price_protection'");
-        if($price_protection['card_location'] == $short_name)
+        $price_protection_short_name = self::getUniqueValueFromDB("SELECT card_location FROM card WHERE card_type = 'price_protection'");
+        if($price_protection_short_name == $short_name)
             $protect = true;
 
         $message = "";
@@ -4081,8 +4079,7 @@ class CityOfTheBigShoulders extends Table
             // 1. it's on the company where the stock price is about to fall
             // 2. price protection is not exhausted
             // 3. the player selling the stock is not the player that owns the company with Price Protection
-            if($price_protection['card_location'] == $short_name && 
-                $price_protection['card_location_arg'] == 0 &&
+            if($price_protection['card_location'] == $short_name &&
                 $price_protection_player_id != $player_id)
             {
                 self::notifyAllPlayers( "priceProtectionUsed", "Price Protection used against share value drop", array() );
