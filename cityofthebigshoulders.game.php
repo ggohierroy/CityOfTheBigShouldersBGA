@@ -239,6 +239,50 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function checkStockLimits($player_id)
+    {
+        // check if certificate limit reached
+        $player_shares = self::getPlayerShares($player_id);
+        $player_number = self::getPlayersNumber();
+        $certificate_limit = 14;
+        if($player_number == 2)
+        {
+            $certificate_limit = 10;
+        }  
+        else if($player_number == 3)
+        {
+            $certificate_limit = 12;
+        }
+        
+        if(count($player_shares) == $certificate_limit)
+            throw new BgaUserException( self::_("You are over the certificate limit") );
+        
+        // check if 60% limit in single company reached
+        $owned_share = 0;
+        foreach($player_shares as $player_share)
+        {
+            $split = explode('_', $player_share['card_type']);
+            $owned_short_name = $split[0];
+            $owned_stock_type = $split[1];
+
+            if($owned_stock_type == 'preferred')
+            {
+                $owned_share += 2;
+            }
+            else if ($owned_stock_type == 'director')
+            {
+                $owned_share += 3;
+            }
+            else if ($owned_stock_type == 'common')
+            {
+                $owned_share += 1;
+            }
+        }
+
+        if($owned_share > 6)
+            throw new BgaUserException( self::_("You own more than 60% of a single company and must sell certficates") );
+    }
+
     function getStocksByPlayer($company_id)
     {
         $stocks = self::getObjectListFromDB("SELECT card_id, card_type, card_location_arg FROM card 
@@ -3892,6 +3936,13 @@ class CityOfTheBigShoulders extends Table
     function skipSell()
     {
         self::checkAction( 'skipSell' );
+
+        if($advanced_rules == 2)
+        {
+            // this can only happen after a directorship change in the advanced game
+            self::checkStockLimits($player_id);
+        }
+
         $this->gamestate->nextState( 'playerSkipSellBuyPhase' );
     }
 
@@ -4514,6 +4565,13 @@ class CityOfTheBigShoulders extends Table
         self::notifyAllPlayers( "countersUpdated", "", array(
             'counters' => $counters,
         ) );
+
+        if($advanced_rules == 2)
+        {
+            // after all shares sold, check if player respects stock limits
+            // this can only happen after a directorship change in the advanced game
+            self::checkStockLimits($player_id);
+        }
 
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'playerBuyPhase' );
