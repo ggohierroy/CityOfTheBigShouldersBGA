@@ -241,6 +241,7 @@ function (dojo, declare) {
                     break;
                 case 'playerSkipSellBuyPhase':
                     this.slideVertically('available_shares_wrapper', 'shares_top');
+                    this.slideVertically('main_board_wrapper', 'board_bottom');
                     if(args.args.round > 0)
                         this.slideVertically('available_companies_wrapper', 'companies_top');
                     if(this.isCurrentPlayerActive()) {
@@ -256,6 +257,7 @@ function (dojo, declare) {
                     break;
                 case 'playerBuyPhase':
                     this.slideVertically('available_shares_wrapper', 'shares_top');
+                    this.slideVertically('main_board_wrapper', 'board_bottom');
                     if(args.args.round > 0)
                         this.slideVertically('available_companies_wrapper', 'companies_top');
                     if(this.isCurrentPlayerActive()) {
@@ -3709,7 +3711,8 @@ function (dojo, declare) {
         // control_name = available_shares_company (or bank)
         // item_id = brunswick_common_134
         onAvailableShareSelected: function(control_name, item_id){
-            if(this.checkAction('emergencyFundraise')){
+            var stateName = this.gamedatas.gamestate.name;
+            if(stateName == 'client_playerConfirmEmergencyFundraise' || stateName == 'playerEmergencyFundraise'){
                 var companyItems = this.available_shares_company.getSelectedItems();
                 if(companyItems.length == 0){
                     this.restoreServerGameState();
@@ -3740,7 +3743,7 @@ function (dojo, declare) {
                     })
                 });
                 
-            } else if (this.checkAction('buyCertificate')) {
+            } else if (stateName == 'client_playerTurnBuyCertificate' || stateName == 'playerSkipSellBuyPhase' || stateName == 'playerBuyPhase') {
                 var bankItems = this.available_shares_bank.getSelectedItems();
                 var companyItems = this.available_shares_company.getSelectedItems();
 

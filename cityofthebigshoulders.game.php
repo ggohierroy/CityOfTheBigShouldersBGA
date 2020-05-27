@@ -239,12 +239,52 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function getStocksByPlayer($company_id)
+    {
+        $stocks = self::getObjectListFromDB("SELECT card_id, card_type, card_location_arg FROM card 
+            WHERE owner_type = 'player' AND primary_type = 'stock' AND card_type_arg = $company_id");
+
+        $stock_by_player = [];
+        foreach($stocks as $stock)
+        {
+            $player_id = $stock['card_location_arg'];
+
+            if(!array_key_exists($player_id, $stock_by_player))
+                $stock_by_player[$player_id] = ['stocks' => [], 'ownership' => 0, 'preferred_stock' => null];
+            
+            $card_type = $stock['card_type'];
+            $split = explode('_', $card_type);
+            $short_name = $split[0];
+            $stock_type = $split[1];
+            
+            $multiplier = 1;
+            if($stock_type == 'director')
+            {
+                $multiplier = 3;
+                $stock_by_player[$player_id]['director_stock'] = $stock;
+            }  
+            else if($stock_type == 'preferred')
+            {
+                $multiplier = 2;
+                $stock_by_player[$player_id]['preferred_stock'] = $stock;
+            }
+            else
+            {
+                $stock_by_player[$player_id]['stocks'][] = $stock;
+            }
+            
+            $stock_by_player[$player_id]['ownership'] += $multiplier;
+        }
+
+        return $stock_by_player;
+    }
+
     function adjustNextSequenceOrder($new_first_player_id)
     {
         $players = self::getCollectionFromDB("SELECT player_id, next_sequence_order AS color, player_name FROM player ORDER BY next_sequence_order ASC");
         $player_order = 2;
         $order = 0;
-        $player = $players[$new_first_player_id];
+        $new_first_player = $players[$new_first_player_id];
 
         foreach($players as $player_id => $player)
         {
@@ -262,7 +302,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         self::notifyAllPlayers( "playerFirst", clienttranslate('${player_name} uses Advertising and becomes 1st player for the next action sequence'), array(
-            'player_name' => $player['player_name']
+            'player_name' => $new_first_player['player_name']
         ) );
     }
 
@@ -4050,17 +4090,16 @@ class CityOfTheBigShoulders extends Table
 
         $in_clause = "(".implode(",", $selected_shares).")";
 
-        $sql = "SELECT * FROM card WHERE card_id IN $in_clause";
+        $sql = "SELECT * FROM card WHERE primary_type = 'stock' AND card_id IN $in_clause";
         $stocks = self::getObjectListFromDB($sql);
 
         $companies_selling = [];
 
+        $advanced_rules = self::getGameStateValue("advanced_rules");
+
         // check that shares can be sold
         foreach($stocks as $stock)
         {
-            if($stock['primary_type'] != 'stock')
-                throw new BgaVisibleSystemException("This is not a stock");
-
             $card_type = $stock['card_type'];
             if($stock['owner_type'] != 'player')
                 throw new BgaVisibleSystemException("${card_type} does not belong to any player");
@@ -4072,28 +4111,67 @@ class CityOfTheBigShoulders extends Table
             if($stock['card_location_arg'] != $player_id)
                 throw new BgaVisibleSystemException("${card_type} does not belong to active player");
             
-            // basic game -> cannot sell director's share
-            if($stock_type == 'director')
-                throw new BgaUserException( self::_("You cannot sell a director's share in the basic game") );
-            
             $multiplier = 1;
             if($stock_type == 'director')
                 $multiplier = 3;
             else if($stock_type == 'preferred')
                 $multiplier = 2;
             
+            $stocks_by_player = null;
             if(array_key_exists($short_name, $companies_selling))
             {
+                $stocks_by_player = $companies_selling[$short_name]['stocks_by_player'];
+
                 $current_lost_value = $companies_selling[$short_name]['lost_value'];
                 $companies_selling[$short_name]['lost_value'] = $current_lost_value + $multiplier;
             }
             else
             {
-                $companies_selling[$short_name] = ['company_id' => $stock['card_type_arg'], 'short_name' => $short_name, 'lost_value' => $multiplier];
+                $is_owner = false;
+                if($advanced_rules == 2)
+                {
+                    // check if player is owner of company, which might trigger directorship change
+                    if($stock_type == 'director')
+                        $is_owner = true;
+                    else
+                        $is_owner = self::getUniqueValueFromDB("SELECT id FROM company WHERE owner_id = $player_id AND short_name = '$short_name'") != null;
+
+                    // get all the stocks for the company by player
+                    if($is_owner)
+                        $stocks_by_player = self::getStocksByPlayer($stock['card_type_arg']);
+                }
+
+                $companies_selling[$short_name] = [
+                    'company_id' => $stock['card_type_arg'], 
+                    'short_name' => $short_name, 
+                    'lost_value' => $multiplier, 
+                    'stocks_by_player' => $stocks_by_player,
+                    'is_owner' => $is_owner,
+                    'director_share' => null];
             }
             
-            
-            // TODO -> advanced game condition for selling director's share
+            // basic game -> cannot sell director's share
+            if($stock_type == 'director')
+            {
+                $companies_selling[$short_name]['director_share'] = $stock;
+                if($advanced_rules == 2)
+                {
+                    // check that someone owns at least 30% of the company
+                    $found = false;
+                    foreach($stocks_by_player as $owner_id => $owner_stocks)
+                    {
+                        // try to find a player that's not the current player that has at least 30% in the company
+                        if($owner_stocks['ownership'] >= 3 && $owner_id != $player_id)
+                            $found = true;
+                    }
+                    if(!$found)
+                        throw new BgaUserException( self::_("You cannot sell your director's share because no other player owns at least 30% of the company") );
+                }
+                else
+                {
+                    throw new BgaUserException( self::_("You cannot sell a director's share in the basic game") );
+                }
+            }
         }
 
         // sell shares
@@ -4117,16 +4195,188 @@ class CityOfTheBigShoulders extends Table
 
             $money_gained += $share_value*$multiplier;
 
-            // update card location to bank
-            $sql = "UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$card_id";
-            self::DbQuery( $sql );
+            if($stock_type != 'director')
+            {
+                // update card location to bank
+                $sql = "UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$card_id";
+                self::DbQuery( $sql );
 
-            self::notifyAllPlayers( "shareSold", clienttranslate( '${player_name} sells share to the bank' ), array(
-                'player_name' => self::getActivePlayerName(),
-                'type' => $card_type,
-                'id' => $card_id,
-                'player_id' => $player_id
-            ) );
+                self::notifyAllPlayers( "shareSold", clienttranslate( '${player_name} sells share to the bank' ), array(
+                    'player_name' => self::getActivePlayerName(),
+                    'type' => $card_type,
+                    'id' => $card_id,
+                    'player_id' => $player_id
+                ) );
+            }
+        }
+
+        if($advanced_rules == 2)
+        {
+            // check if change of directorship
+            foreach($companies_selling as $company)
+            {
+                // only check for companies for which the player selling is owner
+                if(!$company['is_owner'])
+                    continue;
+
+                $short_name = $company['short_name'];
+                $company_id = $company['company_id'];
+                if($company['director_share'] != null)
+                {
+                    $director_share = $company['director_share'];
+                    $director_share_id = $director_share['card_id'];
+
+                    // player is selling his director's share
+                    // which will send that share to another player
+                    // and will send either 3 common stocks or 2 common + 1 preferred to the bank pool
+                    // there might be 2 players tied at 30% control, so find first one to the left who has at least 30%
+                    $number_of_players = self::getPlayersNumber();
+                    $current_player_id = $player_id;
+                    $new_owner_id = null;
+                    for($i = 0; $i < $number_of_players; $i++)
+                    {
+                        $next_player_id = self::getPlayerAfter( $current_player_id );
+                        
+                        // get stocks for this player
+                        $stocks = $company['stocks_by_player'][$next_player_id];
+                        if($stocks['ownership'] >= 3)
+                        {
+                            $new_owner_id = $next_player_id;
+                            break;
+                        }
+
+                        $current_player_id = $next_player_id;
+                    }
+
+                    // send director's share to new owner
+                    self::DbQuery("UPDATE card SET card_location = 'personal_area_${new_owner_id}', card_location_arg = $new_owner_id WHERE card_id = $director_share_id");
+
+                    // send 30% worth of shares from the new owner to the bank
+                    $player_stocks = $company['stocks_by_player'][$new_owner_id];
+                    $number_of_common_stocks_to_sell = 3;
+                    if($player_stocks['preferred_stock'] != null)
+                    {
+                        $number_of_common_stocks_to_sell = 1;
+                        $preferred_stock = $player_stocks['preferred_stock'];
+                        $preferred_stock_id = $preferred_stock['card_id'];
+                        self::DbQuery("UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$preferred_stock_id");
+
+                        self::notifyAllPlayers( "shareSold", "", array(
+                            'type' => $preferred_stock['card_type'],
+                            'id' => $preferred_stock_id,
+                            'player_id' => $new_owner_id
+                        ) );
+                    }
+                    for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
+                    {
+                        $common_stock = array_pop($player_stocks['stocks']);
+                        $common_stock_id = $common_stock['card_id'];
+                        self::DbQuery("UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$common_stock_id");
+
+                        self::notifyAllPlayers( "shareSold", "", array(
+                            'type' => $common_stock['card_type'],
+                            'id' => $common_stock_id,
+                            'player_id' => $new_owner_id
+                        ) );
+                    }
+
+                    // update company owner
+                    self::DbQuery("UPDATE company SET owner_id = $new_owner_id WHERE id = $company_id");
+
+                    // if player's initial company, set initial company id = null (this will be used to gain partner)
+                    self::DbQuery("UPDATE player SET initial_company_id = NULL WHERE player_id = $player_id AND initial_company_id = $company_id");
+
+                    $basic_infos = self::loadPlayersBasicInfos();
+                    self::notifyAllPlayers( "directorshipChange", clienttranslate('${player_name} sells Director\' Certificate for ${company_name}. ${new_player_name} becomes the new owner'), array(
+                        'player_name' => self::getActivePlayerName(),
+                        'new_player_name' => $basic_infos[$new_owner_id]['player_name'],
+                        'company_name' => self::getCompanyName($short_name),
+                        'short_name' => $short_name,
+                        'director_id' => $director_share_id
+                    ) );
+                }
+                else
+                {
+                    // this means player is selling a common stocks (can't have preferred if owner)
+                    // which means player has at least 40% of company, and that only one player could now own more (if other player also owned 40%)
+                    // check if any player now owns more
+                    // note: those common stocks have already been sent to the bank, no need to move them
+                    $lost_value = $company['lost_value'];
+                    $current_owner_stocks = $company['stocks_by_player'][$player_id];
+                    $new_ownership = $current_owner_stocks['ownership'] - $lost_value;
+
+                    $new_owner_id = null;
+                    $max_ownership = 0;
+                    foreach($company['stocks_by_player'] as $owner_id => $owner_stocks)
+                    {
+                        if($owner_id == $player_id)
+                            continue;
+                        
+                        $ownership = $owner_stocks['ownership'];
+                        if($ownership > $new_ownership && $ownership > $max_ownership)
+                        {
+                            $new_owner_id = $owner_id;
+                            $max_ownership = $ownership;
+                        }
+                    }
+
+                    if($new_owner_id != null)
+                    {
+                        // there's a new owner in town!
+                        $director_share = $current_owner_stocks['director_stock'];
+                        $director_share_id = $director_share['card_id'];
+
+                        // send director's share to new owner
+                        self::DbQuery("UPDATE card SET card_location = 'personal_area_${new_owner_id}', card_location_arg = $new_owner_id WHERE card_id = $director_share_id");
+
+                        // send 30% worth of shares from the new owner to the current player
+                        $player_stocks = $company['stocks_by_player'][$new_owner_id];
+                        $number_of_common_stocks_to_sell = 3;
+                        if($player_stocks['preferred_stock'] != null)
+                        {
+                            $number_of_common_stocks_to_sell = 1;
+                            $preferred_stock = $player_stocks['preferred_stock'];
+                            $preferred_stock_id = $preferred_stock['card_id'];
+                            self::DbQuery("UPDATE card SET card_location = 'personal_area_${player_id}', card_location_arg = $player_id WHERE card_id=$preferred_stock_id");
+
+                            self::notifyAllPlayers( "shareTransferred", "", array(
+                                'type' => $preferred_stock['card_type'],
+                                'id' => $preferred_stock_id,
+                                'player_id' => $player_id,
+                                'from_id' => $new_owner_id
+                            ) );
+                        }
+                        for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
+                        {
+                            $common_stock = array_pop($player_stocks['stocks']);
+                            $common_stock_id = $common_stock['card_id'];
+                            self::DbQuery("UPDATE card SET card_location = 'personal_area_${player_id}', card_location_arg = $player_id WHERE card_id=$common_stock_id");
+
+                            self::notifyAllPlayers( "shareTransferred", "", array(
+                                'type' => $common_stock['card_type'],
+                                'id' => $common_stock_id,
+                                'player_id' => $player_id,
+                                'from_id' => $new_owner_id
+                            ) );
+                        }
+
+                        // update company owner
+                        self::DbQuery("UPDATE company SET owner_id = $new_owner_id WHERE id = $company_id");
+
+                        // if player's initial company, set initial company id = null (this will be used to gain partner)
+                        self::DbQuery("UPDATE player SET initial_company_id = NULL WHERE player_id = $player_id AND initial_company_id = $company_id");
+
+                        $basic_infos = self::loadPlayersBasicInfos();
+                        self::notifyAllPlayers( "directorshipChange", clienttranslate('${player_name} no longer has share majority for ${company_name}. ${new_player_name} becomes the new owner'), array(
+                            'player_name' => self::getActivePlayerName(),
+                            'new_player_name' => $basic_infos[$new_owner_id]['player_name'],
+                            'company_name' => self::getCompanyName($short_name),
+                            'short_name' => $short_name,
+                            'director_id' => $director_share_id
+                        ) );
+                    }
+                }
+            }
         }
 
         // decrease share value
