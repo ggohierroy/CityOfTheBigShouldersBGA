@@ -2311,16 +2311,21 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "(NULL,'resource','$resource','$location','0')";
         }
 
-        // insert 5 random goals
-        $goals = array_keys($this->goal);
-        shuffle($goals);
-        $i = 0;
-        foreach($goals as $goal)
+        $public_goals = self::getGameStateValue("public_goals");
+
+        if($public_goals != 2)
         {
-            if($i == 5)
-                break;
-            $cards[] = "(NULL,'goal','$goal','goals','0')";
-            $i++;
+            // insert 5 random goals
+            $goals = array_keys($this->goal);
+            shuffle($goals);
+            $i = 0;
+            foreach($goals as $goal)
+            {
+                if($i == 5)
+                    break;
+                $cards[] = "(NULL,'goal','$goal','goals','0')";
+                $i++;
+            }
         }
 
         // insert rest of resources in the resource bag
