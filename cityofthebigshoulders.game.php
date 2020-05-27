@@ -4292,7 +4292,9 @@ class CityOfTheBigShoulders extends Table
                         'new_player_name' => $basic_infos[$new_owner_id]['player_name'],
                         'company_name' => self::getCompanyName($short_name),
                         'short_name' => $short_name,
-                        'director_id' => $director_share_id
+                        'director_id' => $director_share_id,
+                        'new_owner_id' => $new_owner_id,
+                        'previous_owner_id' => $player_id
                     ) );
                 }
                 else
@@ -4372,7 +4374,9 @@ class CityOfTheBigShoulders extends Table
                             'new_player_name' => $basic_infos[$new_owner_id]['player_name'],
                             'company_name' => self::getCompanyName($short_name),
                             'short_name' => $short_name,
-                            'director_id' => $director_share_id
+                            'director_id' => $director_share_id,
+                            'new_owner_id' => $new_owner_id,
+                            'previous_owner_id' => $player_id
                         ) );
                     }
                 }

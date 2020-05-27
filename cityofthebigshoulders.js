@@ -4177,6 +4177,9 @@ function (dojo, declare) {
             dojo.subscribe('shareSold', this, "notif_shareSold");
             this.notifqueue.setSynchronous('shareSold', 200);
 
+            dojo.subscribe('shareTransferred', this, "notif_shareTransferred");
+            this.notifqueue.setSynchronous('shareTransferred', 200);
+
             dojo.subscribe('emergencyFundraise', this, "notif_emergencyFundraise");
             this.notifqueue.setSynchronous('emergencyFundraise', 200);
 
@@ -4204,6 +4207,9 @@ function (dojo, declare) {
             dojo.subscribe('appealBonusGoodsTokenReceived', this, "notif_appealBonusGoodsTokenReceived");
             this.notifqueue.setSynchronous('appealBonusGoodsTokenReceived', 200);
 
+            dojo.subscribe('directorshipChange', this, "notif_directorshipChange");
+            this.notifqueue.setSynchronous('directorshipChange', 200);
+
             dojo.subscribe('scoreUpdated', this, "notif_scoreUpdated");
 
             dojo.subscribe('newRound', this, "notif_newRound");
@@ -4215,6 +4221,32 @@ function (dojo, declare) {
             dojo.subscribe('playerOrderInitialized', this, "notif_playerOrderInitialized");
 
             dojo.subscribe('playerOrderChanged', this, "notif_playerOrderChanged");
+        },
+
+        notif_directorshipChange: function(notif){
+            var shortName = notif.args.short_name;
+            var previous_owner_id = notif.args.previous_owner_id;
+            var new_owner_id = notif.args.new_owner_id;
+            var hash = this.hashString(shortName);
+
+            // all the content of the company needs to be transferred to the new element being created
+            var companyContentElement = dojo.byId("company_" + shortName);
+
+            var from = 'company_area_'+previous_owner_id+'_item_'+shortName;
+            this['companyArea'+new_owner_id].addToStockWithId(hash, shortName, from);
+            var stockElementId = this['companyArea'+new_owner_id].getItemDivId(shortName);
+            dojo.place(companyContentElement, stockElementId, "only");
+
+            this['companyArea'+previous_owner_id].removeFromStockById(shortName);
+
+            // transfer director share
+            var stockId = notif.args.director_id;
+            var stockType = shortName + '_director';
+            var hashStockType = this.hashString(stockType);
+
+            var from = 'personal_area_' + previous_owner_id + '_item_' + stockType + '_' + stockId; //personal_area_2319929_item_brunswick_common_133
+            this['personal_area_' + new_owner_id].addToStockWithId(hashStockType, stockType+'_'+stockId, from);
+            this['personal_area_' + previous_owner_id].removeFromStockById(stockType+'_'+stockId);
         },
 
         notif_playerOrderChanged: function(notif){
@@ -4339,6 +4371,18 @@ function (dojo, declare) {
             }
 
             this.updateCounters(notif.args.counters);
+        },
+
+        notif_shareTransferred: function(notif){
+            var stockId = notif.args.id;
+            var playerId = notif.args.player_id;
+            var stockType = notif.args.type;
+
+            var hashStockType = this.hashString(stockType);
+
+            var from = 'personal_area_' + notif.args.from_id + '_item_' + stockType + '_' + stockId; //personal_area_2319929_item_brunswick_common_133
+            this['personal_area_' + playerId].addToStockWithId(hashStockType, stockType+'_'+stockId, from);
+            this['personal_area_' + notif.args.from_id].removeFromStockById(stockType+'_'+stockId);
         },
 
         notif_shareSold: function(notif){
