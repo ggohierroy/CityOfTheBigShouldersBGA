@@ -2877,7 +2877,7 @@ class CityOfTheBigShoulders extends Table
         if(($factory_number == 2 && $short_name != 'henderson') || ($factory_number == 3 && $short_name == 'henderson'))
         {
             $initial_company_id = self::getUniqueValueFromDB("SELECT initial_company_id FROM player WHERE player_id = $player_id");
-            if($initial_company_id == $company_id)
+            if($initial_company_id == $company_id || $initial_company_id == null /* happens when the initial company is lost */)
                 self::gainPartner($player_id, 'company');
         }
 
