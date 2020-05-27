@@ -70,7 +70,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} may buy an available certificate or start a company'),
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
-        "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy" ),
+        "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy", "undo" ),
         "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5 )
     ),
 

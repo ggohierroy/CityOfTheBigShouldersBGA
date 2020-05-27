@@ -3913,6 +3913,7 @@ class CityOfTheBigShoulders extends Table
         $short_name = $split[0];
         $stock_type = $split[1];
         $card_id = $split[2];
+        $company_id = self::getUniqueValueFromDB("SELECT id FROM company WHERE short_name = '$short_name'");
 
         if($stock_type == 'director')
             throw new BgaVisibleSystemException("Can't buy director's share");
@@ -3965,7 +3966,7 @@ class CityOfTheBigShoulders extends Table
             throw new BgaUserException( self::_("You have reached your certificate limit") );
         
         // check if 60% limit in single company reached
-        $owned_share = $multiplier;
+        $owned_share = $multiplier; // add current certificate as baseline to calculate ownership
         foreach($player_shares as $player_share)
         {
             $split = explode('_', $player_share['card_type']);
@@ -4001,8 +4002,6 @@ class CityOfTheBigShoulders extends Table
 
         if($owned_share > 6)
             throw new BgaUserException( self::_("You cannot own more than 60% of any one company") );
-        
-        // TODO advanced game: check if player gains ownership of company
 
         // update player treasury
         $certificate_cost = $share_value * $multiplier;
@@ -4074,6 +4073,89 @@ class CityOfTheBigShoulders extends Table
             'counters' => $counters,
             'from' => $from // can be bank or company_stock_holder_${short_name}
         ) );
+
+        // advanced game: check if player gains ownership of company
+        $advanced_rules = self::getGameStateValue("advanced_rules");
+        if($advanced_rules == 2)
+        {
+            // if player already owner, nothing to do
+            $company_owner_id = self::getUniqueValueFromDB("SELECT owner_id FROM company WHERE short_name = '$short_name'");
+            if($player_id != $company_owner_id)
+            {
+                $company_stocks = self::getStocksByPlayer($company_id);
+                $new_ownership = $owned_share;
+                $current_owner_id = null;
+                foreach($company_stocks as $owner_id => $owner_stocks)
+                {
+                    if($owner_id == $player_id)
+                        continue;
+                    
+                    if($owner_stocks['ownership'] < $new_ownership)
+                    {
+                        $current_owner_id = $owner_id;
+                        break;
+                    }
+                }
+
+                if($current_owner_id != null)
+                {
+                    // we have a new owner in town!
+                    $current_owner_stocks = $company_stocks[$current_owner_id];
+                    $director_share = $current_owner_stocks['director_stock'];
+                    $director_share_id = $director_share['card_id'];
+
+                    // send director's share to new owner
+                    self::DbQuery("UPDATE card SET card_location = 'personal_area_${player_id}', card_location_arg = $player_id WHERE card_id = $director_share_id");
+
+                    // send 30% worth of shares from this player to the current owner of company
+                    $player_stocks = $company_stocks[$player_id];
+                    $number_of_common_stocks_to_sell = 3;
+                    if($player_stocks['preferred_stock'] != null)
+                    {
+                        $number_of_common_stocks_to_sell = 1;
+                        $preferred_stock = $player_stocks['preferred_stock'];
+                        $preferred_stock_id = $preferred_stock['card_id'];
+                        self::DbQuery("UPDATE card SET card_location = 'personal_area_${current_owner_id}', card_location_arg = $current_owner_id WHERE card_id=$preferred_stock_id");
+
+                        self::notifyAllPlayers( "shareTransferred", "", array(
+                            'type' => $preferred_stock['card_type'],
+                            'id' => $preferred_stock_id,
+                            'player_id' => $current_owner_id,
+                            'from_id' => $player_id
+                        ) );
+                    }
+                    for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
+                    {
+                        $common_stock = array_pop($player_stocks['stocks']);
+                        $common_stock_id = $common_stock['card_id'];
+                        self::DbQuery("UPDATE card SET card_location = 'personal_area_${current_owner_id}', card_location_arg = $current_owner_id WHERE card_id=$common_stock_id");
+
+                        self::notifyAllPlayers( "shareTransferred", "", array(
+                            'type' => $common_stock['card_type'],
+                            'id' => $common_stock_id,
+                            'player_id' => $current_owner_id,
+                            'from_id' => $player_id
+                        ) );
+                    }
+
+                    // update company owner
+                    self::DbQuery("UPDATE company SET owner_id = $player_id WHERE id = $company_id");
+
+                    // if player's initial company, set initial company id = null (this will be used to gain partner)
+                    self::DbQuery("UPDATE player SET initial_company_id = NULL WHERE player_id = $current_owner_id AND initial_company_id = $company_id");
+
+                    $basic_infos = self::loadPlayersBasicInfos();
+                    self::notifyAllPlayers( "directorshipChange", clienttranslate('${player_name} gains share majority for ${company_name} and becomes the new owner'), array(
+                        'player_name' => self::getActivePlayerName(),
+                        'company_name' => self::getCompanyName($short_name),
+                        'short_name' => $short_name,
+                        'director_id' => $director_share_id,
+                        'new_owner_id' => $player_id,
+                        'previous_owner_id' => $current_owner_id
+                    ) );
+                }
+            }
+        }
         
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameStockPhase' );

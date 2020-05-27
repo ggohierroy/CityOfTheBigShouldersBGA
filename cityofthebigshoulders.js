@@ -584,10 +584,11 @@ function (dojo, declare) {
                         break;
                     case 'playerSkipSellBuyPhase':
                         this.addActionButton( 'stock_pass', _('Pass Stock Action'), 'onStockPass');
-                        this.addActionButton( 'undo', _('Undo Skip Sell'), 'onUndo', null, false, 'red');
+                        this.addActionButton( 'undo', _('Undo Whole Stock Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'playerBuyPhase':
                         this.addActionButton( 'skip_buy', _('Skip'), 'onSkipBuy');
+                        this.addActionButton( 'undo', _('Undo Whole Stock Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_playerTurnSelectStartingShareValue':
                         this.addActionButton( 'initial_share_35', '$35', 'onStartCompany');
