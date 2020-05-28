@@ -3937,8 +3937,10 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'skipSell' );
 
+        $advanced_rules = self::getGameStateValue("advanced_rules");
         if($advanced_rules == 2)
         {
+            $player_id = self::getActivePlayerId();
             // this can only happen after a directorship change in the advanced game
             self::checkStockLimits($player_id);
         }
@@ -5013,7 +5015,15 @@ class CityOfTheBigShoulders extends Table
 
         self::undoSavepoint();
         
-        $this->gamestate->nextState( 'nextCompany' );
+        $advanced_rules = self::getGameStateValue("advanced_rules");
+        if($advanced_rules == 2)
+        {
+            $this->gamestate->nextState( 'nextEmergency' );
+        }
+        else
+        {
+            $this->gamestate->nextState( 'nextCompany' );
+        }
     }
 
     function stGameCleanup()

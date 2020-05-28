@@ -240,7 +240,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stGameOperationPhase",
-        "transitions" => array( "nextCompany" => 13, "cleanup" => 20, "gameEnd" => 99)
+        "transitions" => array( "nextCompany" => 13, "nextEmergency" => 34, "cleanup" => 20, "gameEnd" => 99)
     ),
 
     20 => array(
