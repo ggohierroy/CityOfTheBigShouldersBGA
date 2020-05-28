@@ -787,7 +787,7 @@ function (dojo, declare) {
         
         */
 
-        activateCompanyShares(shortName){
+        activateCompanyShares: function(shortName){
             var stockElements = dojo.query('#available_shares_company>.stockitem');
             for(var i = 0; i < stockElements.length; i++){
                 var stockElement = stockElements[i];
