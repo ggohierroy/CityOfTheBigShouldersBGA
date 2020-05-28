@@ -2563,6 +2563,8 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'good':
                 $auto_forfeited = self::gainGood($company_short_name);
+                if(!$auto_forfeited)
+                    $company['extra_goods'] += 1;
                 break;
             case 'bump':
                 self::increaseShareValue($company_short_name, 1);
