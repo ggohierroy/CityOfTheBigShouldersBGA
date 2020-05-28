@@ -181,7 +181,7 @@ $machinestates = array(
         "updateGameProgression" => true,
         "args" => "argsOperationPhase",
         "possibleactions" => array( "buyResources", "tradeResources", "useAsset", "skipBuyResources", "undo"  ),
-        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13, "zombiepass" => 19)
+        "transitions" => array( "playerProduceGoodsPhase" => 14, "freeAppealBonus" => 26, "loopback" => 13, "zombiepass" => 19, "playerDistributeGoodsPhase" => 16)
     ),
 
     14 => array(

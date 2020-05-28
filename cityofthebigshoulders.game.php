@@ -239,6 +239,25 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function canFactoryRun($short_name, $factory_number)
+    {
+        $factory_material = $this->companies[$short_name]['factories'][$factory_number];
+
+        // get workers and automated workers in factory
+        $location = "${short_name}_${factory_number}";
+        $automated = "${short_name}_worker_holder_${factory_number}";
+        $workers_in_factory = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = '$location'");
+        $automations_in_factory = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'automation' AND card_location = '$automated'");
+        
+        // check worker requirements for factory
+        if($factory_material['workers'] == $workers_in_factory + $automations_in_factory)
+            return true;
+        else
+            return false;
+    }
+
     function checkStockLimits($player_id)
     {
         // check if certificate limit reached
@@ -2575,7 +2594,7 @@ class CityOfTheBigShoulders extends Table
             {
                 $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
                 $total_factories = count($this->companies[$company_short_name]['factories']);
-                if($last_factory_produced == $total_factories)
+                if($last_factory_produced == $total_factories || !self::canFactoryRun($company_short_name, $last_factory_produced + 1))
                 {
                     // go to state distributeGoods
                     $this->gamestate->nextState( 'distributeGoods' );
@@ -2639,7 +2658,7 @@ class CityOfTheBigShoulders extends Table
             {
                 $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
                 $total_factories = count($this->companies[$short_name]['factories']);
-                if($last_factory_produced == $total_factories)
+                if($last_factory_produced == $total_factories || !self::canFactoryRun($short_name, $last_factory_produced + 1))
                 {
                     // go to state distributeGoods
                     $this->gamestate->nextState( 'distributeGoods' );
@@ -2815,13 +2834,7 @@ class CityOfTheBigShoulders extends Table
             throw new BgaVisibleSystemException("Company not owned by player");
 
         // check worker requirements for factory
-        $location = "${short_name}_${factory_number}";
-        $automated = "${short_name}_worker_holder_${factory_number}";
-        $workers_in_factory = self::getUniqueValueFromDB(
-            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = '$location'");
-        $automations_in_factory = self::getUniqueValueFromDB(
-            "SELECT COUNT(card_id) FROM card WHERE primary_type = 'automation' AND card_location = '$automated'");
-        if($factory_material['workers'] != $workers_in_factory + $automations_in_factory)
+        if(!self::canFactoryRun($short_name, $factory_number))
             throw new BgaUserException( self::_("Not enough workers to produce in this factory") );
 
         // check resource requirements for factory
@@ -2964,7 +2977,10 @@ class CityOfTheBigShoulders extends Table
                 return;
             }
 
-            $this->gamestate->nextState( 'nextFactory' );
+            if(self::canFactoryRun($short_name, $factory_number + 1))
+                $this->gamestate->nextState( 'nextFactory' );
+            else
+                $this->gamestate->nextState( 'distributeGoods' );
         }
     }
 
@@ -3148,7 +3164,14 @@ class CityOfTheBigShoulders extends Table
     function skipBuyResources()
     {
         self::checkAction( 'skipBuyResources' );
-        $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+
+        $company_id = self::getGameStateValue( 'current_company_id');
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id = $company_id");
+        $company_short_name = $company['short_name'];
+        if(self::canFactoryRun($company_short_name, 1))
+            $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+        else
+            $this->gamestate->nextState(' playerDistributeGoodsPhase ');
     }
 
     function managerBonusGainResources($resource_ids)
@@ -3211,7 +3234,7 @@ class CityOfTheBigShoulders extends Table
         // check if it was last factory to produce
         $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
         $total_factories = count($this->companies[$company_short_name]['factories']);
-        if($last_factory_produced == $total_factories)
+        if($last_factory_produced == $total_factories || !self::canFactoryRun($company_short_name, $last_factory_produced + 1))
         {
             // go to state distributeGoods
             $this->gamestate->nextState( 'distributeGoods' );
@@ -3291,7 +3314,10 @@ class CityOfTheBigShoulders extends Table
             'resource_ids' => $resource_array
         ) );
 
-        $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+        if(self::canFactoryRun($company_short_name, 1))
+            $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+        else
+            $this->gamestate->nextState(' playerDistributeGoodsPhase ');
     }
 
     // this function is called when buying an asset tile and the immediate bonus is an automation
