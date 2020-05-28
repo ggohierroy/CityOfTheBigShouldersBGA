@@ -2538,7 +2538,7 @@ class CityOfTheBigShoulders extends Table
         $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
 
-        $company = self::getNonEmptyObjectFromDB("SELECT treasury, id, short_name, owner_id FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT treasury, id, short_name, owner_id, extra_goods FROM company WHERE id = $company_id");
         $player_id = $player_id = self::getActivePlayerId();
 
         if($company['owner_id'] != $player_id)
@@ -2596,6 +2596,9 @@ class CityOfTheBigShoulders extends Table
                 $total_factories = count($this->companies[$company_short_name]['factories']);
                 if($last_factory_produced == $total_factories || !self::canFactoryRun($company_short_name, $last_factory_produced + 1))
                 {
+                    if($company['extra_goods'] > 0)
+                        self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
+
                     // go to state distributeGoods
                     $this->gamestate->nextState( 'distributeGoods' );
                 }
@@ -2626,7 +2629,7 @@ class CityOfTheBigShoulders extends Table
 
         $company_id = self::getGameStateValue('bonus_company_id');
 
-        $company = self::GetNonEmptyObjectFromDB("SELECT id, treasury, short_name, owner_id FROM company WHERE id = $company_id");
+        $company = self::GetNonEmptyObjectFromDB("SELECT id, treasury, short_name, owner_id, extra_goods FROM company WHERE id = $company_id");
         $player_id = $player_id = self::getActivePlayerId();
 
         if($company['owner_id'] != $player_id)
@@ -2660,6 +2663,9 @@ class CityOfTheBigShoulders extends Table
                 $total_factories = count($this->companies[$short_name]['factories']);
                 if($last_factory_produced == $total_factories || !self::canFactoryRun($short_name, $last_factory_produced + 1))
                 {
+                    if($company['extra_goods'] > 0)
+                        self::companyProduceGoods($short_name, $company_id, $company['extra_goods']);
+
                     // go to state distributeGoods
                     $this->gamestate->nextState( 'distributeGoods' );
                 }
@@ -2938,12 +2944,6 @@ class CityOfTheBigShoulders extends Table
 
         if($factory_number == count($company_material['factories']))
         {
-            if($company['extra_goods'] > 0)
-            {
-                // if last factory, produce extra goods if any
-                self::companyProduceGoods($short_name, $company_id, $company['extra_goods']);
-            }
-
             if($resources_gained)
             {
                 // go to resource bonus state
@@ -2956,6 +2956,9 @@ class CityOfTheBigShoulders extends Table
                 $this->gamestate->nextState( 'managerBonusAppeal' );
                 return;
             }
+
+            if($company['extra_goods'] > 0)
+                self::companyProduceGoods($short_name, $company_id, $company['extra_goods']);
 
             // go to state distributeGoods
             $this->gamestate->nextState( 'distributeGoods' );
@@ -2978,9 +2981,16 @@ class CityOfTheBigShoulders extends Table
             }
 
             if(self::canFactoryRun($short_name, $factory_number + 1))
+            {
                 $this->gamestate->nextState( 'nextFactory' );
+            }
             else
+            {
+                if($company['extra_goods'] > 0)
+                    self::companyProduceGoods($short_name, $company_id, $company['extra_goods']);
+
                 $this->gamestate->nextState( 'distributeGoods' );
+            }
         }
     }
 
@@ -3166,12 +3176,19 @@ class CityOfTheBigShoulders extends Table
         self::checkAction( 'skipBuyResources' );
 
         $company_id = self::getGameStateValue( 'current_company_id');
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, extra_goods FROM company WHERE id = $company_id");
         $company_short_name = $company['short_name'];
         if(self::canFactoryRun($company_short_name, 1))
+        {
             $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+        }
         else
+        {
+            if($company['extra_goods'] > 0)
+                self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
+
             $this->gamestate->nextState(' playerDistributeGoodsPhase ');
+        }
     }
 
     function managerBonusGainResources($resource_ids)
@@ -3189,7 +3206,7 @@ class CityOfTheBigShoulders extends Table
         $count = 0;
         $resource_array = [];
         $company_id = self::getGameStateValue( 'current_company_id');
-        $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT short_name, extra_goods FROM company WHERE id = $company_id");
         $company_short_name = $company['short_name'];
         foreach($resources as $resource)
         {
@@ -3236,6 +3253,9 @@ class CityOfTheBigShoulders extends Table
         $total_factories = count($this->companies[$company_short_name]['factories']);
         if($last_factory_produced == $total_factories || !self::canFactoryRun($company_short_name, $last_factory_produced + 1))
         {
+            if($company['extra_goods'] > 0)
+                self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
+
             // go to state distributeGoods
             $this->gamestate->nextState( 'distributeGoods' );
         }
@@ -3258,7 +3278,7 @@ class CityOfTheBigShoulders extends Table
         $count = 0;
         $resource_array = [];
         $company_id = self::getGameStateValue( 'current_company_id');
-        $company = self::getNonEmptyObjectFromDB("SELECT treasury, short_name FROM company WHERE id = $company_id");
+        $company = self::getNonEmptyObjectFromDB("SELECT treasury, short_name, extra_goods FROM company WHERE id = $company_id");
         $company_short_name = $company['short_name'];
         foreach($resources as $resource)
         {
@@ -3315,9 +3335,16 @@ class CityOfTheBigShoulders extends Table
         ) );
 
         if(self::canFactoryRun($company_short_name, 1))
+        {
             $this->gamestate->nextState( 'playerProduceGoodsPhase' );
+        }
         else
+        {
+            if($company['extra_goods'] > 0)
+                self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
+
             $this->gamestate->nextState(' playerDistributeGoodsPhase ');
+        }
     }
 
     // this function is called when buying an asset tile and the immediate bonus is an automation
