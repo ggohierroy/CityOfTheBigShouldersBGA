@@ -4209,17 +4209,14 @@ class CityOfTheBigShoulders extends Table
                 $current_owner_id = null;
                 foreach($company_stocks as $owner_id => $owner_stocks)
                 {
-                    if($owner_id == $player_id)
+                    if($owner_stocks['director_stock'] == null)
                         continue;
                     
-                    if($owner_stocks['ownership'] < $new_ownership)
-                    {
-                        $current_owner_id = $owner_id;
-                        break;
-                    }
+                    $current_owner_id = $owner_id;
+                    break;
                 }
 
-                if($current_owner_id != null)
+                if($company_stocks[$current_owner_id]['ownership'] < $new_ownership)
                 {
                     // we have a new owner in town!
                     $current_owner_stocks = $company_stocks[$current_owner_id];
