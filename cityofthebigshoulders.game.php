@@ -4811,6 +4811,10 @@ class CityOfTheBigShoulders extends Table
 
     function stGamePublicGoalScoring()
     {
+        $public_goals = self::getGameStateValue("public_goals");
+        if($public_goals == 2)
+            return;
+
         $goals = self::getObjectListFromDB("SELECT card_type FROM card WHERE primary_type = 'goal'", true);
 
         $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value FROM company");
