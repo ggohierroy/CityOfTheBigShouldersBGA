@@ -255,15 +255,16 @@ class CityOfTheBigShoulders extends Table
         }
         
         if(count($player_shares) == $certificate_limit)
-            throw new BgaUserException( self::_("You are over the certificate limit") );
+            throw new BgaUserException( self::_("You must sell certificates because you are over the certificate limit") );
         
         // check if 60% limit in single company reached
-        $owned_share = 0;
+        $ownership_by_company = [];
         foreach($player_shares as $player_share)
         {
             $split = explode('_', $player_share['card_type']);
             $owned_short_name = $split[0];
             $owned_stock_type = $split[1];
+            $owned_share = 0;
 
             if($owned_stock_type == 'preferred')
             {
@@ -277,10 +278,18 @@ class CityOfTheBigShoulders extends Table
             {
                 $owned_share += 1;
             }
+
+            if(!array_key_exists($owned_short_name, $ownership_by_company))
+                $ownership_by_company[$owned_short_name] = 0;
+
+            $ownership_by_company[$owned_short_name] += $owned_share;
         }
 
-        if($owned_share > 6)
-            throw new BgaUserException( self::_("You own more than 60% of a single company and must sell certficates") );
+        foreach($ownership_by_company as $ownership)
+        {
+            if($ownership > 6)
+                throw new BgaUserException( self::_("You own more than 60% of a single company and must sell certficates") );
+        }
     }
 
     function getStocksByPlayer($company_id)
