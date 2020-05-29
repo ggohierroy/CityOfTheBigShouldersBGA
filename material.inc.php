@@ -216,7 +216,7 @@ $this->companies = [
     "initial_appeal" => 1,
     "has_asset" => false,
     "salesperson" => [0 => 30, 1 => 40, 2 => 50],
-    "salesperson_number" => 4,
+    "salesperson_number" => 3,
     "factories" => [
       1 => [
         'workers'=> 1,
