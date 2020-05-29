@@ -232,7 +232,17 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "payDividends", "withhold", "useAsset", "undo" ),
-        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17)
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17, "useAssets" => 35)
+    ),
+
+    35 => array(
+        "name" => "playerUseAssetsPhase",
+        "description" => clienttranslate('${company_name} (${actplayer}) may use unexhausted assets'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may use unexhausted assets'),
+        "type" => "activeplayer",
+        "args" => "argsOperationPhase",
+        "possibleactions" => array( "useAsset", "finish", "undo" ),
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 36, "loopback" => 35)
     ),
 
     19 => array(
@@ -295,7 +305,7 @@ $machinestates = array(
         "transitions" => array( "loopback" => 28, "next" => 16 )
     ),
 
-    // this happens when an asset tile is used during the pay dividens step of the operation phase
+    // this happens when an asset tile is used during the pay dividends step of the operation phase
     29 => array(
         "name" => "playerDividendsAppealBonus",
         "description" => clienttranslate('${company_name} (${actplayer}) may gain or forfeit appeal bonus'),
@@ -304,6 +314,17 @@ $machinestates = array(
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
         "transitions" => array( "loopback" => 29, "next" => 17 )
+    ),
+
+    // this happens when an asset tile is used during the use asset step of the operation phase (final opportunity to use asset)
+    36 => array(
+        "name" => "playerUseAssetsAppealBonus",
+        "description" => clienttranslate('${company_name} (${actplayer}) may gain or forfeit appeal bonus'),
+        "descriptionmyturn" => clienttranslate('${company_name} (${you}) may gain or forfeit appeal bonus'),
+        "type" => "activeplayer",
+        "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
+        "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
+        "transitions" => array( "loopback" => 36, "next" => 35 )
     ),
 
     // this happens when an asset tile is used during the free action phase

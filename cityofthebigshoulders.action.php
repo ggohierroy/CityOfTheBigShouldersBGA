@@ -328,6 +328,13 @@
       self::ajaxResponse( );
     }
 
+    public function finish()
+    {
+      self::setAjaxMode();
+      $this->game->finish();
+      self::ajaxResponse( );
+    }
+
   }
   
 

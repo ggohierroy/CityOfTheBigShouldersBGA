@@ -369,6 +369,11 @@ function (dojo, declare) {
                         dojo.query('#haymarket_square').addClass('active');
                     }
                     break;
+                case 'playerUseAssetsPhase':
+                    if(this.isCurrentPlayerActive()){
+                        this.activateCompanyAsset(args.args.company_short_name);
+                    }
+                    break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     this.activateDemandForCompany(args.args.company_short_name);
                     break;
@@ -518,6 +523,9 @@ function (dojo, declare) {
                 case 'playerDividendsPhase':
                     dojo.query('.asset-tile').removeClass('active');
                     dojo.query('#haymarket_square').removeClass('active');
+                    break;
+                case 'playerUseAssetsPhase':
+                    dojo.query('.asset-tile').removeClass('active');
                     break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     dojo.query('.demand').removeClass('active');
@@ -669,6 +677,10 @@ function (dojo, declare) {
                     case 'playerDividendsPhase':
                         this.addActionButton( 'confirm_dividends', _('Confirm'), 'onConfirmPayDividends');
                         this.addActionButton( 'withhold_dividends', _('Withhold'), 'onWithhold');
+                        this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
+                        break;
+                    case 'playerUseAssetsPhase':
+                        this.addActionButton( 'finish', _('Finish Operation Phase'), 'onFinish');
                         this.addActionButton( 'undo', _('Undo Whole Operation Phase'), 'onUndo', null, false, 'red');
                         break;
                     case 'client_confirmGainLessResources':
@@ -3339,6 +3351,10 @@ function (dojo, declare) {
 
         onUndo: function(){
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/undo.html", { lock: true }, this, function( result ) {} );
+        },
+
+        onFinish: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/finish.html", { lock: true }, this, function( result ) {} );
         },
 
         onConfirmPayDividends: function(){

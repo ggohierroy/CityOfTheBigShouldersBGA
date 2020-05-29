@@ -2457,8 +2457,17 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function finish()
+    {
+        self::checkAction( 'finish' );
+
+        $this->gamestate->nextState( 'gameOperationPhase' );
+    }
+
     function emergencyFundraise($stock_ids)
     {
+        self::checkAction( 'emergencyFundraise' );
+
         $stocks = self::getObjectListFromDB("SELECT card_id, card_type, card_location, owner_type, card_type_arg FROM card
             WHERE primary_type = 'stock' AND card_id IN ($stock_ids)");
 
@@ -2522,6 +2531,8 @@ class CityOfTheBigShoulders extends Table
     
     function passEmergencyFundraise()
     {
+        self::checkAction( 'passEmergencyFundraise' );
+
         $this->gamestate->nextState( 'playerBuyResourcesPhase' );
     }
 
@@ -2798,7 +2809,12 @@ class CityOfTheBigShoulders extends Table
         if(!$protect)
             self::increaseShareValue($short_name, -1);
 
-        $this->gamestate->nextState( 'gameOperationPhase' );
+        // check if company has unused assets
+        $has_unused_asset = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE primary_type = 'asset' AND card_location = '$short_name' AND card_location_arg = 0");
+        if($has_unused_asset)
+            $this->gamestate->nextState( 'useAssets' );
+        else
+            $this->gamestate->nextState( 'gameOperationPhase' );
     }
 
     function payDividends()
@@ -2814,7 +2830,12 @@ class CityOfTheBigShoulders extends Table
 
         self::DbQuery("UPDATE company SET income = 0 WHERE id = $company_id");
 
-        $this->gamestate->nextState( 'gameOperationPhase' );
+        // check if company has unsused assets
+        $has_unused_asset = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE primary_type = 'asset' AND card_location = '$short_name' AND card_location_arg = 0");
+        if($has_unused_asset)
+            $this->gamestate->nextState( 'useAssets' );
+        else
+            $this->gamestate->nextState( 'gameOperationPhase' );
     }
 
     function withhold()
@@ -3002,9 +3023,13 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'distributeGoods' );
 
+        $good_ids = array_unique(explode(',', $good_ids));
         $demand_ids = explode(',', $demand_ids); // tranform string into array
         if(count($demand_ids) == 0)
             throw new BgaVisibleSystemException("Cannot distribute 0 goods");
+
+        if(count($demand_ids) != count($good_ids))
+            throw new BgaVisibleSystemException("Must have same number of goods and demand tiles");
 
         $goods_to_distribute_by_location = [];
         $unique_demand_tiles = [];
@@ -3121,10 +3146,10 @@ class CityOfTheBigShoulders extends Table
 
             // update goods location
             $values = [];
-            $good_ids = explode(',', $good_ids);
+            
             for($i = 0; $i < $number_of_goods_to_distribute; $i++)
             {
-                $good_id = $good_ids[$i];
+                $good_id = array_pop($good_ids);
                 if(!array_key_exists($good_id, $goods))
                     throw new BgaVisibleSystemException("Could not find distributed goods in goods owned by company");
                 
@@ -3132,13 +3157,13 @@ class CityOfTheBigShoulders extends Table
                 $values[] = $good['card_id'];
             }
 
-            $good_ids = implode(',', $values);
+            $values_string = implode(',', $values);
             self::DbQuery(
                 "UPDATE card SET
                 owner_type = NULL,
                 card_location = 'demand${demand_id}',
                 card_location_arg = 0
-                WHERE card_id IN ($good_ids)");
+                WHERE card_id IN ($values_string)");
         }
 
         // update income of company
