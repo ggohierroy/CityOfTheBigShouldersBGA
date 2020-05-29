@@ -3638,6 +3638,13 @@ function (dojo, declare) {
                 return;
             }
 
+            var item = this.capital_assets.getItemById(item_id);
+            if(item.type == 0)
+            {
+                this.capital_assets.unselectItem(item_id);
+                return;
+            }
+
             var split = item_id.split('_'); // union_stockyards_18
             this.clientStateArgs.actionArgs.assetId = split[split.length - 1];
             var shortName = this.clientStateArgs.companyShortName;
