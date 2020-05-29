@@ -1403,6 +1403,9 @@ function (dojo, declare) {
                 i++;
             }
 
+            // add an empty asset for when the deck is empty
+            newStock.addItemType( 0, 0, g_gamethemeurl+'img/buildings_small.png', 61 );
+
             this[stockName] = newStock;
         },
 
@@ -1808,6 +1811,13 @@ function (dojo, declare) {
             }
 
             this.capital_assets.changeItemsWeight( newWeights ) // { 1: 10, 2: 20, itemType: Weight }
+
+            // add empty assets when asset deck is empty
+            var items = this.capital_assets.getAllItems();
+            var emptySpaces = 5 - items.length;
+            for(var i = 0; i < emptySpaces; i++){
+                this.capital_assets.addToStock(0);
+            }
 
             for(var i = 0; i < companyWorkers.length; i++){
                 this.placeWorkerInFactory(companyWorkers[i]);
@@ -4453,6 +4463,13 @@ function (dojo, declare) {
             this.capital_assets.changeItemsWeight( newWeights );
 
             this.placeAsset(newAsset);
+
+            // add empty assets when asset deck is empty
+            var items = this.capital_assets.getAllItems();
+            var emptySpaces = 5 - items.length;
+            for(var i = 0; i < emptySpaces; i++){
+                this.capital_assets.addToStock(0);
+            }
         },
 
         notif_assetDiscarded: function(notif){
