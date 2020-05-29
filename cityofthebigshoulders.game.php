@@ -1790,7 +1790,7 @@ class CityOfTheBigShoulders extends Table
         $salesperson_number = $this->companies[$company_short_name]['salesperson_number'] - 1;
 
         if($salesperson_number <= $value)
-            return;
+            return true;
         
         // create manager in that factory
         $sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg)
@@ -1805,6 +1805,8 @@ class CityOfTheBigShoulders extends Table
             'location' => $company_short_name,
             'salesperson_id' => $salesperson_id
         ) );
+
+        return false;
     }
 
     function increaseCompanyAppeal($company_short_name, $company_id, $current_appeal, $steps)
@@ -2566,7 +2568,7 @@ class CityOfTheBigShoulders extends Table
                 self::hireWorkerFromSupply($company_short_name, $company_id, $factory_number);
                 break;
             case 'salesperson':
-                self::hire_salesperson($company_short_name, $company_id);
+                $auto_forfeited = self::hire_salesperson($company_short_name, $company_id);
                 break;
             case 'automation':
                 self::automateWorker($company_short_name, $factory_number, $relocate_number);
