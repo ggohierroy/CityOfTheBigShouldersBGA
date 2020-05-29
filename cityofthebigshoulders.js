@@ -3959,12 +3959,15 @@ function (dojo, declare) {
         onConfirmDistributeGoods: function(){
             var goods = this.clientStateArgs.goods;
             var demandIds = [];
+            var goodIds = [];
             for(var i = 0; i < goods.length; i++){
                 var good = goods[i];
                 demandIds.push(good.demandId);
+                goodIds.push(good.goodId);
             }
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/distributeGoods.html", { lock: true,
-                demandIds: demandIds.join(',')
+                demandIds: demandIds.join(','),
+                goodIds: goodIds.join(',')
             }, this, function( result ) {} );
         },
 

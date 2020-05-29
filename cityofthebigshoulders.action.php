@@ -273,7 +273,8 @@
     {
       self::setAjaxMode();
       $demand_ids = self::getArg( "demandIds", AT_numberlist, true );
-      $this->game->distributeGoods($demand_ids);
+      $good_ids = self::getArg( "goodIds", AT_numberlist, true );
+      $this->game->distributeGoods($demand_ids, $good_ids);
       self::ajaxResponse( );
     }
 

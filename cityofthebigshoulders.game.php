@@ -2996,7 +2996,7 @@ class CityOfTheBigShoulders extends Table
         }
     }
 
-    function distributeGoods($demand_ids)
+    function distributeGoods($demand_ids, $good_ids)
     {
         self::checkAction( 'distributeGoods' );
 
@@ -3023,7 +3023,7 @@ class CityOfTheBigShoulders extends Table
         $company_id = self::getGameStateValue('current_company_id');
         $company = self::getNonEmptyObjectFromDb("SELECT id, short_name, income FROM company WHERE id = $company_id");
         $short_name = $company['short_name'];
-        $goods = self::getObjectListFromDb("SELECT card_id FROM card WHERE primary_type = 'good' AND card_location = '$short_name'");
+        $goods = self::getCollectionFromDB("SELECT card_id FROM card WHERE primary_type = 'good' AND card_location = '$short_name'");
         $income = $company['income'];
         $company_material = $this->companies[$short_name];
         $company_type = $company_material['type']; // dry_goods
@@ -3119,9 +3119,14 @@ class CityOfTheBigShoulders extends Table
 
             // update goods location
             $values = [];
+            $good_ids = explode(',', $good_ids);
             for($i = 0; $i < $number_of_goods_to_distribute; $i++)
             {
-                $good = array_pop($goods);
+                $good_id = $good_ids[$i];
+                if(!array_key_exists($good_id, $goods))
+                    throw new BgaVisibleSystemException("Could not find distributed goods in goods owned by company");
+                
+                $good = $goods[$good_id];
                 $values[] = $good['card_id'];
             }
 
