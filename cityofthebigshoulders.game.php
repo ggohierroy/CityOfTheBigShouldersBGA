@@ -153,8 +153,10 @@ class CityOfTheBigShoulders extends Table
         $sql = "SELECT id, treasury, appeal, next_company_id, share_value_step, owner_id, short_name, extra_goods FROM company";
         $owned_companies = self::getCollectionFromDb( $sql );
         $result['owned_companies'] = $owned_companies;
-        $result['company_order'] = self::getCurrentCompanyOrder($owned_companies);
 
+        // return order of companies and counters for that order
+        $company_order = self::getCurrentCompanyOrder($owned_companies);
+        $result['company_order'] = $company_order;
         $result['all_buildings'] = $this->building;
         $result['all_companies'] = $this->companies;
         $result['general_action_spaces'] = $this->general_action_spaces;
@@ -186,17 +188,26 @@ class CityOfTheBigShoulders extends Table
         self::updateStockCounters($result['counters'], $items, $owned_companies);
 
         // add a counter for each company (because all counters must exist on setup)
-        foreach($this->companies as $short_name => $company){
+        foreach($this->companies as $short_name => $company)
+        {
             $short_name = $company['short_name'];
-            $money_id = "money_${short_name}";
-            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => 0 );
+            self::addCounter($result ['counters'], "money_${short_name}", 0);
+            self::addCounter($result ['counters'], "appeal_${short_name}", 0);
+            self::addCounter($result['counters'], "order_${short_name}", 0);
+        }
+
+        foreach($company_order as $company)
+        {
+            $short_name = $company['short_name'];
+            self::addCounter($result['counters'], "order_${short_name}", $company["order"]);
         }
 
         // update counter for owned companies
-        foreach($owned_companies as $id => $company){
+        foreach($owned_companies as $id => $company)
+        {
             $short_name = $company['short_name'];
-            $money_id = "money_${short_name}";
-            $result ['counters'] [$money_id] = array ('counter_name' => $money_id, 'counter_value' => $company['treasury'] );
+            self::addCounter($result ['counters'], "money_${short_name}", $company['treasury']);
+            self::addCounter($result ['counters'], "appeal_${short_name}", $company["appeal"]);
         }
 
         foreach($result['players'] as $player_id => $player)
@@ -1828,12 +1839,21 @@ class CityOfTheBigShoulders extends Table
             next_company_id = $next_company_id 
             WHERE short_name = '$company_short_name'");
 
+        $counters = [];
+        self::addCounter($counters, "appeal_${company_short_name}", $new_appeal);
+        foreach($current_order as $company)
+        {
+            $short_name = $company['short_name'];
+            self::addCounter($counters, "order_$short_name", $company['order']);
+        }
+        
         self::notifyAllPlayers( "appealIncreased", clienttranslate( '${company_name} increased its appeal to ${appeal}' ), array(
             'company_name' => self::getCompanyName($company_short_name),
             'company_short_name' => $company_short_name,
             'appeal' => $new_appeal,
             'previous_appeal' => $current_appeal,
-            'order' => $current_order
+            'order' => $current_order,
+            'counters' => $counters
         ) );
 
         $last_bonus_gained = self::BONUS_LOOKUP[$current_appeal];
@@ -4800,9 +4820,20 @@ class CityOfTheBigShoulders extends Table
         // get the automation tokens that were just created
         $automations = self::getObjectListFromDB("SELECT * FROM card WHERE primary_type = 'automation' AND card_location_arg = $company_id");
 
+        // update counters
+        $counters = [];
+        self::addCounter($counters, "money_${player_id}", $newTreasury);
+        self::addCounter($counters, "money_${company_short_name}", $company_treasury);
+        self::addCounter($counters, "appeal_${company_short_name}", $initial_appeal);
+
+        $company_order = $query_result['order'];
+        foreach($company_order as $company)
+        {
+            $short_name = $company['short_name'];
+            self::addCounter($counters, "order_${short_name}", $company['order']);
+        }
+
         // notify players that company started
-        $money_id = "money_${player_id}";
-        $company_money_id = "money_${company_short_name}";
         self::notifyAllPlayers( "startCompany", clienttranslate( '${player_name} has started company ${company_name}' ), array(
             'player_id' => $player_id,
             'player_name' => self::getActivePlayerName(),
@@ -4811,10 +4842,8 @@ class CityOfTheBigShoulders extends Table
             'initial_share_value_step' => $initial_share_value_step,
             'owner_id' => $player_id,
             'appeal' => $initial_appeal,
-            'order' => $query_result['order'],
-            'counters' => [
-                $money_id => array ('counter_name' => $money_id, 'counter_value' => $newTreasury),
-                $company_money_id => array ('counter_name' => $company_money_id, 'counter_value' => $company_treasury)],
+            'order' => $company_order,
+            'counters' => $counters,
             'stocks' => $stocks
         ) );
 

@@ -1734,12 +1734,17 @@ function (dojo, declare) {
                 // place it in the correct zone, and then the order of the tokens will be adjusted
                 this['appeal_zone_'+company.appeal].placeInZone(tokenId, weight);
             }
+
+            var allCompanies = this.gamedatas.all_companies;
+            this.addTooltip( tokenId, allCompanies[company.short_name].name, "");
         },
 
         updateAppealTokens: function(appeal, company_order){
             var count = company_order.length;
 
             this['appeal_zone_'+appeal].removeAll();
+
+            var allCompanies = this.gamedatas.all_companies;
             
             for(var i in company_order){
                 var company = company_order[i];
@@ -1748,6 +1753,7 @@ function (dojo, declare) {
                 var weight = count - company.order;
                 this['appeal_zone_'+company.appeal].placeInZone('appeal_token_'+company.short_name, weight);
                 dojo.setStyle('appeal_token_'+company.short_name, 'z-index', weight);
+                this.addTooltip( 'appeal_token_'+company.short_name, allCompanies[company.short_name].name, "");
             }
         },
 
@@ -1758,6 +1764,9 @@ function (dojo, declare) {
 
             this.placeOnObject( 'share_token_'+short_name, 'overall_player_board_'+playerId );
             this['share_zone_'+share_value_step].placeInZone('share_token_'+short_name);
+
+            var allCompanies = this.gamedatas.all_companies;
+            this.addTooltip( 'share_token_'+short_name, allCompanies[short_name].name, "");
         },
 
         createShareValueZones: function(){
@@ -2044,8 +2053,21 @@ function (dojo, declare) {
             var companyId = 'company_' + companyShortName;
             var companyElement = dojo.place( this.format_block( 'jstpl_company_content', {
                 'id': companyId,
-                'short_name': companyShortName
+                'short_name': companyShortName,
+                'item_id': item_id
             } ), company_div );
+
+            this.addTooltip( item_id + '_appeal', _( "Current Appeal (Order of Operation)" ), "");
+
+            // this is a hack because when the companies are in transit between stocks
+            // there is momentarily two companies with contents that have the same ids
+            // because of that, we need to update the company treasury manually
+            var companyTreasuryElement = dojo.query('#' + item_id + ' #money_'+companyShortName)[0];
+            var companyAppealElement = dojo.query('#' + item_id + ' #appeal_'+companyShortName)[0];
+            var companyOrderElement = dojo.query('#' + item_id + ' #order_'+companyShortName)[0];
+            companyTreasuryElement.innerText = this.gamedatas.counters['money_' + companyShortName].counter_value;
+            companyAppealElement.innerText = this.gamedatas.counters['appeal_' + companyShortName].counter_value;
+            companyOrderElement.innerText = this.gamedatas.counters['order_' + companyShortName].counter_value;
 
             var company = this.gamedatas.all_companies[companyShortName];
 
@@ -4697,8 +4719,11 @@ function (dojo, declare) {
 
         notif_shareValueChange: function(notif){
             var shortName = notif.args.company_short_name;
-            this['share_zone_'+notif.args.previous_share_value_step].removeFromZone('share_token_'+shortName);
+            this['share_zone_'+notif.args.previous_share_value_step].removeFromZone('share_token_'+shortName, false);
             this['share_zone_'+notif.args.share_value_step].placeInZone('share_token_'+shortName);
+
+            var allCompanies = this.gamedatas.all_companies;
+            this.addTooltip( 'share_token_'+shortName, allCompanies[shortName].name, "");
         },
 
         notif_dividendEarned: function(notif){
@@ -4731,6 +4756,8 @@ function (dojo, declare) {
             }, null, notif.args.previous_appeal);
 
             this.updateAppealTokens(notif.args.appeal, notif.args.order);
+
+            this.updateCounters(notif.args.counters);
         },
 
         notif_workerReceived: function(notif){
@@ -4807,9 +4834,9 @@ function (dojo, declare) {
             var appeal = notif.args.appeal;
             var playerId = notif.args.owner_id;
             var initialShareValueStep = notif.args.initial_share_value_step;
-            
-            var directorStockId = notif.args.director_stock_id;
             var stocks = notif.args.stocks;
+
+            this.updateCounters(notif.args.counters);
 
             this.placeCompany({
                     short_name: shortName,
@@ -4833,14 +4860,6 @@ function (dojo, declare) {
             });
 
             this.updateAppealTokens(appeal, notif.args.order);
-
-            this.updateCounters(notif.args.counters);
-
-            // this is a hack because when the companies are in transit between stocks
-            // there is momentarily two companies with contents that have the same ids
-            // because of that, we need to update the company treasury manually
-            var companyTreasuryElement = dojo.query('#company_area_'+playerId+'_item_'+shortName+' #money_'+shortName)[0];
-            companyTreasuryElement.innerText = this.gamedatas.counters['money_' + shortName].counter_value;
         },
 
         notif_automationTokensCreated: function(notif) {

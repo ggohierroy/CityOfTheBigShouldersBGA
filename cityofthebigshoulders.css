@@ -118,6 +118,11 @@
     left: 70px
 }
 
+.company_appeal{
+    top: 190px;
+    left: 70px;
+}
+
  .panel-token {
     background-image: url( 'img/tokens.png' );
     display: inline-block;
@@ -132,6 +137,12 @@
 
 .money {  
     background-position: 0px 0px; 
+    width: 28px;
+    height: 28px;
+}
+
+.appeal {
+    background-position: -203px -23px; 
     width: 28px;
     height: 28px;
 }
@@ -166,10 +177,10 @@
 
 .extra-goods {
     width: 92px;
-    height: 35px;
+    height: 30px;
     position: absolute;
-    left: 69px;
-    top: 193px;
+    left: 255px;
+    top: 198px;
 }
 
 #player_order {

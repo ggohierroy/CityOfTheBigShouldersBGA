@@ -186,6 +186,7 @@ var jstpl_player_board = '\<div class="cp_board">\
 
 var jstpl_company_content = '<div id="${id}" class="company-content">\
 <div class="company_item company_money"><div class="panel-token money"></div><span id="money_${short_name}">0</span></div>\
+<div id="${item_id}_appeal" class="company_item company_appeal"><div class="panel-token appeal"></div><span id="appeal_${short_name}">0</span>(<span id="order_${short_name}">0</span>)</div>\
 </div>';
 
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
