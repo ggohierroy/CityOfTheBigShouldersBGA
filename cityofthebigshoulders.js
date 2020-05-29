@@ -242,13 +242,21 @@ function (dojo, declare) {
                 case 'playerSkipSellBuyPhase':
                     this.slideVertically('available_shares_wrapper', 'shares_top');
                     this.slideVertically('main_board_wrapper', 'board_bottom');
-                    if(args.args.round > 0)
-                        this.slideVertically('available_companies_wrapper', 'companies_top');
-                    if(this.isCurrentPlayerActive()) {
-                        if(args.args.round > 0){
-                            this.available_companies.setSelectionMode(1);
-                            dojo.query('#available_companies>.company').addClass('active');
+                    if(args.args.round > 0){
+                        var playerId = this.getActivePlayerId();
+                        var money = this.gamedatas.counters['money_' + playerId].counter_value;
+                        this.clientStateArgs.playerMoney = money;
+                        if(money >= 105){
+                            this.slideVertically('available_companies_wrapper', 'companies_top');
+
+                            if(this.isCurrentPlayerActive()) {
+                                this.available_companies.setSelectionMode(1);
+                                dojo.query('#available_companies>.company').addClass('active');
+                            }
                         }
+                        this.deactivateTooExpensiveStocks(money);
+                    }
+                    if(this.isCurrentPlayerActive()) {
                         this.available_shares_company.setSelectionMode(1);
                         this.available_shares_bank.setSelectionMode(1);
                         dojo.query('#available_shares_company>.stockitem').addClass('active');
@@ -258,18 +266,30 @@ function (dojo, declare) {
                 case 'playerBuyPhase':
                     this.slideVertically('available_shares_wrapper', 'shares_top');
                     this.slideVertically('main_board_wrapper', 'board_bottom');
-                    if(args.args.round > 0)
-                        this.slideVertically('available_companies_wrapper', 'companies_top');
-                    if(this.isCurrentPlayerActive()) {
-                        if(args.args.round > 0){
-                            this.available_companies.setSelectionMode(1);
-                            dojo.query('#available_companies>.company').addClass('active');
+                    if(args.args.round > 0){
+                        var playerId = this.getActivePlayerId();
+                        var money = this.gamedatas.counters['money_' + playerId].counter_value;
+                        this.clientStateArgs.playerMoney = money;
+                        if(money >= 105){
+                            this.slideVertically('available_companies_wrapper', 'companies_top');
+
+                            if(this.isCurrentPlayerActive()) {
+                                this.available_companies.setSelectionMode(1);
+                                dojo.query('#available_companies>.company').addClass('active');
+                            }
                         }
+
+                        this.deactivateTooExpensiveStocks(money);
+                    }
+                    if(this.isCurrentPlayerActive()) {
                         this.available_shares_company.setSelectionMode(1);
                         this.available_shares_bank.setSelectionMode(1);
                         dojo.query('#available_shares_company>.stockitem').addClass('active');
                         dojo.query('#available_shares_bank>.stockitem').addClass('active');
                     }
+                    break;
+                case 'client_playerTurnBuyCertificate':
+                    this.deactivateTooExpensiveStocks(this.clientStateArgs.playerMoney);
                     break;
                 case 'playerBuildingPhase':
                     this.slideVertically('main_board_wrapper', 'board_top');
@@ -449,13 +469,13 @@ function (dojo, declare) {
                     
                     break;
                 case 'playerSkipSellBuyPhase':
-                    dojo.query('#available_shares_company>.stockitem').removeClass('active');
-                    dojo.query('#available_shares_bank>.stockitem').removeClass('active');
+                    dojo.query('#available_shares_company>.stockitem').removeClass('active exhausted');
+                    dojo.query('#available_shares_bank>.stockitem').removeClass('active exhausted');
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerBuyPhase':
-                    dojo.query('#available_shares_company>.stockitem').removeClass('active');
-                    dojo.query('#available_shares_bank>.stockitem').removeClass('active');
+                    dojo.query('#available_shares_company>.stockitem').removeClass('active exhausted');
+                    dojo.query('#available_shares_bank>.stockitem').removeClass('active exhausted');
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerSellPhase':
@@ -546,7 +566,8 @@ function (dojo, declare) {
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'client_playerTurnBuyCertificate':
-                    
+                    dojo.query('#available_shares_company>.stockitem').removeClass('exhausted');
+                    dojo.query('#available_shares_bank>.stockitem').removeClass('exhausted');
                     break;
                 case 'playerBuildingPhase':
                 case 'clientPlayerDiscardBuilding':
@@ -798,6 +819,29 @@ function (dojo, declare) {
             script.
         
         */
+
+        deactivateTooExpensiveStocks: function(money){
+            var companyShares = this.available_shares_company.getAllItems();
+            for(var i = 0; i < companyShares.length; i++){
+                var share = companyShares[i];
+                var shareElementId = this.available_shares_company.getItemDivId(share.id);
+                var shareId = share.id.split('_')[2]; //brunswick_common_145
+                var value = this.gamedatas.counters['stock_' + shareId].counter_value;
+                if(value > money){
+                    dojo.addClass(shareElementId, 'exhausted');
+                }
+            }
+            var bankShares = this.available_shares_bank.getAllItems();
+            for(var i = 0; i < bankShares.length; i++){
+                var share = bankShares[i];
+                var shareElementId = this.available_shares_bank.getItemDivId(share.id);
+                var shareId = share.id.split('_')[2]; //brunswick_common_145
+                var value = this.gamedatas.counters['stock_' + shareId].counter_value;
+                if(value > money){
+                    dojo.addClass(shareElementId, 'exhausted');
+                }
+            }
+        },
 
         activateCompanyShares: function(shortName){
             var stockElements = dojo.query('#available_shares_company>.stockitem');
