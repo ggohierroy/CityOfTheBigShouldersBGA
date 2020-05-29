@@ -1091,6 +1091,10 @@ class CityOfTheBigShoulders extends Table
                 card_location = '50' OR
                 card_location = '40')");
 
+        // if full, don't try to refill
+        if(count($assets) == 5)
+            return;
+
         $spots = ['40', '50', '60', '70', '80'];
         $empty_spot = '';
 
@@ -1473,8 +1477,6 @@ class CityOfTheBigShoulders extends Table
                 'asset_id' => $asset['card_id']
             ) );
         }
-
-        self::refillAssets();
         
         return $asset_material['bonus'];
     }
@@ -5289,6 +5291,9 @@ class CityOfTheBigShoulders extends Table
 
     function stGameActionPhase()
     {
+        // since a player can undo his turn, we only refill assets here
+        self::refillAssets();
+
         $new_active_player = null;
 
         // get all players
