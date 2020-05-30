@@ -4937,14 +4937,20 @@ class CityOfTheBigShoulders extends Table
 
     function stGamePublicGoalScoring()
     {
+        $players = self::getCollectionFromDB("SELECT player_id, player_name, treasury, number_partners, player_score FROM player");
+        foreach($players as $player_id => $player)
+        {
+            self::setStat( $player['treasury'], 'treasury', $player_id);
+            self::setStat( $player['player_score'] - $player['treasury'], 'share_value', $player_id);
+        }
+        
         $public_goals = self::getGameStateValue("public_goals");
         if($public_goals == 2)
             return;
 
         $goals = self::getObjectListFromDB("SELECT card_type FROM card WHERE primary_type = 'goal'", true);
-
         $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value FROM company");
-        $players = self::getCollectionFromDB("SELECT player_id, player_name, treasury, number_partners, player_score FROM player");
+        
         $scores = []; //$scores[$player_id] = ['player_id' => $player_id, 'score_delta' => $multiplier * $value_delta];
         foreach($goals as $goal_type)
         {
@@ -5075,12 +5081,6 @@ class CityOfTheBigShoulders extends Table
             {
                 throw new BgaVisibleSystemException("Could not find data to calculate public goal");
             }
-        }
-
-        foreach($players as $player_id => $player)
-        {
-            self::setStat( $player['treasury'], 'treasury', $player_id);
-            self::setStat( $player['player_score'] - $player['treasury'], 'share_value', $player_id);
         }
 
         foreach($scores as $score)
