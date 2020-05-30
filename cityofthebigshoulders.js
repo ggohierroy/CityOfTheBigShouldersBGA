@@ -4609,23 +4609,17 @@ function (dojo, declare) {
         },
 
         notif_goodsDistributed: function(notif){
-            if(this.isCurrentPlayerActive())
-                return; // goods have already been moved
-            
-            // check if there are goods to distribute
             var shortName = notif.args.short_name;
-            var goods = this[shortName + '_goods'].getAllItems();
 
             for(var index in notif.args.demand_ids){
                 var demandId = notif.args.demand_ids[index];
                 var targetId = 'demand' + demandId;
+                var goodId = notif.args.good_ids[index];
 
                 // place good on demand tile
-                var good = goods.pop();
-                var card_id = good.split('_')[1]; // good_159
                 this.placeGood({
                     card_location: targetId + '_goods',
-                    card_id: card_id
+                    card_id: goodId
                 }, 'company', shortName + '_goods')
             }
         },

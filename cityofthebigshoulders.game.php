@@ -3112,6 +3112,7 @@ class CityOfTheBigShoulders extends Table
             WHERE primary_type = 'salesperson' AND card_location = '$short_name'");
         
         // check that is enough space on demand tiles for distributed goods
+        $goods_to_distribute = $good_ids;
         foreach($goods_to_distribute_by_location as $demand_id => $number_of_goods_to_distribute)
         {
             $value_of_goods = $company_material['salesperson'][$number_salespeople];
@@ -3171,7 +3172,7 @@ class CityOfTheBigShoulders extends Table
             
             for($i = 0; $i < $number_of_goods_to_distribute; $i++)
             {
-                $good_id = array_pop($good_ids);
+                $good_id = array_pop($goods_to_distribute);
                 if(!array_key_exists($good_id, $goods))
                     throw new BgaVisibleSystemException("Could not find distributed goods in goods owned by company");
                 
@@ -3198,7 +3199,8 @@ class CityOfTheBigShoulders extends Table
             'short_name' => $short_name,
             'count' => $count,
             'income' => $income,
-            'demand_ids' => $demand_ids
+            'demand_ids' => $demand_ids,
+            'good_ids' => $good_ids
         ) );
 
         $this->gamestate->nextState('dividends');
