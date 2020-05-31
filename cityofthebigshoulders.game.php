@@ -4670,7 +4670,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // insert in sold companies table, this player can't buy shares from this company this decade
-        $sql = "INSERT INTO sold_shares (player_id, round, company_short_name) VALUES ";
+        $sql = "INSERT IGNORE INTO sold_shares (player_id, round, company_short_name) VALUES ";
         $sql .= implode(',', $values);
         self::DbQuery($sql);
 
