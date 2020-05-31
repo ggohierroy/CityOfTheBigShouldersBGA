@@ -3327,6 +3327,9 @@ class CityOfTheBigShoulders extends Table
     function buyResources($resource_ids)
     {
         self::checkAction( 'buyResources' );
+
+        if($resource_ids == "")
+            throw new BgaUserException( self::_("You must buy at least one resource") );
         
         $in_clause = "(${resource_ids})";
         $sql = "SELECT card_id, owner_type, card_location, card_type FROM card WHERE primary_type = 'resource' AND card_id IN $in_clause";
