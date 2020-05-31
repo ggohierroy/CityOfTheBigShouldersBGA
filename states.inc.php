@@ -222,7 +222,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset", "undo" ),
-        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16)
+        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16, "useAssets" => 35)
     ),
 
     17 => array(
