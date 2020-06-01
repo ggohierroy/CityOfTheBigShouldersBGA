@@ -3245,7 +3245,7 @@ class CityOfTheBigShoulders extends Table
             if($company['extra_goods'] > 0)
                 self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
 
-            $this->gamestate->nextState(' playerDistributeGoodsPhase ');
+            $this->gamestate->nextState('playerDistributeGoodsPhase');
         }
     }
 
@@ -3404,7 +3404,7 @@ class CityOfTheBigShoulders extends Table
             if($company['extra_goods'] > 0)
                 self::companyProduceGoods($company_short_name, $company_id, $company['extra_goods']);
 
-            $this->gamestate->nextState(' playerDistributeGoodsPhase ');
+            $this->gamestate->nextState('playerDistributeGoodsPhase');
         }
     }
 
