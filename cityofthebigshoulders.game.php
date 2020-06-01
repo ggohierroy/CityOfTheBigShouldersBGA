@@ -2615,7 +2615,7 @@ class CityOfTheBigShoulders extends Table
 
             // notify payment
             self::notifyAllPlayers( "countersUpdated", clienttranslate('${company_name} automatically forfeits appeal bonus and receives $25'), array(
-                'company_name' => self::getCompanyName($short_name),
+                'company_name' => self::getCompanyName($company_short_name),
                 'counters' => $counters
             ) );
         }
