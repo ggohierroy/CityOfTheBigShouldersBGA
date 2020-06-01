@@ -5048,7 +5048,7 @@ class CityOfTheBigShoulders extends Table
                     break;
             }
 
-            if($value_by_player != null)
+            if($value_by_player !== null)
             {
                 // find max value
                 $max_value = 0;
