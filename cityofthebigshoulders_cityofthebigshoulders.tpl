@@ -41,6 +41,7 @@
                 <div id="haymarket"></div>
             </div>
             <div id="player_order"></div>
+            <div id="bag">Bag: <span id="resources_in_bag">0</span></div>
             <div id="round_1" class="round-spot"></div>
             <div id="round_2" class="round-spot"></div>
             <div id="round_3" class="round-spot"></div>

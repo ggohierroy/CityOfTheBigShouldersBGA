@@ -183,6 +183,12 @@
     top: 198px;
 }
 
+#bag {
+    top: 25px;
+    left: 500px;
+    position: absolute;
+}
+
 #player_order {
     width: 19px;
     height: 53px;

@@ -166,6 +166,8 @@ class CityOfTheBigShoulders extends Table
         $result['round'] = self::getGameStateValue('round');
         $result['phase'] = self::getGameStateValue('phase');
         $result['priority_deal_player_id'] = self::getGameStateValue('priority_deal_player_id');
+        $resources_in_bag = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'resource_bag'");
+        self::addCounter($result ['counters'], "resources_in_bag", $resources_in_bag);
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -1429,6 +1431,13 @@ class CityOfTheBigShoulders extends Table
                 'resources' => $market_square_resources
             ));
         }
+
+        $counters = [];
+        $resources_in_bag = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'resource_bag'");
+        self::addCounter($counters, "resources_in_bag", $resources_in_bag);
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $counters,
+        ) );
     }
 
     function gainAsset($company_name, $company, $asset, $should_replace)
