@@ -141,7 +141,7 @@
         <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
         <div id="building_area_{PLAYER_ID}"></div>
         <div class="personal_share_area">
-            <h3>Personal Shares</h3>
+            <h3>Personal Shares (<span id="current_shares_{PLAYER_ID}">0</span>/<span id="total_shares_{PLAYER_ID}">0</span>)</h3>
             <div id="personal_area_{PLAYER_ID}"></div>
         </div>
         <div class="owned_companies_area">

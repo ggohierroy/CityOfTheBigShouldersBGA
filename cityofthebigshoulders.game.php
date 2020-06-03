@@ -212,6 +212,23 @@ class CityOfTheBigShoulders extends Table
             self::addCounter($result ['counters'], "appeal_${short_name}", $company["appeal"]);
         }
 
+        // set certificate limit
+        $player_number = self::getPlayersNumber();
+        $certificate_limit = 14;
+        if($player_number == 2)
+        {
+            $certificate_limit = 10;
+        }  
+        else if($player_number == 3)
+        {
+            $certificate_limit = 12;
+        }
+
+        // get stocks per player
+        $stocks_per_player = self::getCollectionFromDB(
+            "SELECT card_location_arg AS player_id, COUNT(card_id) AS stock_count FROM card 
+            WHERE primary_type = 'stock' AND owner_type = 'player' GROUP BY card_location_arg");
+
         foreach($result['players'] as $player_id => $player)
         {
             $money_id = "money_${player_id}";
@@ -221,6 +238,12 @@ class CityOfTheBigShoulders extends Table
             $result ['counters'] [$money_id] = array ('counter_name' => "money_${player_id}", 'counter_value' => $player['treasury'] );
             $result ['counters'] [$partner_current] = array ('counter_name' => $partner_current, 'counter_value' => $player['current_number_partners'] );
             $result ['counters'] [$partner_id] = array ('counter_name' => $partner_id, 'counter_value' => $player['number_partners'] );
+            self::addCounter($result ['counters'], "total_shares_${player_id}", $certificate_limit);
+
+            if(array_key_exists($player_id, $stocks_per_player))
+                self::addCounter($result ['counters'], "current_shares_${player_id}", $stocks_per_player[$player_id]['stock_count']);
+            else
+                self::addCounter($result ['counters'], "current_shares_${player_id}", 0);
         }
   
         return $result;
@@ -4264,6 +4287,7 @@ class CityOfTheBigShoulders extends Table
             'from' => $from // can be bank or company_stock_holder_${short_name}
         ) );
 
+        $stock_count_counters = [];
         // advanced game: check if player gains ownership of company
         $advanced_rules = self::getGameStateValue("advanced_rules");
         if($advanced_rules == 2)
@@ -4288,6 +4312,7 @@ class CityOfTheBigShoulders extends Table
                 {
                     // we have a new owner in town!
                     $current_owner_stocks = $company_stocks[$current_owner_id];
+                    $stock_count = count($current_owner_stocks) - 1; // lost director's share
                     $director_share = $current_owner_stocks['director_stock'];
                     $director_share_id = $director_share['card_id'];
 
@@ -4310,6 +4335,8 @@ class CityOfTheBigShoulders extends Table
                             'player_id' => $current_owner_id,
                             'from_id' => $player_id
                         ) );
+
+                        $stock_count++;
                     }
                     for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
                     {
@@ -4323,6 +4350,8 @@ class CityOfTheBigShoulders extends Table
                             'player_id' => $current_owner_id,
                             'from_id' => $player_id
                         ) );
+
+                        $stock_count++;
                     }
 
                     // update company owner
@@ -4340,10 +4369,21 @@ class CityOfTheBigShoulders extends Table
                         'new_owner_id' => $player_id,
                         'previous_owner_id' => $current_owner_id
                     ) );
+
+                    self::addCounter($stock_count_counters, "current_shares_${current_owner_id}", $stock_count);
                 }
             }
         }
-        
+
+        // update stock count
+        $stock_count = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) AS stock_count FROM card 
+            WHERE primary_type = 'stock' AND owner_type = 'player' AND card_location_arg = $player_id");
+        self::addCounter($stock_count_counters, "current_shares_${player_id}", $stock_count);
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $stock_count_counters,
+        ) );
+
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'gameStockPhase' );
     }
@@ -4479,6 +4519,7 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
+        $stock_count_counters = [];
         if($advanced_rules == 2)
         {
             // check if change of directorship
@@ -4522,6 +4563,7 @@ class CityOfTheBigShoulders extends Table
 
                     // send 30% worth of shares from the new owner to the bank
                     $player_stocks = $company['stocks_by_player'][$new_owner_id];
+                    $stock_count = count($player_stocks) + 1; // player gets the director's share
                     $number_of_common_stocks_to_sell = 3;
                     if($player_stocks['preferred_stock'] != null)
                     {
@@ -4535,6 +4577,8 @@ class CityOfTheBigShoulders extends Table
                             'id' => $preferred_stock_id,
                             'player_id' => $new_owner_id
                         ) );
+
+                        $stock_count--;
                     }
                     for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
                     {
@@ -4547,6 +4591,8 @@ class CityOfTheBigShoulders extends Table
                             'id' => $common_stock_id,
                             'player_id' => $new_owner_id
                         ) );
+
+                        $stock_count--;
                     }
 
                     // update company owner
@@ -4565,6 +4611,8 @@ class CityOfTheBigShoulders extends Table
                         'new_owner_id' => $new_owner_id,
                         'previous_owner_id' => $player_id
                     ) );
+
+                    self::addCounter($stock_count_counters, "current_shares_${new_owner_id}", $stock_count);
                 }
                 else
                 {
@@ -4602,6 +4650,7 @@ class CityOfTheBigShoulders extends Table
 
                         // send 30% worth of shares from the new owner to the current player
                         $player_stocks = $company['stocks_by_player'][$new_owner_id];
+                        $stock_count = count($player_stocks) + 1; // player gets the director's share
                         $number_of_common_stocks_to_sell = 3;
                         if($player_stocks['preferred_stock'] != null)
                         {
@@ -4616,6 +4665,8 @@ class CityOfTheBigShoulders extends Table
                                 'player_id' => $player_id,
                                 'from_id' => $new_owner_id
                             ) );
+
+                            $stock_count--;
                         }
                         for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
                         {
@@ -4629,6 +4680,8 @@ class CityOfTheBigShoulders extends Table
                                 'player_id' => $player_id,
                                 'from_id' => $new_owner_id
                             ) );
+
+                            $stock_count--;
                         }
 
                         // update company owner
@@ -4647,6 +4700,8 @@ class CityOfTheBigShoulders extends Table
                             'new_owner_id' => $new_owner_id,
                             'previous_owner_id' => $player_id
                         ) );
+
+                        self::addCounter($stock_count_counters, "current_shares_${new_owner_id}", $stock_count);
                     }
                 }
             }
@@ -4703,6 +4758,15 @@ class CityOfTheBigShoulders extends Table
             // this can only happen after a directorship change in the advanced game
             self::checkStockLimits($player_id);
         }
+
+        // update stock count
+        $stock_count = self::getUniqueValueFromDB(
+            "SELECT COUNT(card_id) AS stock_count FROM card 
+            WHERE primary_type = 'stock' AND owner_type = 'player' AND card_location_arg = $player_id");
+        self::addCounter($stock_count_counters, "current_shares_${player_id}", $stock_count);
+        self::notifyAllPlayers( "countersUpdated", "", array(
+            'counters' => $stock_count_counters,
+        ) );
 
         self::setGameStateValue( "consecutive_passes", 0 );
         $this->gamestate->nextState( 'playerBuyPhase' );
@@ -4865,11 +4929,15 @@ class CityOfTheBigShoulders extends Table
             'automation_tokens' => $automations
         ]);
 
+        // update stock price inside each stock of newly create company
         $counters = [];
         $companies = [];
         $company['share_value_step'] = $initial_share_value_step;
         $companies[$company_id] = $company;
         self::updateStockCounters($counters, $stocks, $companies);
+
+        // update number of stocks for player
+        self::addCounter($counters, "current_shares_${player_id}", count($player_shares) + 1);
 
         self::notifyAllPlayers( "countersUpdated", "", array(
             'counters' => $counters
