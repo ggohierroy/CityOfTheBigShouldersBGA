@@ -4322,12 +4322,15 @@ class CityOfTheBigShoulders extends Table
 
                     // we have a new owner in town!
                     $current_owner_stocks = $company_stocks[$current_owner_id];
-                    $stock_count = count($current_owner_stocks) - 1; // lost director's share
+                    $stock_count = self::getUniqueValueFromDB(
+                        "SELECT COUNT(card_id) AS stock_count FROM card 
+                        WHERE primary_type = 'stock' AND owner_type = 'player' AND card_location_arg = $current_owner_id");
                     $director_share = $current_owner_stocks['director_stock'];
                     $director_share_id = $director_share['card_id'];
 
                     // send director's share to new owner
                     self::DbQuery("UPDATE card SET card_location = 'personal_area_${player_id}', card_location_arg = $player_id WHERE card_id = $director_share_id");
+                    $stock_count--;
 
                     // send 30% worth of shares from this player to the current owner of company
                     $player_stocks = $company_stocks[$player_id];
@@ -4572,12 +4575,17 @@ class CityOfTheBigShoulders extends Table
                         $current_player_id = $next_player_id;
                     }
 
+                    // count number of shares for that player
+                    $stock_count = self::getUniqueValueFromDB(
+                        "SELECT COUNT(card_id) AS stock_count FROM card 
+                        WHERE primary_type = 'stock' AND owner_type = 'player' AND card_location_arg = $new_owner_id");
+
                     // send director's share to new owner
                     self::DbQuery("UPDATE card SET card_location = 'personal_area_${new_owner_id}', card_location_arg = $new_owner_id WHERE card_id = $director_share_id");
+                    $stock_count++;
 
                     // send 30% worth of shares from the new owner to the bank
                     $player_stocks = $company['stocks_by_player'][$new_owner_id];
-                    $stock_count = count($player_stocks) + 1; // player gets the director's share
                     $number_of_common_stocks_to_sell = 3;
                     if($player_stocks['preferred_stock'] != null)
                     {
@@ -4659,12 +4667,17 @@ class CityOfTheBigShoulders extends Table
                         $director_share = $current_owner_stocks['director_stock'];
                         $director_share_id = $director_share['card_id'];
 
+                        // count number of shares for that player
+                        $stock_count = self::getUniqueValueFromDB(
+                            "SELECT COUNT(card_id) AS stock_count FROM card 
+                            WHERE primary_type = 'stock' AND owner_type = 'player' AND card_location_arg = $new_owner_id");
+
                         // send director's share to new owner
                         self::DbQuery("UPDATE card SET card_location = 'personal_area_${new_owner_id}', card_location_arg = $new_owner_id WHERE card_id = $director_share_id");
+                        $stock_count++;
 
                         // send 30% worth of shares from the new owner to the current player
                         $player_stocks = $company['stocks_by_player'][$new_owner_id];
-                        $stock_count = count($player_stocks) + 1; // player gets the director's share
                         $number_of_common_stocks_to_sell = 3;
                         if($player_stocks['preferred_stock'] != null)
                         {
