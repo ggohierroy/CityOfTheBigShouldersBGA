@@ -590,6 +590,10 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'playerconfirmDirectorship':
+                        this.addActionButton( 'confirm_gain_directoship', _('Confirm'), 'onConfirmDirectorshipChange');
+                        this.addActionButton( 'undo', _('Undo Whole Stock Phase'), 'onUndo', null, false, 'red');
+                        break;
                     case 'client_playerConfirmEmergencyFundraise':
                         this.addActionButton( 'confirm', _('Confirm'), 'onConfirmEmergencyFundraise');
                         this.addActionButton( 'concel', _('Cancel'), 'onCancelEmergencyFundraise');
@@ -3550,6 +3554,10 @@ function (dojo, declare) {
 
         onConfirmAssetUse: function(event){
             this.confirmAssetUse(this.clientStateArgs.assetName);
+        },
+
+        onConfirmDirectorshipChange: function(){
+            this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/confirmDirectorship.html", { lock: true }, this, function( result ) {} );
         },
 
         onConfirmEmergencyFundraise: function(){

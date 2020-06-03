@@ -335,6 +335,13 @@
       self::ajaxResponse( );
     }
 
+    public function confirmDirectorship()
+    {
+      self::setAjaxMode();
+      $this->game->confirmDirectorship();
+      self::ajaxResponse( );
+    }
+
   }
   
 

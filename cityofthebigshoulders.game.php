@@ -2511,6 +2511,13 @@ class CityOfTheBigShoulders extends Table
         (note: each method below must match an input method in cityofthebigshoulders.action.php)
     */
 
+    function confirmDirectorship()
+    {
+        self::checkAction( 'confirmDirectorship' );
+
+        $this->gamestate->nextState( 'gameStockPhase' );
+    }
+
     function finish()
     {
         self::checkAction( 'finish' );
@@ -4290,6 +4297,7 @@ class CityOfTheBigShoulders extends Table
         $stock_count_counters = [];
         // advanced game: check if player gains ownership of company
         $advanced_rules = self::getGameStateValue("advanced_rules");
+        $directorship_change = false;
         if($advanced_rules == 2)
         {
             // if player already owner, nothing to do
@@ -4310,6 +4318,8 @@ class CityOfTheBigShoulders extends Table
 
                 if($company_stocks[$current_owner_id]['ownership'] < $new_ownership)
                 {
+                    $directorship_change = true;
+
                     // we have a new owner in town!
                     $current_owner_stocks = $company_stocks[$current_owner_id];
                     $stock_count = count($current_owner_stocks) - 1; // lost director's share
@@ -4385,7 +4395,11 @@ class CityOfTheBigShoulders extends Table
         ) );
 
         self::setGameStateValue( "consecutive_passes", 0 );
-        $this->gamestate->nextState( 'gameStockPhase' );
+
+        if($directorship_change)
+            $this->gamestate->nextState( 'playerconfirmDirectorship' );
+        else
+            $this->gamestate->nextState( 'gameStockPhase' );
     }
 
     function sellShares($selected_shares)

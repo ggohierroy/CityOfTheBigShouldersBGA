@@ -61,7 +61,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "passStockAction", "undo" ),
-        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37 )
     ),
 
     8 => array(
@@ -71,7 +71,16 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy", "undo" ),
-        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37 )
+    ),
+
+    37 => array(
+        "name" => "playerconfirmDirectorship",
+        "description" => clienttranslate('${actplayer} must confirm directorship change'),
+        "descriptionmyturn" => clienttranslate('${you} must confirm directorship change'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "confirmDirectorship", "undo" ),
+        "transitions" => array( "gameStockPhase" => 5 )
     ),
 
     5 => array(
