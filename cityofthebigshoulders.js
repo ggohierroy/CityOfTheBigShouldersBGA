@@ -2679,7 +2679,7 @@ function (dojo, declare) {
                     this.clientStateArgs.selectedFactories.push({ workerId: workerId, factoryNumber: factoryNumber });
                     this.clientStateArgs.totalCost += cost;
                     this.setClientState("client_placeHiredWorkers", {
-                        descriptionmyturn : dojo.string.substitute(_('Hire ${numberWorkers} worker for $${cost}'),{
+                        descriptionmyturn : dojo.string.substitute(_('Hire ${numberWorkers} worker for $${cost}. Select another factory to hire 1 more.'),{
                             cost: this.clientStateArgs.totalCost,
                             numberWorkers: this.clientStateArgs.numberOfWorkersToBuy
                         })
@@ -2858,7 +2858,7 @@ function (dojo, declare) {
                     this.clientStateArgs.selectedFactories = selectedFactories;
                     this.clientStateArgs.totalCost = cost;
                     this.setClientState("client_placeHiredWorkers", {
-                        descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}'),{
+                        descriptionmyturn : dojo.string.substitute(_('Hire 1 worker for $${cost}. Select another factory to hire 1 more.'),{
                             cost: cost,
                         })
                     });
