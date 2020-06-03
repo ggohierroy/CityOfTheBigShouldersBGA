@@ -5529,6 +5529,30 @@ class CityOfTheBigShoulders extends Table
 
             if($new_active_player == null)
             {
+                // if the active player is not the last player, we need to update the player order for the next round
+                if($last_player['player_id'] != $active_player_id)
+                {            
+                    // the first player for the next sequence is the last player that used advertising
+                    // if other players used it, they are next in reverse order of using advertising
+                    foreach($players as $player_id => $player)
+                    {
+                        $players[$player_id]['player_order'] = $player['next_sequence_order'];
+                        $sql = "UPDATE player SET player_order = next_sequence_order WHERE player_id = $player_id";
+                        self::DbQuery($sql);
+                    }
+
+                    // Define the custom sort function
+                    function custom_sort($a,$b) {
+                        return $a['player_order']>$b['player_order'];
+                    }
+                    // Sort the multidimensional array
+                    usort($players, "custom_sort");
+
+                    self::notifyAllPlayers( "playerOrderChanged", clienttranslate('Player order adjusted for next sequence'), array(
+                        'player_order' => $players
+                    ) );
+                }
+
                 // if no more partners go to playerOperationPhase
                 // Active player = player with company that is first in appeal order
                 // give extra time to player
