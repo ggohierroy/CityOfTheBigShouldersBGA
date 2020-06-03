@@ -1464,7 +1464,7 @@ function (dojo, declare) {
             }
 
             // add an empty asset for when the deck is empty
-            newStock.addItemType( 0, 0, g_gamethemeurl+'img/buildings_small.png', 61 );
+            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_small.png', 61 );
 
             this[stockName] = newStock;
         },
@@ -4445,6 +4445,7 @@ function (dojo, declare) {
             var assetId = notif.args.asset.card_id;
             var fromItemDiv = this.capital_assets.getItemDivId(assetName + '_' + assetId);
             this.placeAsset(notif.args.asset, 'capital_assets', fromItemDiv);
+            this.capital_assets.addToStock(0);
         },
 
         notif_buildingsDealt: function(notif){
@@ -4557,6 +4558,8 @@ function (dojo, declare) {
                 newWeights[hash] = 80-Number(asset.card_location);
             }
 
+            // remove any white space that would be added during a player's turn when buying assets
+            this.capital_assets.removeFromStock(0);
             this.capital_assets.changeItemsWeight( newWeights );
 
             this.placeAsset(newAsset);
