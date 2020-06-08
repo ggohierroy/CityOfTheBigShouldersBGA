@@ -120,6 +120,7 @@ function (dojo, declare) {
             dojo.connect( this.capital_assets, 'onChangeSelection', this, 'onAssetSelected' );
             this.createResourceStock('haymarket');
             dojo.connect($('haymarket_square'), 'onclick', this, 'onHaymarketSquareClicked');
+            this.haymarket.onItemCreate = dojo.hitch( this, 'onHaymarketResourceCreated' ); 
             this.createResourceStock('supply_x');
             this.createResourceStock('supply_30');
             this.createResourceStock('supply_20');
@@ -3694,11 +3695,15 @@ function (dojo, declare) {
             });
         },
 
-        onHaymarketSquareClicked: function(event){
-            dojo.stopEvent(event);
+        onHaymarketResourceCreated: function(item_div, asset_type_id, item_id){
+            dojo.connect($(item_div), 'onclick', this, 'onHaymarketSquareClicked');
+        },
 
+        onHaymarketSquareClicked: function(event){
             if(!this.checkAction('tradeResources'))
                 return;
+            
+            dojo.stopEvent(event);
 
             // check resources in haymarket
             var items = this.haymarket.getAllItems();
