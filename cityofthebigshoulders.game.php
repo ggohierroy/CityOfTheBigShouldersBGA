@@ -1397,18 +1397,24 @@ class CityOfTheBigShoulders extends Table
             $resource_ids = [];
             for($j = 0; $j < $refill_amount; $j++)
             {
+                if(count($drawn_resources) == 0)
+                    continue;
+
                 $resource = array_pop($drawn_resources);
                 $resource_ids[] = $resource['card_id'];
                 $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
             }
 
-            $in_condition = implode(',', $resource_ids);
-            self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
+            if(count($resource_ids) != 0)
+            {
+                $in_condition = implode(',', $resource_ids);
+                self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
 
-            self::notifyAllPlayers( "resourcesDrawn", "", array(
-                'resource_ids_types' => $resource_ids_types,
-                'location' => $location
-            ));
+                self::notifyAllPlayers( "resourcesDrawn", "", array(
+                    'resource_ids_types' => $resource_ids_types,
+                    'location' => $location
+                ));
+            }
         }
 
         if(count($drawn_resources) != 0)
