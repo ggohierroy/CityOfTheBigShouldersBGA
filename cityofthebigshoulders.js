@@ -339,6 +339,7 @@ function (dojo, declare) {
                     break;
                 case 'client_actionChooseCompany':
                 case 'client_tradeChooseCompany':
+                case 'client_chooseCompanyToPay':
                     // activate all companies in player area
                     dojo.query('#player_'+this.player_id+' .company').addClass('active');
                     break;
@@ -522,6 +523,7 @@ function (dojo, declare) {
                 case 'client_tradeChooseCompany':
                 case 'client_tradeChooseCompanyResources':
                 case 'playerStartFirstCompany':
+                case 'client_chooseCompanyToPay':
                     dojo.query('.company').removeClass('active');
                     break;
                 case 'playerBuyResourcesPhase':
@@ -655,7 +657,10 @@ function (dojo, declare) {
                         this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_actionChooseFactorySkip':
-                        this.addActionButton( 'skip_action', _('Skip Rest of Action'), 'onConfirmAction', null, false, 'red');
+                        this.addActionButton( 'skip_action', _('Skip Rest of Action'), 'onConfirmActionSkip', null, false, 'red');
+                        this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
+                        break;
+                    case 'client_chooseCompanyToPay':
                         this.addActionButton( 'concel_action', _('Cancel'), 'onCancelAction');
                         break;
                     case 'client_actionChooseFactorySkipToRelocate':
@@ -2570,6 +2575,10 @@ function (dojo, declare) {
 
             var state = this.gamedatas.gamestate.name;
             switch(state){
+                case 'client_chooseCompanyToPay':
+                    this.clientStateArgs.companyShortName = companyShortName;
+                    this.onConfirmAction();
+                    break;
                 case 'client_tradeChooseCompany':
                     if(!this.checkAction('tradeResources'))
                         return;
@@ -4156,6 +4165,18 @@ function (dojo, declare) {
             }
             else if(this.clientStateArgs.buildingAction == "building44"){
                 this.chooseCompany();
+            }
+        },
+
+        onConfirmActionSkip: function(){
+            if(!this.clientStateArgs.companyShortName){
+                // since you can skip the action just to block someone
+                // we still need to know which company this is for
+                this.setClientState("client_chooseCompanyToPay", {
+                    descriptionmyturn : _('Choose a company to pay for this action')
+                });
+            } else {
+                this.onConfirmAction();
             }
         },
 
