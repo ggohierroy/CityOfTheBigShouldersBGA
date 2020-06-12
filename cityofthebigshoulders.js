@@ -2501,7 +2501,7 @@ function (dojo, declare) {
                 var hash = this.hashString(company.short_name);
 
                 var imagePosition = this.companyNameToImagePosition[company.short_name];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/all_companies_small.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/all_companies_small_final.png', imagePosition );
 
                 i++;
             }

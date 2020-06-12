@@ -568,6 +568,10 @@
     position: absolute;
 }
 
+.stockitem.company {
+    background-size: 2100px 458px;
+}
+
 #haymarket_square{
     width: 159px;
     height: 73px;
