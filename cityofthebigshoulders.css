@@ -61,7 +61,8 @@
 }
 
 #main_board {
-    background-image: url(img/board_small.png);
+    background-image: url(img/board_small_final.png);
+    background-size: 980px 530px;
     width: 980px;
     height: 530px;
     position: relative;
