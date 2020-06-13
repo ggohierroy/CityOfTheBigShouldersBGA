@@ -573,6 +573,19 @@
     background-size: 2100px 458px;
 }
 
+.stockitem.tile {
+    background-size: 250px 749px;
+}
+
+.tile-tooltip {
+    background-image: url("img/buildings_large_final.png");
+    height: 118px;
+    width: 118px;
+    margin-left: 20px;
+    margin-right: 5px;
+    float: left;
+}
+
 #haymarket_square{
     width: 159px;
     height: 73px;

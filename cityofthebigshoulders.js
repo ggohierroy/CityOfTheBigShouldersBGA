@@ -48,6 +48,18 @@ function (dojo, declare) {
                 'workshop': 55, 'michigan_lumber': 56, 'abattoir': 57, 'pennsylvania_coal': 58, 'cincinnati_steel': 59,
                 'brilliant_marketing': 60
             };
+            this.goalPositions = {
+                'goal1': 65, 
+                'goal2': 67, 
+                'goal3': 69, 
+                'goal4': 71,  
+                'goal5': 73,  
+                'goal6': 66,  
+                'goal7': 68,  
+                'goal8': 70,  
+                'goal9': 72,  
+                'goal10': 74
+            };
         },
         
         /*
@@ -830,6 +842,14 @@ function (dojo, declare) {
         
         */
 
+        getTooltipHtml: function(positionLookup, objectType, text, imagesPerRow, width, height){
+            var imagePosition = positionLookup[objectType];
+            var horizontalOffset = (imagePosition % imagesPerRow) * width;
+            var verticalOffset = Math.floor(imagePosition / imagesPerRow ) * height;
+            var style = "-" + horizontalOffset + "px -" + verticalOffset + "px;";
+            return "<div class='clearfix'><div class='tile-tooltip' style='background-position: " + style + "'></div><span>" + text + "</span></div>";
+        },
+
         deactivateTooExpensiveStocks: function(money){
             var companyShares = this.available_shares_company.getAllItems();
             for(var i = 0; i < companyShares.length; i++){
@@ -1405,22 +1425,13 @@ function (dojo, declare) {
             newStock.centerItems = true;
 
             var i = 0;
-            var goalPositions = {
-                'goal1': 65, 
-                'goal2': 67, 
-                'goal3': 69, 
-                'goal4': 71,  
-                'goal5': 73,  
-                'goal6': 66,  
-                'goal7': 68,  
-                'goal8': 70,  
-                'goal9': 72,  
-                'goal10': 74};
             for(var goalId in goals){
                 var hash = this.hashString(goalId);
-                var imagePosition = goalPositions[goalId];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
+                var imagePosition = this.goalPositions[goalId];
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_large_final.png', imagePosition );
             }
+
+            newStock.jstpl_stock_item= "<div id=\"${id}\" class=\"stockitem tile\" style=\"top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:${position};background-image:url('${image}');\"></div>";
 
             this.goals = newStock;
         },
@@ -1458,19 +1469,20 @@ function (dojo, declare) {
             newStock.image_items_per_row = 5;
             newStock.setSelectionMode(0);
             newStock.item_margin=5.5;
+            newStock.jstpl_stock_item= "<div id=\"${id}\" class=\"stockitem tile\" style=\"top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:${position};background-image:url('${image}');\"></div>";
 
             var i = 0;
             for(var assetName in capitaAssets){
                 var hash = this.hashString(assetName);
 
                 var imagePosition = this.assetNameToImagePosition[assetName];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_large_final.png', imagePosition );
 
                 i++;
             }
 
             // add an empty asset for when the deck is empty
-            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_small_final.png', 61 );
+            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_large_final.png', 61 );
 
             this[stockName] = newStock;
         },
@@ -1582,7 +1594,11 @@ function (dojo, declare) {
             }
 
             var assetMaterial = this.gamedatas.all_capital_assets[assetName];
-            this.addTooltip( itemDivId, _( assetMaterial.tooltip ), "");
+
+            var text = _( assetMaterial.tooltip );
+            var html = this.getTooltipHtml(this.assetNameToImagePosition, assetName, text, 5, 118, 118); 
+            this.addTooltip( itemDivId, html, "");
+
             return hash;
         },
 
@@ -1693,10 +1709,12 @@ function (dojo, declare) {
                 var hash = this.hashString(index);
 
                 var imagePosition = this.buildingNumberToImagePosition[index];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_large_final.png', imagePosition );
 
                 i++;
             }
+
+            newStock.jstpl_stock_item= "<div id=\"${id}\" class=\"stockitem tile\" style=\"top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:${position};background-image:url('${image}');\"></div>";
             
             if(itemCreateCallback)
                 newStock.onItemCreate = dojo.hitch( this, itemCreateCallback );
@@ -1949,7 +1967,9 @@ function (dojo, declare) {
             }
 
             var buildingMaterial = this.gamedatas.all_buildings[building.card_type];
-            this.addTooltip( div, _( buildingMaterial.tooltip ), "");
+            var text = _( buildingMaterial.tooltip );
+            var html = this.getTooltipHtml(this.buildingNumberToImagePosition, building.card_type, text, 5, 118, 118); 
+            this.addTooltip( div, html, "");
         },
 
         placeStock: function(stock, from){
@@ -2190,7 +2210,10 @@ function (dojo, declare) {
 
             var itemDivId = this.goals.getItemDivId(hash);
             var goalMaterial = this.gamedatas.goals[goal.card_type];
-            this.addTooltip( itemDivId, _( goalMaterial.tooltip ), "");
+
+            var text = _( goalMaterial.tooltip );
+            var html = this.getTooltipHtml(this.goalPositions, goal.card_type, text, 5, 118, 118); 
+            this.addTooltip( itemDivId, html, "");
         },
 
         placeDemand: function(demand){
