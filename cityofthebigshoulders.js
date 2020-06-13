@@ -1419,7 +1419,7 @@ function (dojo, declare) {
             for(var goalId in goals){
                 var hash = this.hashString(goalId);
                 var imagePosition = goalPositions[goalId];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
             }
 
             this.goals = newStock;
@@ -1464,13 +1464,13 @@ function (dojo, declare) {
                 var hash = this.hashString(assetName);
 
                 var imagePosition = this.assetNameToImagePosition[assetName];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
 
                 i++;
             }
 
             // add an empty asset for when the deck is empty
-            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_small.png', 61 );
+            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_small_final.png', 61 );
 
             this[stockName] = newStock;
         },
@@ -1693,7 +1693,7 @@ function (dojo, declare) {
                 var hash = this.hashString(index);
 
                 var imagePosition = this.buildingNumberToImagePosition[index];
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/buildings_small_final.png', imagePosition );
 
                 i++;
             }
