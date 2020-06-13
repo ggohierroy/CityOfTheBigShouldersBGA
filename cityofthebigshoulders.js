@@ -105,7 +105,9 @@ function (dojo, declare) {
 
                 if(player.player_order && gamedatas.gamestate.name != 'playerStartFirstCompany'){
                     var hash = this.hashString(player.color);
-                    this.player_order.addToStock(hash);
+                    this.player_order.addToStockWithId(hash, player.name);
+                    var itemDiv = this.player_order.getItemDivId(player.name);
+                    dojo.style(itemDiv, "z-index", player.player_order);
                     orderWeight[hash] = Number(player.player_order);
                 }
 
@@ -1490,19 +1492,19 @@ function (dojo, declare) {
         createPlayerOrderStock: function(){
             var newStock = new ebg.stock();
 
-            newStock.create( this, $('player_order'), 15.5, 15);
+            newStock.create( this, $('player_order'), 22, 22);
 
-            newStock.image_items_per_row = 8;
+            newStock.image_items_per_row = 11;
             newStock.setSelectionMode(0);
-            newStock.item_margin=-3;
+            newStock.item_margin=-10;
 
             // red green blue yellow
             // "ff0000", "008000", "0000ff", "ffa500"
             var colorPosition = [ 
-                {'color': 'ff0000', 'position': 62},
-                {'color': '008000', 'position': 57},
-                {'color': '0000ff', 'position': 56},
-                {'color': 'ffa500', 'position': 63} ];
+                {'color': 'ff0000', 'position': 53},
+                {'color': '008000', 'position': 54},
+                {'color': '0000ff', 'position': 55},
+                {'color': 'ffa500', 'position': 52} ];
 
             var i = 0;
             for(var i = 0; i < colorPosition.length; i++){
@@ -1817,34 +1819,34 @@ function (dojo, declare) {
 
         createJobMarketZone: function(){
             var zone = new ebg.zone();
-            zone.create( this, 'job_market', 12, 27 );
+            zone.create( this, 'job_market', 15, 29 );
             zone.setPattern('custom');
             this.job_market = zone;
             this.job_market.itemIdToCoords = function( i, control_width ) {
                 if( i%12==0 )
-                {   return {  x:9,y:0, w:12, h:27 }; }
+                {   return {  x:7,y:0, w:15, h:29 }; }
                 else if( i%12==1 )
-                {   return {  x:38,y:0, w:12, h:27 }; }
+                {   return {  x:36,y:0, w:15, h:29 }; }
                 else if( i%12==2 )
-                {   return {  x:9,y:27, w:12, h:27 }; }
+                {   return {  x:7,y:27, w:15, h:29 }; }
                 else if( i%12==3 )
-                {   return {  x:38,y:27, w:12, h:27 }; }
+                {   return {  x:36,y:27, w:15, h:29 }; }
                 else if( i%12==4 )
-                {   return {  x:9,y:59, w:12, h:27 }; }
+                {   return {  x:7,y:59, w:15, h:29 }; }
                 else if( i%12==5 )
-                {   return {  x:38,y:59, w:12, h:27 }; }
+                {   return {  x:36,y:59, w:15, h:29 }; }
                 else if( i%12==6 )
-                {   return {  x:9,y:86, w:12, h:27 }; }
+                {   return {  x:7,y:86, w:15, h:29 }; }
                 else if( i%12==7 )
-                {   return {  x:38,y:86, w:12, h:27 }; }
+                {   return {  x:36,y:86, w:15, h:29 }; }
                 else if( i%12==8 )
-                {   return {  x:9,y:118, w:12, h:27 }; }
+                {   return {  x:7,y:118, w:15, h:29 }; }
                 else if( i%12==9 )
-                {   return {  x:38,y:118, w:12, h:27 }; }
+                {   return {  x:36,y:118, w:15, h:29 }; }
                 else if( i%12==10 )
-                {   return {  x:9,y:145, w:12, h:27 }; }
+                {   return {  x:7,y:145, w:15, h:29 }; }
                 else if( i%12==11 )
-                {   return {  x:38,y:145, w:12, h:27 }; }
+                {   return {  x:36,y:145, w:15, h:29 }; }
             };
         },
 
@@ -2133,7 +2135,7 @@ function (dojo, declare) {
                 var numberOfWorkers = factory.workers;
                 var initialWorkerLeft = 43;
                 if(numberOfWorkers == 2){
-                    initialWorkerLeft = 29;
+                    initialWorkerLeft = 28;
                 } else if (numberOfWorkers == 3){
                     initialWorkerLeft = 15;
                 }
@@ -2151,19 +2153,34 @@ function (dojo, declare) {
             }
 
             // add salesperson spots
-
             dojo.place( this.format_block( 'jstpl_salesperson_holder', {
                 'id': companyShortName+'_salesperson_holder',
-                'top': 89
+                'top': 85
             } ), companyElement );
 
             var zone = new ebg.zone();
-            zone.create( this, companyShortName + '_salesperson_holder', 15, 15 );
+            zone.create( this, companyShortName + '_salesperson_holder', 21, 21 );
             zone.setPattern( 'custom' );
             zone.itemIdToCoords = function( i, control_width ) {
-                return {x:0, y: 33*i, w:15, h:15}
+                return {x:0, y: 33*i, w:21, h:21}
             };
             this[companyShortName + '_salesperson_holder'] = zone;
+
+            // add price tooltips for salespeople
+            for(var i = 0; i < Number(company.salesperson_number); i++){
+                var price = company.salesperson[i];
+
+                var divId = companyShortName + '_salesperson_' + i;
+
+                dojo.place( this.format_block( 'jstpl_price_tooltip', {
+                    'id': divId,
+                    'top': 52+33*i
+                } ), companyElement );
+
+                this.addTooltip( divId, dojo.string.substitute(_('$${price}'),{
+                    'price': price
+                }), "");
+            }
 
             // add resource stock
             dojo.place( this.format_block( 'jstpl_generic_div', {
@@ -2406,7 +2423,7 @@ function (dojo, declare) {
                 var playerColor = this.gamedatas.players[playerId].color;
                 dojo.place( this.format_block( 'jstpl_token', {
                     'token_id': partnerId, 
-                    'token_class': 'moveable-token meeple meeple-'+playerColor
+                    'token_class': 'moveable-token partner partner-'+playerColor
                 } ), 'overall_player_board_'+playerId );
             }
 
@@ -4415,6 +4432,9 @@ function (dojo, declare) {
                 var player = notif.args.player_order[index];
                 var hash = this.hashString(player.color);
                 orderWeight[hash] = Number(player.player_order);
+
+                var itemDiv = this.player_order.getItemDivId(player.name);
+                dojo.style(itemDiv, "z-index", player.player_order);
             }
             
             this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }
@@ -4425,8 +4445,11 @@ function (dojo, declare) {
             for(var index in notif.args.player_order){
                 var player = notif.args.player_order[index];
                 var hash = this.hashString(player.color);
-                this.player_order.addToStock(hash);
+                this.player_order.addToStockWithId(hash, player.name);
                 orderWeight[hash] = Number(player.player_order);
+
+                var itemDiv = this.player_order.getItemDivId(player.name);
+                dojo.style(itemDiv, "z-index", player.player_order);
             }
             
             this.player_order.changeItemsWeight( orderWeight ); // { 1: 10, 2: 20, itemType: Weight }

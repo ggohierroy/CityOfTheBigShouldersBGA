@@ -151,22 +151,30 @@
 .priority-marker {
     background-image: url( 'img/tokens.png' );
     position: relative;
-    background-position: -125px -33px; 
-    width: 28px;
-    height: 18px;
+    background-position: -117px -29px; 
+    width: 39px;
+    height: 19px;
 }
 
 .meeple { 
-    width: 15px;
-    height: 15px;
-    background-position-y: -105px; 
+    width: 21px;
+    height: 21px;
+    background-position-y: -25px; 
 }
-.meeple-ff0000 { background-position-x: -93px }
-.meeple-0000ff { background-position-x: 0px; }
-.meeple-008000 { background-position-x: -15px; }
-.meeple-ffa500 { background-position-x: -108px }
-.meeple-tan { background-position-x: -30px }
-.meeple-black { background-position-x: -77px }
+
+.partner {
+    width: 22px;
+    height: 22px;
+    background-position-y: -88px; 
+}
+
+.partner-ff0000 { background-position-x: -198px } /* red */
+.partner-0000ff { background-position-x: -242px; } /* blue */
+.partner-008000 { background-position-x: -220px; } /* green */
+.partner-ffa500 { background-position-x: -176px } /* yellow */
+
+.meeple-tan { background-position-x: -269px }
+.meeple-black { background-position-x: -243px }
 
 .extra-goods-token {
     background-image: url( 'img/tokens.png' );
@@ -195,7 +203,7 @@
     height: 53px;
     position: absolute;
     left: 926px;
-    top: 382px;
+    top: 373px;
 }
 
 .appeal-bonus {
@@ -391,9 +399,9 @@
 
 .worker {
     background-image: url('img/tokens.png');
-    background-position: -98px -29px;
-    width: 13px;
-    height: 22px;
+    background-position: -99px -24px;
+    width: 15px;
+    height: 29px;
     position: absolute;
 }
 
@@ -428,7 +436,7 @@
 
 #job_market{
     left: 353px;
-    top: 192px;
+    top: 190px;
     height: 177px;
     width: 58px;
     /* background-color: white;
@@ -531,28 +539,35 @@
 }
 
 .worker-holder{
-    top: 36px;
+    top: 34px;
     position: absolute;
     height: 22px;
-    width: 13px;
+    width: 22px;
     /* background-color: white;
     opacity: 50%; */
 }
 
 .manager-holder{
-    top: 9px;
+    top: 6px;
     left: 14px;
-    width: 15px;
-    height: 15px;
+    width: 21px;
+    height: 21px;
     position: absolute;
     /* background-color: white;
     opacity: 50%; */
 }
 
 .salesperson-holder{
-    left: 31px;
-    width: 15px;
-    height: 15px;
+    left: 23px;
+    width: 21px;
+    height: 21px;
+    position: absolute;
+}
+
+.price-tooltip{
+    left: 23px;
+    width: 40px;
+    height: 25px;
     position: absolute;
 }
 

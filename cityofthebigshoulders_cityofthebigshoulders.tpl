@@ -181,7 +181,7 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 
 var jstpl_player_board = '\<div class="cp_board">\
 <div class="board_item"><div class="panel-token money"></div><span id="money_${id}">0</span></div>\
-<div class="board_item"><div class="panel-token meeple meeple-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
+<div class="board_item"><div class="panel-token partner partner-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
 <div class="board_item priority-holder"><div id="priority_${id}" class="panel-token"></div></div>\
 </div>';
 
@@ -204,6 +204,8 @@ var jstpl_manager_holder = '<div id="${id}" class="manager-holder"</div>';
 var jstpl_generic_div = '<div id="${id}" class="${class}"</div>';
 
 var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"</div>';
+
+var jstpl_price_tooltip = '<div id="${id}" class="price-tooltip" style="top:${top}px;"</div>';
 
 var jstpl_temp_worker = '<div class="worker temp"</div>';
 
