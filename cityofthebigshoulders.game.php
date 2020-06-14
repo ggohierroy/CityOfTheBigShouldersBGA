@@ -5718,7 +5718,7 @@ class CityOfTheBigShoulders extends Table
             $player_id = self::getActivePlayerId();
             self::giveExtraTime( $player_id );
 
-            $player_order = self::getObjectListFromDB("SELECT player_order, player_id, player_color, player_name AS color FROM player");
+            $player_order = self::getObjectListFromDB("SELECT player_order, player_id, player_color AS color, player_name FROM player");
             self::notifyAllPlayers( "playerOrderInitialized", "", array(
                 'player_order' => $player_order
             ) );

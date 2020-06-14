@@ -1494,17 +1494,17 @@ function (dojo, declare) {
 
             newStock.create( this, $('player_order'), 22, 22);
 
-            newStock.image_items_per_row = 11;
+            newStock.image_items_per_row = 12;
             newStock.setSelectionMode(0);
-            newStock.item_margin=-10;
+            newStock.item_margin=-9;
 
             // red green blue yellow
             // "ff0000", "008000", "0000ff", "ffa500"
             var colorPosition = [ 
-                {'color': 'ff0000', 'position': 53},
-                {'color': '008000', 'position': 54},
-                {'color': '0000ff', 'position': 55},
-                {'color': 'ffa500', 'position': 52} ];
+                {'color': 'ff0000', 'position': 57},
+                {'color': '008000', 'position': 58},
+                {'color': '0000ff', 'position': 59},
+                {'color': 'ffa500', 'position': 56} ];
 
             var i = 0;
             for(var i = 0; i < colorPosition.length; i++){
@@ -4433,7 +4433,7 @@ function (dojo, declare) {
                 var hash = this.hashString(player.color);
                 orderWeight[hash] = Number(player.player_order);
 
-                var itemDiv = this.player_order.getItemDivId(player.name);
+                var itemDiv = this.player_order.getItemDivId(player.player_name);
                 dojo.style(itemDiv, "z-index", player.player_order);
             }
             
@@ -4443,12 +4443,13 @@ function (dojo, declare) {
         notif_playerOrderInitialized: function(notif){
             var orderWeight = {};
             for(var index in notif.args.player_order){
+
                 var player = notif.args.player_order[index];
                 var hash = this.hashString(player.color);
-                this.player_order.addToStockWithId(hash, player.name);
+                this.player_order.addToStockWithId(hash, player.player_name);
                 orderWeight[hash] = Number(player.player_order);
 
-                var itemDiv = this.player_order.getItemDivId(player.name);
+                var itemDiv = this.player_order.getItemDivId(player.player_name);
                 dojo.style(itemDiv, "z-index", player.player_order);
             }
             
