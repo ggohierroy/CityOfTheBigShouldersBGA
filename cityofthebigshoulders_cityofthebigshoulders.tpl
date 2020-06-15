@@ -193,23 +193,23 @@ var jstpl_company_content = '<div id="${id}" class="company-content">\
 var jstpl_share_token = '<div id="share_token_${short_name}" class="company_token ${short_name}_token"></div>';
 var jstpl_appeal_token = '<div id="${id}" class="company_token ${short_name}_token"></div>';
 
-var jstpl_automation_holder = '<div id="${short_name}_automation_holder_${factory}_${number}" class="automation_holder" style="left:${left}px;"</div>';
+var jstpl_automation_holder = '<div id="${short_name}_automation_holder_${factory}_${number}" class="automation_holder" style="left:${left}px;"></div>';
 var jstpl_token = '<div id="${token_id}" class="${token_class}"></div>';
 
-var jstpl_factory = '<div id="${id}" class="factory" style="left:${left}px; width:${width}px;"</div>';
-var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${left}px;"</div>';
+var jstpl_factory = '<div id="${id}" class="factory" style="left:${left}px; width:${width}px;"></div>';
+var jstpl_worker_holder = '<div id="${id}" class="worker-holder" style="left:${left}px;"></div>';
 
-var jstpl_manager_holder = '<div id="${id}" class="manager-holder"</div>';
+var jstpl_manager_holder = '<div id="${id}" class="manager-holder"></div>';
 
-var jstpl_generic_div = '<div id="${id}" class="${class}"</div>';
+var jstpl_generic_div = '<div id="${id}" class="${class}"></div>';
 
-var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"</div>';
+var jstpl_salesperson_holder = '<div id="${id}" class="salesperson-holder" style="top:${top}px;"></div>';
 
-var jstpl_price_tooltip = '<div id="${id}" class="price-tooltip" style="top:${top}px;"</div>';
+var jstpl_price_tooltip = '<div id="${id}" class="price-tooltip" style="top:${top}px;"></div>';
 
-var jstpl_temp_worker = '<div class="worker temp"</div>';
+var jstpl_temp_worker = '<div class="worker temp"></div>';
 
-var jstpl_temp_manager = '<div class="moveable-token meeple meeple-tan manager temp"</div>';
+var jstpl_temp_manager = '<div class="moveable-token meeple meeple-tan manager temp"></div>';
 
 var jstpl_stock_content = '<div class="stock-content"><span>$</span><span id="${stock_id}">0</span></div>';
 
