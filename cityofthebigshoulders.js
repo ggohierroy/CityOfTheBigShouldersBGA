@@ -1444,17 +1444,17 @@ function (dojo, declare) {
             newStock.create( this, $(stockName), 14, 14);
 
             // Specify that there are 5 buildings per row
-            newStock.image_items_per_row = 13;
+            newStock.image_items_per_row = 4;
             newStock.setSelectionMode(0);
             newStock.item_margin = 1;
             newStock.centerItems = true;
 
             var i = 0;
-            var resources = {'livestock': 11, 'coal': 8, 'wood': 9, 'steel': 3};
+            var resources = {'livestock': 3, 'coal': 1, 'wood': 2, 'steel': 0};
             for(var resourceName in resources){
                 var imagePosition = resources[resourceName];
                 var hash = this.hashString(resourceName);
-                newStock.addItemType( hash, i, g_gamethemeurl+'img/tokens.png', imagePosition );
+                newStock.addItemType( hash, i, g_gamethemeurl+'img/resources.png', imagePosition );
             }
 
             this[stockName] = newStock;
