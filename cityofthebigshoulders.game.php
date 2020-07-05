@@ -5435,9 +5435,23 @@ class CityOfTheBigShoulders extends Table
         }
 
         // get first player in turn order and set as active player
-        $sql = "SELECT player_id FROM player WHERE player_order = 1";
-        $player = self::getNonEmptyObjectFromDB($sql);
-        $this->gamestate->changeActivePlayer( $player['player_id'] ); 
+        // skip players that don't own a company
+        $owners = self::getCollectionFromDB("SELECT owner_id FROM company GROUP BY owner_id");
+        $players = self::getObjectListFromDB("SELECT player_id, player_name FROM player ORDER BY player_order ASC");
+        foreach($players as $player)
+        {
+            if(array_key_exists($player['player_id'], $owners))
+            {
+                $this->gamestate->changeActivePlayer( $player['player_id'] ); 
+                break;
+            }
+            else
+            {
+                self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
+                    'player_name' => $player['player_name']
+                ) );
+            }
+        }
 
         // adjust next sequence order, which is required for using advertising
         self::DbQuery("UPDATE player SET next_sequence_order = player_order");
@@ -5473,6 +5487,9 @@ class CityOfTheBigShoulders extends Table
         $tmp = array_values($players);
         $last_player = array_pop($tmp);
 
+        // get company owners since players without a company will automatically be skipped
+        $owners = self::getCollectionFromDB("SELECT owner_id FROM company GROUP BY owner_id");
+
         // get active player
         $active_player_id = $this->getActivePlayerId();
         $active_player_order = $players[$active_player_id]['player_order'];
@@ -5500,12 +5517,21 @@ class CityOfTheBigShoulders extends Table
                 'player_order' => $players
             ) );
 
-            foreach($players as $player_id => $player)
+            foreach($players as $player)
             {
                 if($player['current_number_partners'] > 0)
                 {
-                    $new_active_player = $player;
-                    break;
+                    if(array_key_exists($player['player_id'], $owners))
+                    {
+                        $new_active_player = $player;
+                        break;
+                    }
+                    else
+                    {
+                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
+                            'player_name' => $player['player_name']
+                        ) );
+                    }
                 }    
             }
         }
@@ -5516,8 +5542,17 @@ class CityOfTheBigShoulders extends Table
             {
                 if($player['player_order'] > $active_player_order && $player['current_number_partners'] > 0)
                 {
-                    $new_active_player = $player;
-                    break;
+                    if(array_key_exists($player['player_id'], $owners))
+                    {
+                        $new_active_player = $player;
+                        break;
+                    }
+                    else
+                    {
+                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
+                            'player_name' => $player['player_name']
+                        ) );
+                    }
                 }    
             }
         }
@@ -5528,8 +5563,17 @@ class CityOfTheBigShoulders extends Table
             {
                 if($player['player_order'] <= $active_player_order && $player['current_number_partners'] > 0)
                 {
-                    $new_active_player = $player;
-                    break;
+                    if(array_key_exists($player['player_id'], $owners))
+                    {
+                        $new_active_player = $player;
+                        break;
+                    }
+                    else
+                    {
+                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
+                            'player_name' => $player['player_name']
+                        ) );
+                    }
                 }    
             }
 
