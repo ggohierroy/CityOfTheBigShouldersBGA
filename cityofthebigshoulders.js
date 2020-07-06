@@ -441,6 +441,7 @@ function (dojo, declare) {
                 case 'playerDistributeAppealBonus':
                 case 'playerDividendsAppealBonus':
                 case 'playerFreeActionAppealBonus':
+                case 'playerUseAssetsAppealBonus':
                 case 'managerBonusAppeal':
                     if(this.isCurrentPlayerActive()){
                         this.clientStateArgs.undoMoves = [];
@@ -512,6 +513,7 @@ function (dojo, declare) {
                 case 'playerProduceGoodsAppealBonus':
                 case 'playerDistributeAppealBonus':
                 case 'playerDividendsAppealBonus':
+                case 'playerUseAssetsAppealBonus':
                 case 'playerFreeActionAppealBonus':
                 case 'managerBonusAppeal':
                     dojo.query('.appeal-bonus').removeClass('active');
@@ -782,6 +784,7 @@ function (dojo, declare) {
                     case 'playerProduceGoodsAppealBonus':
                     case 'playerDistributeAppealBonus':
                     case 'playerDividendsAppealBonus':
+                    case 'playerUseAssetsAppealBonus':
                     case 'playerFreeActionAppealBonus':
                     case 'managerBonusAppeal':
                         this.addActionButton( 'forfeit_bonus', _('Forfeit for $25'), 'onForfeitBonus');
