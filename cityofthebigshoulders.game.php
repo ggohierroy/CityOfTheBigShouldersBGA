@@ -439,7 +439,7 @@ class CityOfTheBigShoulders extends Table
         }
     }
 
-    function maxByPlayer($value_by_company, $companies)
+    function maxByPlayer($value_by_company, $property_name, $companies)
     {
         $value_by_player = [];
 
@@ -449,12 +449,12 @@ class CityOfTheBigShoulders extends Table
             $player_id = $companies[$company_id]['owner_id'];
             if(array_key_exists($player_id, $value_by_player))
             {
-                if($value_by_player[$player_id]['value'] < $item['value'])
-                    $value_by_player[$player_id]['value'] = $item['value'];
+                if($value_by_player[$player_id]['value'] < $item[$property_name])
+                    $value_by_player[$player_id]['value'] = $item[$property_name];
             }
             else
             {
-                $value_by_player[$player_id] = ['player_id' => $player_id, 'value' => $item['value']];
+                $value_by_player[$player_id] = ['player_id' => $player_id, 'value' => $item[$property_name]];
             }
         }
         
@@ -5064,7 +5064,7 @@ class CityOfTheBigShoulders extends Table
             return;
 
         $goals = self::getObjectListFromDB("SELECT card_type FROM card WHERE primary_type = 'goal'", true);
-        $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value FROM company");
+        $companies = self::getCollectionFromDB("SELECT id AS company_id, short_name, owner_id, appeal AS value, treasury FROM company");
         
         $scores = []; //$scores[$player_id] = ['player_id' => $player_id, 'score_delta' => $multiplier * $value_delta];
         foreach($goals as $goal_type)
@@ -5124,16 +5124,12 @@ class CityOfTheBigShoulders extends Table
                 case 'goal6': // highest appeal
                     $goal_name = clienttranslate('Company highest appeal');
                     $value_by_company = $companies;
-                    $value_by_player = self::maxByPlayer($value_by_company, $companies);
+                    $value_by_player = self::maxByPlayer($value_by_company, 'value', $companies);
                     break;
                 case 'goal7': // most money
-                    $goal_name = clienttranslate('Most money');
-                    $value_by_player = array_map(function($player) {
-                        return array(
-                            'player_id' => $player['player_id'],
-                            'value' => $player['treasury']
-                        );
-                    }, $players);
+                    $goal_name = clienttranslate('Company most money');
+                    $value_by_company = $companies;
+                    $value_by_player = self::maxByPlayer($value_by_company, 'treasury', $companies);
                     break;
                 case 'goal8': // most partners
                     $goal_name = clienttranslate('Most partners');
