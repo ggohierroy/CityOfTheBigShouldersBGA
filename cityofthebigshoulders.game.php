@@ -3500,8 +3500,20 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'skipAssetBonus' );
 
-        // set state to next game state
-        $this->gamestate->nextState( 'freeActions' );
+        $current_appeal_bonus = self::getGameStateValue('current_appeal_bonus');
+        $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
+        if($current_appeal_bonus == $final_appeal_bonus)
+        {
+            // set state to next game state
+            $this->gamestate->nextState( 'freeActions' );
+        }
+        else
+        {
+            // this can happen only with price protection
+            // first the player receives the automation (or skips it)
+            // then if there is an appeal bonus, go to that state
+            $this->gamestate->nextState( 'appealBonus' );
+        }
     }
 
     function useAsset( $asset_name )
