@@ -61,7 +61,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "passStockAction", "undo" ),
-        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37, "zombiepass" => 5 )
     ),
 
     8 => array(
@@ -71,7 +71,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argPlayerBuyPhase",
         "possibleactions" => array( "buyCertificate", "startCompany", "skipBuy", "undo" ),
-        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37 )
+        "transitions" => array( "gameStockPhase" => 5, "gameTurn" => 5, "playerconfirmDirectorship" => 37, "zombiepass" => 5 )
     ),
 
     37 => array(
@@ -80,7 +80,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} must confirm directorship change'),
         "type" => "activeplayer",
         "possibleactions" => array( "confirmDirectorship", "undo" ),
-        "transitions" => array( "gameStockPhase" => 5 )
+        "transitions" => array( "gameStockPhase" => 5, "zombiepass" => 5 )
     ),
 
     5 => array(
@@ -127,7 +127,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} may trade with Haymarket Square or use Capital Assets'),
         "type" => "activeplayer",
         "possibleactions" => array( "tradeResources", "useAsset", "passFreeActions", "undo" ),
-        "transitions" => array( "pass" => 12, "freeAppealBonus" => 31, "loopback" => 23)
+        "transitions" => array( "pass" => 12, "freeAppealBonus" => 31, "loopback" => 23, "zombiepass" => 12)
     ),
 
     12 => array(
@@ -146,7 +146,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
         "possibleactions" => array( "hireWorker", "skipAssetBonus", "undo" ),
-        "transitions" => array( "freeActions" => 23 )
+        "transitions" => array( "freeActions" => 23, "zombiepass" => 12 )
     ),
 
     // this happens when immediate bonus is gained when purchasing asset tile
@@ -157,7 +157,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus",
         "possibleactions" => array( "automateFactory", "skipAssetBonus", "undo" ),
-        "transitions" => array( "freeActions" => 23, "appealBonus" => 24 /* this only happens with price protection*/)
+        "transitions" => array( "freeActions" => 23, "appealBonus" => 24 /* this only happens with price protection*/, "zombiepass" => 12)
     ),
 
     // this happens when immediate bonus is gained when purchasing asset tile
@@ -169,7 +169,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus", "undo" ),
-        "transitions" => array( "loopback" => 24, "next" => 23 )
+        "transitions" => array( "loopback" => 24, "next" => 23, "zombiepass" => 12 )
     ),
 
     34 => array(
@@ -179,7 +179,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "emergencyFundraise", "passEmergencyFundraise"  ),
-        "transitions" => array( "playerBuyResourcesPhase" => 13)
+        "transitions" => array( "playerBuyResourcesPhase" => 13, "zombiepass" => 19)
     ),
 
     13 => array(
@@ -200,7 +200,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "produceGoods", "tradeResources", "useAsset", "skipProduceGoods", "undo" ),
-        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27, "loopback" => 14)
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusResources" => 15, "managerBonusAppeal" => 30, "freeAppealBonus" => 27, "loopback" => 14, "zombiepass" => 19)
     ),
 
     15 => array(
@@ -210,7 +210,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsManagerBonusResources",
         "possibleactions" => array( "managerBonusGainResources" ),
-        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusAppeal" => 30 )
+        "transitions" => array( "distributeGoods" => 16, "nextFactory" => 14, "managerBonusAppeal" => 30, "zombiepass" => 19)
     ),
 
     // this happens when a manager bonus gives appeal
@@ -221,7 +221,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 30, "nextFactory" => 14, "distributeGoods" => 16 )
+        "transitions" => array( "loopback" => 30, "nextFactory" => 14, "distributeGoods" => 16, "zombiepass" => 19)
     ),
 
     16 => array(
@@ -231,7 +231,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset", "undo" ),
-        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16, "useAssets" => 35)
+        "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16, "useAssets" => 35, "zombiepass" => 19)
     ),
 
     17 => array(
@@ -241,7 +241,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "payDividends", "withhold", "useAsset", "undo" ),
-        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17, "useAssets" => 35)
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17, "useAssets" => 35, "zombiepass" => 19)
     ),
 
     35 => array(
@@ -251,7 +251,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
         "possibleactions" => array( "useAsset", "finish", "undo" ),
-        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 36, "loopback" => 35)
+        "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 36, "loopback" => 35, "zombiepass" => 19)
     ),
 
     19 => array(
@@ -278,7 +278,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus", "undo" ),
-        "transitions" => array( "loopback" => 25, "next" => 11 )
+        "transitions" => array( "loopback" => 25, "next" => 11, "zombiepass" => 12)
     ),
 
     // this happens when an asset tile is used during the buy resource step of the operation phase
@@ -289,7 +289,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 26, "next" => 13 )
+        "transitions" => array( "loopback" => 26, "next" => 13, "zombiepass" => 19)
     ),
 
     // this happens when an asset tile is used during the produce goods step of the operation phase
@@ -300,7 +300,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 27, "next" => 14 )
+        "transitions" => array( "loopback" => 27, "next" => 14, "zombiepass" => 19)
     ),
 
     // this happens when an asset tile is used during the distribute goods step of the operation phase
@@ -311,7 +311,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 28, "next" => 16 )
+        "transitions" => array( "loopback" => 28, "next" => 16, "zombiepass" => 19)
     ),
 
     // this happens when an asset tile is used during the pay dividends step of the operation phase
@@ -322,7 +322,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 29, "next" => 17 )
+        "transitions" => array( "loopback" => 29, "next" => 17, "zombiepass" => 19)
     ),
 
     // this happens when an asset tile is used during the use asset step of the operation phase (final opportunity to use asset)
@@ -333,7 +333,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 36, "next" => 35 )
+        "transitions" => array( "loopback" => 36, "next" => 35, "zombiepass" => 19)
     ),
 
     // this happens when an asset tile is used during the free action phase
@@ -344,7 +344,7 @@ $machinestates = array(
         "type" => "activeplayer",
         "args" => "argsPlayerAssetBonus", // <- bad naming, only has company id and short name
         "possibleactions" => array( "gainAppealBonus", "forfeitAppealBonus" ),
-        "transitions" => array( "loopback" => 31, "next" => 23 )
+        "transitions" => array( "loopback" => 31, "next" => 23, "zombiepass" => 12)
     ),
    
     // Final state.
