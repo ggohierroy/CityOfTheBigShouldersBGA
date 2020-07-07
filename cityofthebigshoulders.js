@@ -320,7 +320,7 @@ function (dojo, declare) {
                         dojo.addClass(item, 'active');
                     })
                     break;
-                case 'playerActionPhase':
+                case 'playerActionPhase': // main player action
                     // reset action args
                     this.clientStateArgs = {};
                     this.clientStateArgs.actionArgs = {};
@@ -405,7 +405,7 @@ function (dojo, declare) {
                         dojo.query('#haymarket_square').addClass('active');
                     }
                     break;
-                case 'playerUseAssetsPhase':
+                case 'playerUseAssetsPhase': // use assets at the end of the operation phase
                     if(this.isCurrentPlayerActive()){
                         this.activateCompanyAsset(args.args.company_short_name);
                     }
@@ -418,15 +418,18 @@ function (dojo, declare) {
                     this.capital_assets.setSelectionMode(1);
                     dojo.query('#capital_assets>').addClass('active');
                     break;
-                case 'playerAssetAutomationBonus':
+                case 'playerAssetAutomationBonus': // bonus when purchasing an asset tile during the action phase
                 case 'playerAssetWorkerBonus':
                     if(this.isCurrentPlayerActive()){
+                        this.clientStateArgs = {};
+                        this.clientStateArgs.actionArgs = {};
                         this.clientStateArgs.undoMoves = [];
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#company_'+companyShortName+'>.factory').addClass('active');
                     }
                     break;
                 case 'playerFreeActionPhase':
+                    this.clientStateArgs = {};
                     this.clientStateArgs.actionArgs = {};
                     
                     if(this.isCurrentPlayerActive()){
@@ -444,6 +447,8 @@ function (dojo, declare) {
                 case 'playerUseAssetsAppealBonus':
                 case 'managerBonusAppeal':
                     if(this.isCurrentPlayerActive()){
+                        this.clientStateArgs = {};
+                        this.clientStateArgs.actionArgs = {};
                         this.clientStateArgs.undoMoves = [];
                         var nextAppealBonus = args.args.next_appeal_bonus;
                         dojo.addClass($('appeal_' + nextAppealBonus), 'active');
@@ -2783,6 +2788,7 @@ function (dojo, declare) {
 
                     var relocate = this.automateWorker(companyShortName, factoryNumber);
                     if(relocate){
+                        this.clientStateArgs.companyShortName = companyShortName;
                         this.clientStateArgs.factoryNumber = factoryNumber;
                         this.setClientState("client_chooseFactoryRelocateBonus", {
                             descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
