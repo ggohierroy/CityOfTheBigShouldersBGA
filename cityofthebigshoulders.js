@@ -1546,10 +1546,11 @@ function (dojo, declare) {
         placeResource: function(item, from, fromItemDiv){
             var resourceName = item.card_type;
             var hash = this.hashString(resourceName);
+            var div = "";
             switch(item.card_location){
                 case 'haymarket':
                     this.haymarket.addToStockWithId(hash, item.card_id, fromItemDiv);
-                    var div = this.haymarket.getItemDivId(item.card_id);
+                    div = this.haymarket.getItemDivId(item.card_id);
                     dojo.addClass(div, resourceName);
                     if(from != null){
                         this[from].removeFromStockById(item.card_id);
@@ -1557,20 +1558,24 @@ function (dojo, declare) {
                     break;
                 case 'x':
                     this.supply_x.addToStockWithId(hash, item.card_id);
+                    div = this.supply_x.getItemDivId(item.card_id);
                     break;
                 case '30':
                     this.supply_30.addToStockWithId(hash, item.card_id);
+                    div = this.supply_30.getItemDivId(item.card_id);
                     break;
                 case '20':
                     this.supply_20.addToStockWithId(hash, item.card_id);
+                    div = this.supply_20.getItemDivId(item.card_id);
                     break;
                 case '10':
                     this.supply_10.addToStockWithId(hash, item.card_id);
+                    div = this.supply_10.getItemDivId(item.card_id);
                     break;
                 default:
                     // this is going in a company (card_location = company short name)
                     this[item.card_location + '_resources'].addToStockWithId(hash, item.card_id, fromItemDiv);
-                    var div = this[item.card_location + '_resources'].getItemDivId(item.card_id);
+                    div = this[item.card_location + '_resources'].getItemDivId(item.card_id);
                     dojo.addClass(div, resourceName);
                     if(from == 'haymarket'){
                         this.haymarket.removeFromStockById(item.card_id);
@@ -1579,6 +1584,23 @@ function (dojo, declare) {
                     }
                     break;
             }
+
+            switch(resourceName)
+            {
+                case 'livestock':
+                    this.addTooltip( div, _('Livestock'), "");
+                    break;
+                case 'coal':
+                    this.addTooltip( div, _('Coal'), "");
+                    break;
+                case 'wood':
+                    this.addTooltip( div, _('Wood'), "");
+                    break;
+                case 'steel':
+                    this.addTooltip( div, _('Steel'), "");
+                    break;
+            }
+            
         },
 
         placeAsset: function(item, from, fromItemDiv){
