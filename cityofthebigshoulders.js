@@ -2586,6 +2586,7 @@ function (dojo, declare) {
             newStock.create( this, $(location), 109, 73);
             this[location] = newStock;
             newStock.image_items_per_row = 3;
+            newStock.apparenceBorderWidth = "3px";
             newStock.setSelectionMode(0);
 
             var i = 0;
