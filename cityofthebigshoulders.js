@@ -614,6 +614,10 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
+                    case 'client_confirmFirstPlayer':
+                        this.addActionButton( 'accept_first_player', _('Accept'), 'onAcceptFirstPlayer');
+                        this.addActionButton( 'decline_first_player', _('Decline'), 'onDeclineFirstPlayer');
+                        break;
                     case 'playerconfirmDirectorship':
                         this.addActionButton( 'confirm_gain_directoship', _('Confirm'), 'onConfirmDirectorshipChange');
                         this.addActionButton( 'undo', _('Undo Whole Stock Phase'), 'onUndo', null, false, 'red');
@@ -3090,6 +3094,11 @@ function (dojo, declare) {
                         this.onConfirmAction();
                     }
                     break;
+                case "advertising":
+                    this.setClientState("client_confirmFirstPlayer", {
+                        descriptionmyturn : _('You may become the starting player')
+                    });
+                    break;
                 default:
                     this.onConfirmAction();
                     break;
@@ -3617,6 +3626,16 @@ function (dojo, declare) {
 
         onConfirmDirectorshipChange: function(){
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/confirmDirectorship.html", { lock: true }, this, function( result ) {} );
+        },
+
+        onAcceptFirstPlayer: function(){
+            this.clientStateArgs.actionArgs.acceptFirstPlayer = 1;
+            this.onConfirmAction();
+        },
+
+        onDeclineFirstPlayer: function(){
+            this.clientStateArgs.actionArgs.acceptFirstPlayer = 0;
+            this.onConfirmAction();
         },
 
         onConfirmEmergencyFundraise: function(){

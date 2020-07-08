@@ -3870,7 +3870,9 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'advertising':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
-                self::adjustNextSequenceOrder($player_id);
+                $acceptFirstPlayer = boolval($action_args);
+                if($acceptFirstPlayer)
+                    self::adjustNextSequenceOrder($player_id);
                 break;
             case 'building4':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
