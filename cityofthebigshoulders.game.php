@@ -309,7 +309,7 @@ class CityOfTheBigShoulders extends Table
             $certificate_limit = 12;
         }
         
-        if(count($player_shares) == $certificate_limit)
+        if(count($player_shares) > $certificate_limit)
             throw new BgaUserException( self::_("You must sell certificates because you are over the certificate limit") );
         
         // check if 60% limit in single company reached
