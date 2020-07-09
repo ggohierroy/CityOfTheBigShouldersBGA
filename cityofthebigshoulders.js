@@ -2470,6 +2470,10 @@ function (dojo, declare) {
 
         placePartner: function(partner){
             var partnerId = partner.card_type; // worker_{playerId}_{workerNumber}
+
+            // temporary fix since advertising space was renamed
+            if(partner.card_location == "advertising")
+                partner.card_location = "banana";
             
             if(!dojo.byId(partnerId)){
                 var playerId = partnerId.split('_')[1];
