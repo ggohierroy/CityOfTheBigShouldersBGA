@@ -979,7 +979,8 @@ function (dojo, declare) {
             this.addTooltip( "appeal_8", "", _( "Increase company's share value one step along the stock track" ));
 
             this.addTooltip( "job_market_worker", "", _( "When you place a Partner here, your company may hire any number of Workers by paying the bank for each Worker it hires." ));
-            this.addTooltip( "advertising", "", _( "When you place a Partner here and pay $20, increase your company’s Appeal by 1 space on the Appeal Track. Additionnally, you may become the starting player for the Action Phase. This change in turn order takes effect immediately." ));
+            // advertising for ad blockers
+            this.addTooltip( "banana", "", _( "When you place a Partner here and pay $20, increase your company’s Appeal by 1 space on the Appeal Track. Additionnally, you may become the starting player for the Action Phase. This change in turn order takes effect immediately." ));
             this.addTooltip( "fundraising_40", "", _( "When you place a Partner here, your company gains $40 from the bank." ));
             this.addTooltip( "fundraising_60", "", _( "When you place a Partner here, your company gains $60 from the bank." ));
             this.addTooltip( "fundraising_80", "", _( "When you place a Partner here, your company gains $80 from the bank." ));
@@ -3152,7 +3153,7 @@ function (dojo, declare) {
                         this.onConfirmAction();
                     }
                     break;
-                case "advertising":
+                case "banana": // advertising for add blockers
                     this.setClientState("client_confirmFirstPlayer", {
                         descriptionmyturn : _('You may become the starting player')
                     });

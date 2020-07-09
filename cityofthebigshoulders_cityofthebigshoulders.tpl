@@ -93,8 +93,8 @@
             <div id="shoes_0" class="demand shoes" identifier="32">
                 <div id="demand32_goods"></div>
             </div>
-            <div id="advertising" class="worker_spot general-action">
-                <div id="advertising_holder"></div>
+            <div id="banana" class="worker_spot general-action"> <!-- advertising for ad blockers -->
+                <div id="banana_holder"></div>
             </div>
             <div id="fundraising_40" class="worker_spot general-action">
                 <div id="fundraising_40_holder"></div>

@@ -3862,7 +3862,7 @@ class CityOfTheBigShoulders extends Table
                 $worker_ids_string = $action_args2;
                 self::hireWorkers($company_short_name, $company_id, $worker_factories, $worker_ids_string);
                 break;
-            case 'advertising':
+            case 'banana': // advertising for ad blockers
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
                 $acceptFirstPlayer = boolval($action_args);
                 if($acceptFirstPlayer)

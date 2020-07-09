@@ -563,7 +563,7 @@ $this->general_action_spaces = [
     "cost" => 999,
     "payment" => "companytobank"
   ],
-  "advertising" => [
+  "banana" => [ // advertising for ad blockers
     "player_limit" => false,
     "cost" => 20,
     "payment" => "companytobank"
