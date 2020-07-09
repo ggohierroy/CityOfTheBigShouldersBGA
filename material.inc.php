@@ -990,7 +990,7 @@ $this->goal = [
     "tooltip" => clienttranslate("Players with the companies that are highest on the Appeal Track receive \$200. For the purposes of this goal, tokens occuppying the same space are tied.")
   ],
   "goal7" => [
-    "tooltip" => clienttranslate("The player who has the most money in their Personal Treasury, prior to cashing out their Stock Certificates, will receive \$200.")
+    "tooltip" => clienttranslate("The player who is the Director of the company with the most cash in its Company Treasury at the end of the game receives \$200.")
   ],
   "goal8" => [
     "tooltip" => clienttranslate("The player who has the most Partners will receive \$200.")
