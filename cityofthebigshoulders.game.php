@@ -2001,7 +2001,7 @@ class CityOfTheBigShoulders extends Table
         // get workers in market
         $worker_ids = explode(',', $worker_ids_string);
         $workers_in_market = [];
-        if(count($workers_ids) > 0)
+        if(count($worker_ids) > 0)
             $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market' AND card_id IN ($worker_ids_string)");
         
         // hire the workers
