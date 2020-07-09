@@ -4133,6 +4133,18 @@ class CityOfTheBigShoulders extends Table
     {
         self::checkAction( 'passStockAction' );
 
+        $state = $this->gamestate->state();
+        if( $state['name'] == 'playerSellPhase')
+        {
+            $advanced_rules = self::getGameStateValue("advanced_rules");
+            if($advanced_rules == 2)
+            {
+                $player_id = self::getActivePlayerId();
+                // this can only happen after a directorship change in the advanced game
+                self::checkStockLimits($player_id);
+            }
+        }
+
         self::notifyAllPlayers( "stockActionPassed", clienttranslate( '${player_name} passes' ), array(
             'player_name' => self::getActivePlayerName(),
         ) );
