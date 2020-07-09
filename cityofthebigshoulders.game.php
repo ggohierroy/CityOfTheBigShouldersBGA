@@ -1999,8 +1999,10 @@ class CityOfTheBigShoulders extends Table
         }
 
         // get workers in market
-        $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market' AND card_id IN ($worker_ids_string)");
-        $number_of_workers_in_market = count($workers_in_market);
+        $worker_ids = explode(',', $worker_ids_string);
+        $workers_in_market = [];
+        if(count($workers_ids) > 0)
+            $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market' AND card_id IN ($worker_ids_string)");
         
         // hire the workers
         $moved_workers_return = [];
