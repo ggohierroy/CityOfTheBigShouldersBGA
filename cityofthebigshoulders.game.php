@@ -1530,10 +1530,8 @@ class CityOfTheBigShoulders extends Table
         return $asset_material['bonus'];
     }
 
-    function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber)
+    function automateWorker($company_short_name, $factory_number, $relocateFactoryNumber, $worker_id)
     {
-        self::dump('relocateFactoryNumber', $relocateFactoryNumber);
-
         if($factory_number == null)
             return;
 
@@ -1564,8 +1562,6 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
-        self::dump('automated_in_relocate_factory', $automated_in_relocate_factory);
-
         // check that not all automations have been automated in this factory
         if($to_automate == null)
             throw new BgaVisibleSystemException("The factory is completely automated");
@@ -1581,7 +1577,7 @@ class CityOfTheBigShoulders extends Table
             $total_workers++;
             $values = explode('_', $worker['card_location']);
             
-            if($values[1] == $factory_number){
+            if($values[1] == $factory_number && $worker['card_id'] == $worker_id){
                 $to_automate_worker = $worker;
             }
             
@@ -1589,8 +1585,6 @@ class CityOfTheBigShoulders extends Table
                 $workers_in_relocate_factory++;
             }
         }
-
-        self::dump('workers_in_relocate_factory', $workers_in_relocate_factory);
 
         // check that there are enough workers in that factory to automate it
         if($to_automate_worker == null)
@@ -1616,7 +1610,6 @@ class CityOfTheBigShoulders extends Table
         $worker_relocation = null;
         if($total_workers + $total_automated == $total_automations)
         {
-            $worker_id = $to_automate_worker['card_id'];
             $number_workers_market = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'worker' AND card_location = 'job_market'");
             if($number_workers_market == 12)
             {
@@ -1640,7 +1633,6 @@ class CityOfTheBigShoulders extends Table
             // only if relocate factory is different than current factory, update the database to move to new factory
             if($relocateFactoryNumber != $factory_number)
             {
-                $worker_id = $to_automate_worker['card_id'];
                 $sql = "UPDATE card SET card_location = '${company_short_name}_${relocateFactoryNumber}' WHERE card_id = '$worker_id'";
                 self::DbQuery($sql);
             }
@@ -1655,7 +1647,8 @@ class CityOfTheBigShoulders extends Table
             'company_name' => self::getCompanyName($company_short_name),
             'company_short_name' => $company_short_name,
             'factory_number' => $factory_number,
-            'worker_relocation' => $worker_relocation
+            'worker_relocation' => $worker_relocation,
+            'worker_id' => $worker_id
         ));
     }
 
@@ -1976,7 +1969,7 @@ class CityOfTheBigShoulders extends Table
         ) );
     }
 
-    function hireWorkers($company_short_name, $company_id, $worker_factories)
+    function hireWorkers($company_short_name, $company_id, $worker_factories, $worker_ids_string)
     {
         $number_of_workers = count($worker_factories);
         $factories_material = $this->companies[$company_short_name]['factories'];
@@ -2006,7 +1999,7 @@ class CityOfTheBigShoulders extends Table
         }
 
         // get workers in market
-        $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'");
+        $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market' AND card_id IN ($worker_ids_string)");
         $number_of_workers_in_market = count($workers_in_market);
         
         // hire the workers
@@ -2610,7 +2603,7 @@ class CityOfTheBigShoulders extends Table
         self::undoRestorePoint();
     }
 
-    function gainAppealBonus( $factory_number, $relocate_number )
+    function gainAppealBonus( $factory_number, $relocate_number, $worker_id )
     {
         self::checkAction( 'gainAppealBonus' );
 
@@ -2636,7 +2629,7 @@ class CityOfTheBigShoulders extends Table
                 $auto_forfeited = self::hire_salesperson($company_short_name, $company_id);
                 break;
             case 'automation':
-                self::automateWorker($company_short_name, $factory_number, $relocate_number);
+                self::automateWorker($company_short_name, $factory_number, $relocate_number, $worker_id);
                 break;
             case 'partner':
                 $auto_forfeited = self::gainPartner($player_id, 'appeal');
@@ -3455,7 +3448,7 @@ class CityOfTheBigShoulders extends Table
 
     // this function is called when buying an asset tile and the immediate bonus is an automation
     // TODO: front-end shouldn't send short name
-    function automateFactory( $company_short_name, $factory_number, $relocate_number )
+    function automateFactory( $company_short_name, $factory_number, $relocate_number, $worker_id )
     {
         self::checkAction( 'automateFactory' );
 
@@ -3463,7 +3456,7 @@ class CityOfTheBigShoulders extends Table
         $company = self::getNonEmptyObjectFromDB("SELECT short_name FROM company WHERE id=$company_id");
         $short_name = $company['short_name'];
 
-        self::automateWorker($short_name, $factory_number, $relocate_number);
+        self::automateWorker($short_name, $factory_number, $relocate_number, $worker_id);
 
         $current_appeal_bonus = self::getGameStateValue('current_appeal_bonus');
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
@@ -3625,7 +3618,7 @@ class CityOfTheBigShoulders extends Table
         }
     }
 
-    function buildingAction( $building_action, $company_short_name, $factory_number, $action_args )
+    function buildingAction( $building_action, $company_short_name, $factory_number, $action_args, $action_args2 )
     {
         self::dump('action_args', $action_args);
         self::checkAction( 'buildingAction' );
@@ -3866,7 +3859,8 @@ class CityOfTheBigShoulders extends Table
         switch($building_action){
             case 'job_market_worker':
                 $worker_factories = explode(',', $action_args);
-                self::hireWorkers($company_short_name, $company_id, $worker_factories);
+                $worker_ids_string = $action_args2;
+                self::hireWorkers($company_short_name, $company_id, $worker_factories, $worker_ids_string);
                 break;
             case 'advertising':
                 $appeal_bonus_gained = self::increaseCompanyAppeal($company_short_name, $company_id, $company['appeal'], 1);
@@ -3950,26 +3944,31 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'building6':
             case "building24":
-                $relocate_factory_number = intval($action_args);
-                self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
+                $automation_args = explode(',', $action_args);
+                $worker_id = intval($automation_args[0]);
+                $relocate_factory_number = intval($automation_args[1]);
+                self::automateWorker($company_short_name, $factory_number, $relocate_factory_number, $worker_id);
                 break;
             case "building21": // double automation
             case "building42":
                 $automation_factories = explode(',', $action_args);
-                if(count($automation_factories) == 2)
+                if(count($automation_factories) == 3)
                 {
                     $factory_number = intval($automation_factories[0]);
-                    $relocate_factory_number = intval($automation_factories[1]);
-                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
-                }
-                else if(count($automation_factories) == 4)
-                {
-                    $factory_number = intval($automation_factories[0]);
+                    $worker_id = intval($automation_factories[1]);
                     $relocate_factory_number = intval($automation_factories[2]);
-                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
-                    $factory_number = intval($automation_factories[1]);
-                    $relocate_factory_number = intval($automation_factories[3]);
-                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number, $worker_id);
+                }
+                else if(count($automation_factories) == 6)
+                {
+                    $factory_number = intval($automation_factories[0]);
+                    $worker_id = intval($automation_factories[1]);
+                    $relocate_factory_number = intval($automation_factories[4]);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number, $worker_id);
+                    $factory_number = intval($automation_factories[2]);
+                    $worker_id = intval($automation_factories[3]);
+                    $relocate_factory_number = intval($automation_factories[5]);
+                    self::automateWorker($company_short_name, $factory_number, $relocate_factory_number, $worker_id);
                 } 
                 else 
                 {

@@ -856,6 +856,23 @@ function (dojo, declare) {
         
         */
 
+        getWorkerLocation: function(tokenId){
+            var worker = $(tokenId);
+            if(worker == null)
+                return null;
+
+            var parentId = worker.parentNode.id;
+            
+            if(parentId == "job_market")
+                return "job_market";
+
+            if(parentId.indexOf("automation") !== -1)
+                return parentId; // swift_automation_holder_1_0
+            
+            var split = parentId.split("_");
+            return split[0] + "_" + split[1]; // switf_3
+        },
+
         getTooltipHtml: function(positionLookup, objectType, text, imagesPerRow, width, height){
             var imagePosition = positionLookup[objectType];
             var horizontalOffset = (imagePosition % imagesPerRow) * width;
@@ -1397,12 +1414,13 @@ function (dojo, declare) {
             this.clientStateArgs.undoMoves.push({'element': automation, 'to': automationHolder});
             this.clientStateArgs.undoMoves.push({'element': worker, 'to': workerHolder});
 
+            var workerId = worker.id.split('_')[1];
             if(totalWorkers + totalAutomated == totalWorkerSpots){
-                return false;
+                return { 'workerId': workerId, 'relocate': false };;
             }
 
             // worker needs to be relocated
-            return true;
+            return { 'workerId': workerId, 'relocate': true };
         },
        
         canAutomateFactory: function(companyShortName, factoryNumber){
@@ -2497,7 +2515,26 @@ function (dojo, declare) {
 
         placeWorkerInFactory: function(worker, from, fromId){
             var tokenId = 'worker_' + worker.card_id;
+            
+            // If worker is already in place, no need to move it
+            // Ex.: when current player hires workers, they are moved before the call to the server
+            var workerLocation = this.getWorkerLocation(tokenId); // workerLocation = swift_1 (shortName_factoryNumber)
+            if(workerLocation == worker.card_location)
+                return;
+
+            // get the spot where the worker should be placed
             var workerSpotId = this.getNextAvailableWorkerSpot(worker.card_location);
+
+            // if it doesn't exist create it
+            // cases: page load, hired when job market is empty, taken from supply
+            var element = $(tokenId);
+            if(element == null) {
+                dojo.place( this.format_block( 'jstpl_token', {
+                    'token_id': tokenId,
+                    'token_class': 'worker'
+                } ), workerSpotId );
+            }
+
             if(from == 'market'){
                 dojo.place(tokenId, workerSpotId);
                 this.placeOnObject( tokenId, 'job_market');
@@ -2505,10 +2542,6 @@ function (dojo, declare) {
                 this.job_market.removeFromZone(tokenId);
             } else if (from == 'supply'){
                 // some buildings allow hiring workers from the supply
-                dojo.place( this.format_block( 'jstpl_token', {
-                    'token_id': tokenId,
-                    'token_class': 'worker'
-                } ), workerSpotId );
                 this.placeOnObject(tokenId, 'main_board');
                 this.slideToObject(tokenId, workerSpotId).play();
             } else if (from == 'factory'){
@@ -2516,12 +2549,6 @@ function (dojo, declare) {
                 dojo.place(tokenId, workerSpotId);
                 this.placeOnObject(tokenId, fromId);
                 this.slideToObject(tokenId, workerSpotId).play();
-            } else {
-                // just place worker directly
-                dojo.place( this.format_block( 'jstpl_token', {
-                    'token_id': tokenId,
-                    'token_class': 'worker'
-                } ), workerSpotId );
             }
         },
 
@@ -2730,7 +2757,8 @@ function (dojo, declare) {
                 this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", { lock: true,
                     companyShortName: companyShortName,
                     factoryNumber: this.clientStateArgs.factoryNumber,
-                    relocateNumber: factoryNumber
+                    relocateNumber: factoryNumber,
+                    workerId: this.clientStateArgs.workerId
                 }, this, function( result ) {} );
                 return;
             }
@@ -2787,8 +2815,9 @@ function (dojo, declare) {
                             }
 
                             this.clientStateArgs.factoryNumber = factoryNumber;
-                            var relocate = this.automateWorker(companyShortName, factoryNumber);
-                            if(relocate){
+                            var result = this.automateWorker(companyShortName, factoryNumber);
+                            this.clientStateArgs.workerId = result.workerId;
+                            if(result.relocate){
                                 this.setClientState("client_appealBonusChooseFactory", {
                                     descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
                                 });
@@ -2813,10 +2842,11 @@ function (dojo, declare) {
                         return;
                     }
 
-                    var relocate = this.automateWorker(companyShortName, factoryNumber);
-                    if(relocate){
+                    var result = this.automateWorker(companyShortName, factoryNumber);
+                    if(result.relocate){
                         this.clientStateArgs.companyShortName = companyShortName;
                         this.clientStateArgs.factoryNumber = factoryNumber;
+                        this.clientStateArgs.workerId = result.workerId;
                         this.setClientState("client_chooseFactoryRelocateBonus", {
                             descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
                         });
@@ -2824,7 +2854,8 @@ function (dojo, declare) {
                         this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/automateFactory.html", { lock: true,
                             companyShortName: companyShortName,
                             factoryNumber: factoryNumber,
-                            relocateNumber: null
+                            relocateNumber: null,
+                            workerId: result.workerId
                         }, this, function( result ) {} );
                     }
                     break;
@@ -2984,12 +3015,14 @@ function (dojo, declare) {
                     break;
                 case 'building6':
                 case "building24":
-                    var relocate = this.automateWorker(companyShortName, factoryNumber);
-                    if(relocate){
+                    var result = this.automateWorker(companyShortName, factoryNumber);
+                    this.clientStateArgs.actionArgs.workerId = result.workerId;
+                    if(result.relocate){
                         this.setClientState("client_chooseFactoryRelocate", {
                             descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
                         });
                     } else {
+                        this.clientStateArgs.actionArgs.relocateFactoryNumber = 0;
                         this.onConfirmAction();
                     }
                     break;
@@ -3000,7 +3033,8 @@ function (dojo, declare) {
                         // this means that the first factory to automate has been selected
                         this.clientStateArgs.actionArgs.secondFactoryNumber = factoryNumber;
 
-                        var relocate = this.automateWorker(companyShortName, factoryNumber);
+                        var result = this.automateWorker(companyShortName, factoryNumber);
+                        this.clientStateArgs.actionArgs.workerId2 = result.workerId;
 
                         if(!this.clientStateArgs.shouldRelocateFirstWorker){
                             // if there is no spot to put the first worker, there is no spot to put the first either
@@ -3008,7 +3042,7 @@ function (dojo, declare) {
                             this.clientStateArgs.actionArgs.secondFactoryRelocate = 0;
                             this.onConfirmAction();
                         } else {
-                            this.clientStateArgs.shouldRelocateSecondWorker = relocate;
+                            this.clientStateArgs.shouldRelocateSecondWorker = result.relocate;
 
                             this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
                                 descriptionmyturn : _('Choose a factory in which to relocate the first automated worker')
@@ -3018,8 +3052,9 @@ function (dojo, declare) {
 
                         // this is the first factory being selected for automation
                         this.clientStateArgs.actionArgs.firstFactoryNumber = factoryNumber;
-                        var relocate = this.automateWorker(companyShortName, factoryNumber);
-                        this.clientStateArgs.shouldRelocateFirstWorker = relocate;
+                        var result = this.automateWorker(companyShortName, factoryNumber);
+                        this.clientStateArgs.actionArgs.workerId1 = result.workerId;
+                        this.clientStateArgs.shouldRelocateFirstWorker = result.relocate;
 
                         this.setClientState("client_actionChooseFactorySkipToRelocate", {
                             descriptionmyturn : dojo.string.substitute(_('Choose a second factory to automate'),{
@@ -3447,7 +3482,7 @@ function (dojo, declare) {
             if(workerNumber == 0)
                 return;
             
-            var workerId = 'worker_'+playerId+'_'+(totalWorkers - workerNumber + 1);
+            var partnerId = 'worker_'+playerId+'_'+(totalWorkers - workerNumber + 1);
 
             // check if spot can be used multiple times
             var playerLimit = true;
@@ -3466,7 +3501,7 @@ function (dojo, declare) {
             
             // create worker
             this.placePartner({
-                card_type: workerId,
+                card_type: partnerId,
                 card_location: targetId
             });
 
@@ -3477,7 +3512,7 @@ function (dojo, declare) {
             dojo.query('.worker_spot').removeClass('active');
 
             this.clientStateArgs.buildingAction = targetId;
-            this.clientStateArgs.workerId = workerId;
+            this.clientStateArgs.partnerId = partnerId;
             
             switch(targetId){
                 case "job_market_worker":
@@ -3694,7 +3729,7 @@ function (dojo, declare) {
 
         onCancelAction: function(event){
             // destroy meeple
-            var workerId = this.clientStateArgs.workerId;
+            var workerId = this.clientStateArgs.partnerId;
             var buildingAction = this.clientStateArgs.buildingAction;
 
             if(workerId && buildingAction)
@@ -4164,7 +4199,8 @@ function (dojo, declare) {
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/gainAppealBonus.html", { lock: true,
                 factoryNumber: this.clientStateArgs.factoryNumber,
-                relocateFactoryNumber: this.clientStateArgs.relocateFactoryNumber
+                relocateFactoryNumber: this.clientStateArgs.relocateFactoryNumber,
+                workerId: this.clientStateArgs.workerId // for automations
             }, this, function( result ) {} );
         },
 
@@ -4276,11 +4312,18 @@ function (dojo, declare) {
                 return;
             
             var args = [];
+            var args2 = [];
             switch(this.clientStateArgs.buildingAction){
                 case 'job_market_worker':
                     var selectedFactories = this.clientStateArgs.selectedFactories;
                     for(var i = 0; i < selectedFactories.length; i++){
-                        args.push(selectedFactories[i].factoryNumber);   
+                        args.push(selectedFactories[i].factoryNumber); 
+
+                        var workerId = selectedFactories[i].workerId;
+                        if(workerId != null){
+                            var workerNumber = selectedFactories[i].workerId.split('_')[1];
+                            args2.push(workerNumber);  
+                        }
                     }
                     break;
                 default:
@@ -4292,13 +4335,15 @@ function (dojo, declare) {
             }
 
             var actionArgs = args.join(",");
+            var actionArgs2 = args2.join(",");
 
             this.ajaxcall( "/cityofthebigshoulders/cityofthebigshoulders/buildingAction.html", { lock: true,
                 buildingAction: this.clientStateArgs.buildingAction,
                 companyShortName: this.clientStateArgs.companyShortName,
-                workerId: this.clientStateArgs.workerId,
+                workerId: this.clientStateArgs.partnerId,
                 factoryNumber: this.clientStateArgs.factoryNumber,
-                actionArgs: actionArgs
+                actionArgs: actionArgs,
+                actionArgs2: actionArgs2
             }, this, function( result ) {} );
         },
         
@@ -4786,10 +4831,12 @@ function (dojo, declare) {
         notif_factoryAutomated: function(notif){
             var companyShortName = notif.args.company_short_name;
             var factoryNumber = notif.args.factory_number;
+            var workerId = notif.args.worker_id;
             
             var factorySelector = '#'+companyShortName+'_factory_'+factoryNumber; //#brunswick_factory_2
-            var worker = null;
+            var worker = $('worker_' + workerId);
             var automation = null;
+            var from = worker.parentNode.id;
             if(this.isCurrentPlayerActive()){
                 // when doing a double automation, it's possible that the worker is already in its spot
                 // check that first-automation worker exists
@@ -4801,19 +4848,23 @@ function (dojo, declare) {
                     return;
                 }
 
-                // the worker has been moved to the automation spot
-                // we need to send it to its final destination (either job market or factory)
-                worker = dojo.query(factorySelector + '>.automation_holder>.worker')[0];
-
                 // automation is already in the right place, so nothing to do
             } else {
-                // worker is in a worker spot => take the first one
-                worker = dojo.query(factorySelector + '>.worker-holder>.worker')[0];
+                
                 automation = dojo.query(factorySelector + '>.automation_holder>.automation_token')[0];
+
+                // put worker where automation is to be able to move automation in its place
+                dojo.place(worker, automation.parentNode.id);
+
+                var item = {
+                    card_id: automation.id.split('_')[1],
+                    card_type: 'automation',
+                    card_location: companyShortName + "_worker_holder_" + factoryNumber};
+                this.placeAutomationToken(item, automation.parentNode.id);
             }
 
             var item = {
-                card_id: worker.id.split('_')[1],
+                card_id: workerId,
                 card_type: 'worker',
                 card_location: notif.args.worker_relocation};
 
@@ -4822,17 +4873,7 @@ function (dojo, declare) {
             } else if (notif.args.worker_relocation == 'supply') {
                 this.fadeOutAndDestroy( worker );
             } else {
-                this.placeWorkerInFactory(item, 'factory', worker.parentNode.id)
-            }
-
-            if(automation != null){
-                // when current player is not active, we need to move the automation token
-                // which hasn't already been moved
-                var item = {
-                    card_id: automation.id.split('_')[1],
-                    card_type: 'automation',
-                    card_location: companyShortName + "_worker_holder_" + factoryNumber};
-                this.placeAutomationToken(item, automation.parentNode.id);
+                this.placeWorkerInFactory(item, 'factory', from)
             }
         },
 
@@ -4899,22 +4940,10 @@ function (dojo, declare) {
         },
 
         notif_workersHired: function(notif){
-            if(!this.isCurrentPlayerActive()){
-                // active player already has the workers in his factory
-                for(var index in notif.args.worker_ids){
-                    worker = notif.args.worker_ids[index];
 
-                    // bypass the server worker id, get any worker from the market
-                    // front-end ids are irrelevant, and only used for moving tokens around
-                    var marketWorkers = this.job_market.getAllItems();
-                    var marketWorker = $(marketWorkers[0]);
-                    var workerId = marketWorker.id.split('_')[1];
-
-                    this.placeWorkerInFactory({
-                        card_id: workerId,
-                        card_location: worker.card_location
-                    }, 'market');
-                }
+            for(var index in notif.args.worker_ids){
+                worker = notif.args.worker_ids[index];
+                this.placeWorkerInFactory(worker, 'market');
             }
 
             // destroy all temp workers
@@ -4924,21 +4953,10 @@ function (dojo, declare) {
             for(var index in notif.args.all_worker){
                 var worker = notif.args.all_worker[index];
 
-                var element = $('worker_' + worker.card_id);
-                if(element == null) {
-                    // create the worker
-                    this.placeWorkerInFactory({
-                        card_id: worker.card_id,
-                        card_location: worker.card_location
-                    });
-                    if(!this.isCurrentPlayerActive()){
-                        // move it from the factory
-                        this.placeWorkerInFactory({
-                            card_id: worker.card_id,
-                            card_location: worker.card_location
-                        }, 'market');
-                    }
-                }
+                this.placeWorkerInFactory({
+                    card_id: worker.card_id,
+                    card_location: worker.card_location
+                }, 'market');
             }
         },
 

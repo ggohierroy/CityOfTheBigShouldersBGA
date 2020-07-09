@@ -145,8 +145,9 @@
       $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
       $factory_number = self::getArg( "factoryNumber", AT_posint, false );
       $action_args = self::getArg( "actionArgs", AT_numberlist, false );
+      $action_args2 = self::getArg( "actionArgs2", AT_numberlist, false );
 
-      $this->game->buildingAction( $building_action, $company_short_name, $factory_number, $action_args );
+      $this->game->buildingAction( $building_action, $company_short_name, $factory_number, $action_args, $action_args2 );
 
       self::ajaxResponse( );
     }
@@ -158,8 +159,9 @@
       $company_short_name = self::getArg( "companyShortName", AT_alphanum, true );
       $factory_number = self::getArg( "factoryNumber", AT_posint, true );
       $relocate_number = self::getArg( "relocateNumber", AT_posint, false );
+      $worker_id = self::getArg( "workerId", AT_posint, false );
 
-      $this->game->automateFactory( $company_short_name, $factory_number, $relocate_number );
+      $this->game->automateFactory( $company_short_name, $factory_number, $relocate_number, $worker_id );
 
       self::ajaxResponse( );
     }
@@ -203,8 +205,9 @@
 
       $factory_number = self::getArg( "factoryNumber", AT_posint, false );
       $relocate_number = self::getArg( "relocateFactoryNumber", AT_posint, false );
+      $worker_id = self::getArg( "workerId", AT_posint, false );
 
-      $this->game->gainAppealBonus( $factory_number, $relocate_number );
+      $this->game->gainAppealBonus( $factory_number, $relocate_number, $worker_id );
 
       self::ajaxResponse( );
     }
