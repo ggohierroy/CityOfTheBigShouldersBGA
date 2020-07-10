@@ -1973,6 +1973,7 @@ class CityOfTheBigShoulders extends Table
     {
         $number_of_workers = count($worker_factories);
         $factories_material = $this->companies[$company_short_name]['factories'];
+        $worker_ids = explode(',', $worker_ids_string);
 
         // get workers already in factories
         $workers_by_factory = self::getCollectionFromDB(
@@ -1988,26 +1989,30 @@ class CityOfTheBigShoulders extends Table
         
         // regroup workers being added by factory
         $workers_to_hire_by_factory = [];
-        foreach($worker_factories as $factory_number)
+        foreach($worker_factories as $index => $factory_number)
         {
             $key = intval($factory_number);
-            if(array_key_exists($key, $workers_to_hire_by_factory)){
-                $workers_to_hire_by_factory[$key]++;
-            } else {
-                $workers_to_hire_by_factory[$key] = 1;
+            $worker_id = $worker_ids[$index];
+            if(array_key_exists($key, $workers_to_hire_by_factory))
+            {
+                $workers_to_hire_by_factory[$key]['worker_count']++;
+                $workers_to_hire_by_factory[$key]['worker_ids'][] = $worker_id;
+            } 
+            else 
+            {
+                $workers_to_hire_by_factory[$key] = ['worker_count' => 1, 'worker_ids' => [$worker_id]];
             }
         }
 
         // get workers in market
-        $worker_ids = explode(',', $worker_ids_string);
-        $workers_in_market = [];
-        if(count($worker_ids) > 0)
-            $workers_in_market = self::getObjectListFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market' AND card_id IN ($worker_ids_string)");
+        $workers_in_market = self::getCollectionFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'");
         
         // hire the workers
         $moved_workers_return = [];
-        foreach($workers_to_hire_by_factory as $factory_number => $workers_to_hire_count)
+        foreach($workers_to_hire_by_factory as $factory_number => $workers_to_hire)
         {
+            $workers_to_hire_count = $workers_to_hire['worker_count'];
+
             $automation_count = 0;
             $automation_key = "${company_short_name}_worker_holder_${factory_number}";
             if(array_key_exists($automation_key, $automations_by_factory))
@@ -2029,9 +2034,13 @@ class CityOfTheBigShoulders extends Table
             $condition = $company_short_name.'_'.$factory_number;
             for($i = 0; $i < $workers_to_hire_count; $i++)
             {
-                $worker = array_shift($workers_in_market);
-                if($worker != null)
+                $worker_id = array_shift($workers_to_hire['worker_ids']);
+                if($worker_id !== "0")
                 {
+                    if(!array_key_exists($worker_id, $workers_in_market))
+                        throw new BgaVisibleSystemException("Trying to hire workers that are not in the market");
+
+                    $worker = $workers_in_market[$worker_id];
                     $moved_workers[] = $worker['card_id'];
                     $worker['card_location'] = $condition;
                     $worker['card_location_arg'] = $company_id;
@@ -2054,6 +2063,11 @@ class CityOfTheBigShoulders extends Table
             // create workers if market has less workers than amount being hired
             if(count($new_workers) > 0)
             {
+                // sanity check
+                // this must mean that all the workers in the job market have been hired
+                if(count($workers_in_market) != count($moved_workers))
+                    throw new BgaVisibleSystemException("There are still workers in the market and the system is trying to create new ones");
+
                 $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
                 $card_sql .= implode( $new_workers, ',' );
                 self::DbQuery($card_sql);

@@ -4328,6 +4328,8 @@ function (dojo, declare) {
                         if(workerId != null){
                             var workerNumber = selectedFactories[i].workerId.split('_')[1];
                             args2.push(workerNumber);  
+                        } else {
+                            args2.push(0);
                         }
                     }
                     break;
