@@ -3257,7 +3257,20 @@ class CityOfTheBigShoulders extends Table
             'good_ids' => $good_ids
         ) );
 
-        $this->gamestate->nextState('dividends');
+        $last_factory_produced = self::getGameStateValue( "last_factory_produced" );
+        // if player didn't produce this turn, he is force to withhold
+        if($last_factory_produced == 0)
+        {
+            self::notifyAllPlayers( "forceWithhold", clienttranslate( '${company_name} is forced to withhold because none of its factories produced any goods' ), array(
+                'company_name' => self::getCompanyName($short_name),
+            ) );
+
+            self::withholdEarnings($company_id);
+        }
+        else
+        {
+            $this->gamestate->nextState('dividends');
+        }
     }
 
     function skipProduceGoods()
