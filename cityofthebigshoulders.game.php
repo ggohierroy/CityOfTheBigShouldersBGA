@@ -2006,9 +2006,11 @@ class CityOfTheBigShoulders extends Table
 
         // get workers in market
         $workers_in_market = self::getCollectionFromDB("SELECT card_id FROM card WHERE primary_type = 'worker' AND card_location ='job_market'");
-        
+
         // hire the workers
         $moved_workers_return = [];
+        $total_workers_created = 0;
+        $total_workers_moved = 0;
         foreach($workers_to_hire_by_factory as $factory_number => $workers_to_hire)
         {
             $workers_to_hire_count = $workers_to_hire['worker_count'];
@@ -2052,7 +2054,9 @@ class CityOfTheBigShoulders extends Table
                 }
             }
 
-            if(count($moved_workers) > 0)
+            $moved_workers_count = count($moved_workers);
+            $total_workers_moved += $moved_workers_count;
+            if($moved_workers_count > 0)
             {
                 // move these workers to the factory
                 $sql = "UPDATE card SET card_location = '$condition', owner_type = 'company', card_location_arg = $company_id WHERE card_id IN ";
@@ -2061,17 +2065,22 @@ class CityOfTheBigShoulders extends Table
             }
             
             // create workers if market has less workers than amount being hired
-            if(count($new_workers) > 0)
+            $new_workers_count = count($new_workers);
+            $total_workers_created = $new_workers_count;
+            if($new_workers_count > 0)
             {
-                // sanity check
-                // this must mean that all the workers in the job market have been hired
-                if(count($workers_in_market) != count($moved_workers))
-                    throw new BgaVisibleSystemException("There are still workers in the market and the system is trying to create new ones");
-
                 $card_sql = "INSERT INTO card (owner_type, primary_type, card_type, card_type_arg, card_location, card_location_arg) VALUES ";
                 $card_sql .= implode( $new_workers, ',' );
                 self::DbQuery($card_sql);
             }
+        }
+
+        // sanity check
+        if($total_workers_created > 0)
+        {
+            // this must mean that all the workers in the job market have been hired
+            if(count($workers_in_market) != $total_workers_moved)
+                throw new BgaVisibleSystemException("There are still workers in the market and the system is trying to create new ones");
         }
 
         $all_workers = self::getObjectListFromDB("SELECT * FROM card WHERE primary_type = 'worker' AND card_location LIKE '$company_short_name%'");
