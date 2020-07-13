@@ -4774,6 +4774,22 @@ function (dojo, declare) {
                 var resourceType = resource.type;
                 var hash = this.hashString(resourceType);
                 this['supply_' + location].addToStockWithId(hash, resourceId, 'player_boards');
+                var div = this['supply_' + location].getItemDivId(resourceId);
+                switch(resourceType)
+                {
+                    case 'livestock':
+                        this.addTooltip( div, _('Livestock'), "");
+                        break;
+                    case 'coal':
+                        this.addTooltip( div, _('Coal'), "");
+                        break;
+                    case 'wood':
+                        this.addTooltip( div, _('Wood'), "");
+                        break;
+                    case 'steel':
+                        this.addTooltip( div, _('Steel'), "");
+                        break;
+                }
             }
         },
 
@@ -4788,6 +4804,22 @@ function (dojo, declare) {
                 var fromItemDiv = 'supply_' + from + '_item_' + resourceId;
                 this['supply_' + location].addToStockWithId(hash, resourceId, fromItemDiv);
                 this['supply_' + from].removeFromStockById(resourceId);
+                var div = this['supply_' + location].getItemDivId(resourceId);
+                switch(resourceType)
+                {
+                    case 'livestock':
+                        this.addTooltip( div, _('Livestock'), "");
+                        break;
+                    case 'coal':
+                        this.addTooltip( div, _('Coal'), "");
+                        break;
+                    case 'wood':
+                        this.addTooltip( div, _('Wood'), "");
+                        break;
+                    case 'steel':
+                        this.addTooltip( div, _('Steel'), "");
+                        break;
+                }
             }
         },
 

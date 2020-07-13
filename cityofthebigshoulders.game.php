@@ -787,13 +787,16 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
-        $resource_ids = implode(',', $resource_ids);
-        // update resources location
-        self::DbQuery("UPDATE card SET 
-            owner_type = 'company',
-            card_location = '$company_short_name',
-            card_location_arg = $company_id
-            WHERE card_id IN ($resource_ids)");
+        if(count($resource_ids) > 0)
+        {
+            $resource_ids = implode(',', $resource_ids);
+            // update resources location
+            self::DbQuery("UPDATE card SET 
+                owner_type = 'company',
+                card_location = '$company_short_name',
+                card_location_arg = $company_id
+                WHERE card_id IN ($resource_ids)");
+        }
 
         $count = count($resources_returned);
         self::notifyAllPlayers( "resourcesBought", clienttranslate( '${company_name} receives ${count} resources' ), array(
