@@ -5870,6 +5870,7 @@ class CityOfTheBigShoulders extends Table
                 case 'playerSellPhase':
                     self::incGameStateValue( "consecutive_passes", 1 );
                     $this->gamestate->nextState( "zombiePass" );
+                    break;
                 case 'playerActionPhase':
                     self::DbQuery("UPDATE player SET current_number_partners = 0 WHERE player_id = $active_player");
                     $this->gamestate->nextState( "zombiePass" );
