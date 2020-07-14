@@ -3605,8 +3605,8 @@ class CityOfTheBigShoulders extends Table
             case 'popular_partners':
             case 'backroom_deals':
                 $state = $this->gamestate->state();
-                if( $state['name'] != 'playerDistributeGoodsPhase' && $state['name'] != 'playerDividendsPhase' && $state['name'] != 'playerUseAssetsPhase' )
-                    throw new BgaUserException( self::_("Capital Asset can only be used after the production step of the Operation Phase") );
+                if( $state['name'] != 'playerDistributeGoodsPhase' && $state['name'] != 'playerDividendsPhase' )
+                    throw new BgaUserException( self::_("Capital Asset can only be used after the Production step and before the Pay Dividends step of the Operation Phase") );
                 // increase share value one step
                 self::increaseShareValue($short_name, 1);
                 break;
