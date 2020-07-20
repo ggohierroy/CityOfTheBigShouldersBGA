@@ -5556,8 +5556,26 @@ class CityOfTheBigShoulders extends Table
         $active_player_id = $this->getActivePlayerId();
         $active_player_order = $players[$active_player_id]['player_order'];
 
+        // Check if current player is the last in the current action sequence
+        // i.e. if he is the last player or if players later in the turn order because
+        // 1. they have 0 partners
+        // 2. they do not own a company
+        $is_last_player = true;
+        foreach($players as $player)
+        {
+            if($player['player_order'] > $active_player_order)
+            {
+                if($player['current_number_partners'] > 0 && array_key_exists($player['player_id'], $owners))
+                {
+                    $is_last_player = false;
+                    $new_active_player = $player;
+                    break;
+                }
+            }
+        }
+
         // if the current sequence is over
-        if($last_player['player_id'] == $active_player_id)
+        if($is_last_player)
         {            
             // the first player for the next sequence is the last player that used advertising
             // if other players used it, they are next in reverse order of using advertising
@@ -5579,132 +5597,61 @@ class CityOfTheBigShoulders extends Table
                 'player_order' => $players
             ) );
 
+            // look for the next player in the new adjusted turn order
             foreach($players as $player)
             {
-                if($player['current_number_partners'] > 0)
+                if($player['current_number_partners'] > 0 && array_key_exists($player['player_id'], $owners))
                 {
-                    if(array_key_exists($player['player_id'], $owners))
-                    {
-                        $new_active_player = $player;
-                        break;
-                    }
-                    else
-                    {
-                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
-                            'player_name' => $player['player_name']
-                        ) );
-                    }
+                    $new_active_player = $player;
+                    break;
                 }    
             }
         }
 
+        // if no players can play anymore, go to the next phase
         if($new_active_player == null)
         {
-            foreach($players as $player)
-            {
-                if($player['player_order'] > $active_player_order && $player['current_number_partners'] > 0)
-                {
-                    if(array_key_exists($player['player_id'], $owners))
-                    {
-                        $new_active_player = $player;
-                        break;
-                    }
-                    else
-                    {
-                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
-                            'player_name' => $player['player_name']
-                        ) );
-                    }
-                }    
-            }
-        }
+            // if no more partners go to playerOperationPhase
+            // Active player = player with company that is first in appeal order
+            // give extra time to player
+            $order = self::getCurrentCompanyOrder();
+            $first_company = $order[0];
+            $owner_id = $first_company['owner_id'];
+            self::giveExtraTime( $owner_id );
+            $this->gamestate->changeActivePlayer( $owner_id );
 
-        if($new_active_player == null)
+            self::setGameStateValue("next_company_id", $first_company['next_company_id']);
+            self::setGameStateValue("current_company_id", $first_company["id"]);
+            self::setGameStateValue("last_factory_produced", 0);
+
+            self::setGameStateValue( "phase", 3 );
+            self::notifyAllPlayers( "newPhase", clienttranslate("Start Operation Phase"), array(
+                'phase' => 3
+            ) );
+
+            self::undoSavepoint();
+
+            if(self::getGameStateValue("advanced_rules") == 2)
+            {
+                $this->gamestate->nextState( 'playerEmergencyFundraise' );
+            }
+            else
+            {
+                $this->gamestate->nextState( 'playerBuyResourcesPhase' );
+            }
+            return;
+        }
+        else
         {
-            foreach($players as $player)
-            {
-                if($player['player_order'] <= $active_player_order && $player['current_number_partners'] > 0)
-                {
-                    if(array_key_exists($player['player_id'], $owners))
-                    {
-                        $new_active_player = $player;
-                        break;
-                    }
-                    else
-                    {
-                        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
-                            'player_name' => $player['player_name']
-                        ) );
-                    }
-                }    
-            }
+            // if not last player
+            // set active player in next player order (with partners > 0) and go to player action phase
+            $new_player_id = $new_active_player['player_id'];
+            $this->gamestate->changeActivePlayer( $new_player_id );
+            self::giveExtraTime( $new_player_id );
 
-            if($new_active_player == null)
-            {
-                // if the active player is not the last player, we need to update the player order for the next round
-                if($last_player['player_id'] != $active_player_id)
-                {            
-                    // the first player for the next sequence is the last player that used advertising
-                    // if other players used it, they are next in reverse order of using advertising
-                    foreach($players as $player_id => $player)
-                    {
-                        $players[$player_id]['player_order'] = $player['next_sequence_order'];
-                        $sql = "UPDATE player SET player_order = next_sequence_order WHERE player_id = $player_id";
-                        self::DbQuery($sql);
-                    }
-
-                    // Define the custom sort function
-                    function custom_sort($a,$b) {
-                        return $a['player_order']>$b['player_order'];
-                    }
-                    // Sort the multidimensional array
-                    usort($players, "custom_sort");
-
-                    self::notifyAllPlayers( "playerOrderChanged", clienttranslate('Player order adjusted for next sequence'), array(
-                        'player_order' => $players
-                    ) );
-                }
-
-                // if no more partners go to playerOperationPhase
-                // Active player = player with company that is first in appeal order
-                // give extra time to player
-                $order = self::getCurrentCompanyOrder();
-                $first_company = $order[0];
-                $owner_id = $first_company['owner_id'];
-                self::giveExtraTime( $owner_id );
-                $this->gamestate->changeActivePlayer( $owner_id );
-
-                self::setGameStateValue("next_company_id", $first_company['next_company_id']);
-                self::setGameStateValue("current_company_id", $first_company["id"]);
-                self::setGameStateValue("last_factory_produced", 0);
-
-                self::setGameStateValue( "phase", 3 );
-                self::notifyAllPlayers( "newPhase", clienttranslate("Start Operation Phase"), array(
-                    'phase' => 3
-                ) );
-
-                self::undoSavepoint();
-
-                if(self::getGameStateValue("advanced_rules") == 2)
-                {
-                    $this->gamestate->nextState( 'playerEmergencyFundraise' );
-                }
-                else
-                {
-                    $this->gamestate->nextState( 'playerBuyResourcesPhase' );
-                }
-                return;
-            }
+            self::undoSavePoint();
+            $this->gamestate->nextState( 'playerActionPhase' );
         }
-
-        // if not last player
-        // set active player in next player order (with partners > 0) and go to player action phase
-        $new_player_id = $new_active_player['player_id'];
-        $this->gamestate->changeActivePlayer( $new_player_id );
-        self::giveExtraTime( $new_player_id );
-
-        self::undoSavePoint();
-        $this->gamestate->nextState( 'playerActionPhase' );
     }
 
     function stGameStockPhase()
