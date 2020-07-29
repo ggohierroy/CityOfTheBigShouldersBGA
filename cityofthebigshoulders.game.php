@@ -1856,9 +1856,6 @@ class CityOfTheBigShoulders extends Table
 
     function increaseCompanyAppeal($company_short_name, $company_id, $current_appeal, $steps)
     {
-        if($current_appeal == 16)
-            return;
-        
         $new_appeal = $current_appeal + $steps;
         if($new_appeal > 16)
             $new_appeal = 16;
