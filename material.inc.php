@@ -448,6 +448,11 @@ $this->board_demand = [
     "bonus" => 0,
     "demand" => 999,
   ],
+  "demand33" => [
+    "type" => "all",
+    "bonus" => 0,
+    "demand" => 999,
+  ]
 ];
 
 $this->capital_asset = [

@@ -563,6 +563,7 @@ function (dojo, declare) {
                     dojo.query('.asset-tile').removeClass('active');
                     dojo.query('#haymarket_square').removeClass('active');
                     dojo.query('.demand').removeClass('active');
+                    dojo.removeClass('bank', 'active');
                     break;
                 case 'playerDividendsPhase':
                     dojo.query('.asset-tile').removeClass('active');
@@ -573,6 +574,7 @@ function (dojo, declare) {
                     break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     dojo.query('.demand').removeClass('active');
+                    dojo.removeClass('bank', 'active');
                     break;
                 case 'playerFreeActionPhase':
                     dojo.query('.asset-tile').removeClass('active');
@@ -939,8 +941,12 @@ function (dojo, declare) {
             this.createZone('demand32_goods', 13, 22, false);
             this.createZone('demand25_goods', 13, 22, true);
             this.createZone('demand26_goods', 13, 22, false);
+            this.createZone('demand33_goods', 13, 22, false);
 
             dojo.query(".demand").connect( 'onclick', this, 'onDemandSpaceClicked' );
+            dojo.query("#bank").connect( 'onclick', this, 'onDemandSpaceClicked' );
+
+            this.addTooltip( "bank", "", _( "Since you can always sell goods at half-price, this space can be used to do so when all the demand tiles have been filled and the half-price space has not yet been revealed on the board." ));
         },
 
         createZone: function(name, width, height, hasPattern){
@@ -1035,6 +1041,7 @@ function (dojo, declare) {
         activateDemandForCompany: function(shortName){
             var companyType = this.gamedatas.all_companies[shortName].type;
             dojo.query('.'+companyType).addClass('active');
+            dojo.addClass('bank', 'active');
         },
 
         activateFactoriesInCompany: function(shortName){

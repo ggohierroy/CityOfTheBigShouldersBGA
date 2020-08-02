@@ -93,6 +93,9 @@
             <div id="shoes_0" class="demand shoes" identifier="32">
                 <div id="demand32_goods"></div>
             </div>
+            <div id="bank" class="shoes food_and_dairy dry_goods" identifier="33">
+                <div id="demand33_goods"></div>
+            </div>
             <div id="banana" class="worker_spot general-action">
                 <div id="banana_holder"></div>
             </div>

@@ -397,6 +397,14 @@
     left: 93px;
 }
 
+#bank{
+    top: 385px;
+    left: 705px;
+    width: 125.5px;
+    height: 114px;
+    position: absolute;
+}
+
 .worker {
     background-image: url('img/tokens.png');
     background-position: -99px -24px;
