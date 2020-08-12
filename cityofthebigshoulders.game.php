@@ -598,7 +598,7 @@ class CityOfTheBigShoulders extends Table
 
                 self::DbQuery("UPDATE player SET number_partners = number_partners + 1, current_number_partners = current_number_partners + 1");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate('All players receive a new partner'), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('All players automatically receive a new partner in the 3rd decade'), [
                     'counters' => $counters
                 ]);
                 break;
@@ -619,7 +619,7 @@ class CityOfTheBigShoulders extends Table
                     appeal_partner_gained = 1
                     WHERE player_id = $player_id");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner'), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner for reaching 9 on the appeal track'), [
                     'counters' => $counters,
                     'player_name' => $player['player_name']
                 ]);
@@ -641,7 +641,7 @@ class CityOfTheBigShoulders extends Table
                     company_partner_gained = 1
                     WHERE player_id = $player_id");
 
-                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner'), [
+                self::notifyAllPlayers("countersUpdated", clienttranslate('${player_name} receives a new partner for running the last factory in his company for the first time'), [
                     'counters' => $counters,
                     'player_name' => $player['player_name']
                 ]);
