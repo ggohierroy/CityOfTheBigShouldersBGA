@@ -1004,7 +1004,7 @@ class CityOfTheBigShoulders extends Table
             }
         }
 
-        // shift demand right
+        // shift demand right in each row
         $rows = ['food_and_dairy', 'dry_goods', 'meat_packing', 'shoes'];
         $bonuses = ['50', '20', '0'];
         foreach($rows as $row)
@@ -1014,12 +1014,12 @@ class CityOfTheBigShoulders extends Table
                 if(array_key_exists("${row}_${bonus}", $demand_by_location))
                     continue;
                 
-                // when location empty, shift tiles to the left
+                // when location empty, shift tiles to the right
                 if($bonus == '50')
                 {
                     if(array_key_exists("${row}_20", $demand_by_location))
                     {
-                        // check if 20 not empty => shift
+                        // check if 20 not empty => shift to 50
                         $demand = $demand_by_location["${row}_20"];
                         $demand_by_location["${row}_50"] = $demand;
                         unset($demand_by_location["${row}_20"]);
@@ -1033,7 +1033,7 @@ class CityOfTheBigShoulders extends Table
                     }
                     else if(array_key_exists("${row}_0", $demand_by_location))
                     {
-                        // else check if 0 not empty => shift
+                        // else check if 0 not empty => shift to 50
                         $demand = $demand_by_location["${row}_0"];
                         $demand_by_location["${row}_50"] = $demand;
                         unset($demand_by_location["${row}_0"]);
@@ -1045,30 +1045,12 @@ class CityOfTheBigShoulders extends Table
                             'from' => "${row}_0"
                         ));
                     }
-                    else
-                    {
-                        // draw a card
-                        $demand = self::getObjectFromDB(
-                            "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
-                            ORDER BY card_location_arg ASC
-                            LIMIT 1");
-                        
-                        if($demand != null)
-                        {
-                            $demand_id = $demand['card_id'];
-                            $demand['card_location'] = "${row}_50";
-                            self::DbQuery("UPDATE card SET card_location = '${row}_50' WHERE card_id = $demand_id");
-                            self::notifyAllPlayers( "demandDrawn", "", array(
-                                'demand' => $demand
-                            ));
-                        }
-                    }
                 }
                 else if ($bonus == '20')
                 {
                     if(array_key_exists("${row}_0", $demand_by_location))
                     {
-                        // else check if 0 not empty => shift
+                        // else check if 0 not empty => shift to 20
                         $demand = $demand_by_location["${row}_0"];
                         $demand_by_location["${row}_20"] = $demand;
                         unset($demand_by_location["${row}_0"]);
@@ -1080,41 +1062,32 @@ class CityOfTheBigShoulders extends Table
                             'from' => "${row}_0"
                         ));
                     }
-                    else
-                    {
-                        $demand = self::getObjectFromDB(
-                            "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
-                            ORDER BY card_location_arg ASC
-                            LIMIT 1");
-                        
-                        if($demand != null)
-                        {
-                            $demand_id = $demand['card_id'];
-                            $demand['card_location'] = "${row}_20";
-                            self::DbQuery("UPDATE card SET card_location = '${row}_20' WHERE card_id = $demand_id");
-                            self::notifyAllPlayers( "demandDrawn", "", array(
-                                'demand' => $demand
-                            ));
-                        }
-                    }
                 }
-                else if($bonus == '0')
+            }
+        }
+
+        // refill demand by column
+        foreach($bonuses as $bonus)
+        {
+            foreach($rows as $row)
+            {
+                if(array_key_exists("${row}_${bonus}", $demand_by_location))
+                    continue;
+                
+                // draw a card
+                $demand = self::getObjectFromDB(
+                    "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
+                    ORDER BY card_location_arg ASC
+                    LIMIT 1");
+                
+                if($demand != null)
                 {
-                    // draw a card
-                    $demand = self::getObjectFromDB(
-                        "SELECT card_id, card_type FROM card WHERE primary_type = 'demand' AND card_location = 'demand_deck'
-                        ORDER BY card_location_arg ASC
-                        LIMIT 1");
-                    
-                    if($demand != null)
-                    {
-                        $demand_id = $demand['card_id'];
-                        $demand['card_location'] = "${row}_0";
-                        self::DbQuery("UPDATE card SET card_location = '${row}_0' WHERE card_id = $demand_id");
-                        self::notifyAllPlayers( "demandDrawn", "", array(
-                            'demand' => $demand
-                        ));
-                    }
+                    $demand_id = $demand['card_id'];
+                    $demand['card_location'] = "${row}_${bonus}";
+                    self::DbQuery("UPDATE card SET card_location = '${row}_${bonus}' WHERE card_id = $demand_id");
+                    self::notifyAllPlayers( "demandDrawn", "", array(
+                        'demand' => $demand
+                    ));
                 }
             }
         }
