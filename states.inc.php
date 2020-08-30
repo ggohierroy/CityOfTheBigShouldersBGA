@@ -230,7 +230,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may distribute goods'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset", "undo" ),
+        "possibleactions" => array( "distributeGoods", "skipDistributeGoods", "useAsset", "tradeResources", "undo" ),
         "transitions" => array( "dividends" => 17, "gameOperationPhase" => 19, "freeAppealBonus" => 28, "loopback" => 16, "useAssets" => 35, "zombiePass" => 19)
     ),
 
@@ -240,7 +240,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${company_name} (${you}) may pay dividends to shareholders with its earnings ($${income})'),
         "type" => "activeplayer",
         "args" => "argsOperationPhase",
-        "possibleactions" => array( "payDividends", "withhold", "useAsset", "undo" ),
+        "possibleactions" => array( "payDividends", "withhold", "useAsset", "tradeResources", "undo" ),
         "transitions" => array( "gameOperationPhase" => 19, "freeAppealBonus" => 29, "loopback" => 17, "useAssets" => 35, "zombiePass" => 19)
     ),
 

@@ -3860,7 +3860,10 @@ function (dojo, declare) {
             }
 
             var stateName = this.gamedatas.gamestate.name;
-            if(stateName == 'playerBuyResourcesPhase' || stateName == 'playerProduceGoodsPhase'){
+            if(stateName == 'playerBuyResourcesPhase' || 
+                stateName == 'playerProduceGoodsPhase' ||
+                stateName == 'playerDistributeGoodsPhase' ||
+                stateName == 'playerDividendsPhase'){
                 var companyShortName = this.gamedatas.gamestate.args.company_short_name;
                 this.createResourceOptions(companyShortName);
             } else {
