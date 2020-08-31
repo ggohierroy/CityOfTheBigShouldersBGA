@@ -1348,7 +1348,7 @@ class CityOfTheBigShoulders extends Table
 
         //self::dump('drawn_resources', $drawn_resources);
 
-        // if not enough, need to reshuffle everything
+        // if not enough, need to reshuffle everything from haymarket
         $drawn_resources_count = count($drawn_resources);
         $missing_resources_count = $resources_to_draw - $drawn_resources_count;
         if($missing_resources_count != 0)
@@ -1366,17 +1366,19 @@ class CityOfTheBigShoulders extends Table
         }
 
         // then update location of drawn resources for each empty location
-        for($i = 0; $i < $number_empty_locations; $i++)
+        $number_of_locations = 4; // 10, 20, 30, x
+        $non_empty_locations = $number_of_locations - $number_empty_locations; // between 0 and 4
+        for($i = $non_empty_locations; $i < $number_of_locations; $i++)
         {
             $resource_ids_types = [];
-            $location = $supply_locations[3 - $i];
+            $location = $supply_locations[$i];
             $resource_ids = [];
             for($j = 0; $j < $refill_amount; $j++)
             {
                 if(count($drawn_resources) == 0)
                     continue;
 
-                $resource = array_pop($drawn_resources);
+                $resource = array_shift($drawn_resources); // take from beginning of array because order is first from bag -> then from haymarket
                 $resource_ids[] = $resource['card_id'];
                 $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
             }
