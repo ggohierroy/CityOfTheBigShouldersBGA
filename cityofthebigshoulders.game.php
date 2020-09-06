@@ -275,6 +275,36 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    function skipBadPlayer($player)
+    {
+        self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company and receives $25 for each partner'), array(
+            'player_name' => $player['player_name']
+        ) );
+
+        // when a player has no company, he can use his partner to gain 25$
+        $money_from_partners = $player['current_number_partners'] * 25;
+        $player_id = $player['player_id'];
+        $treasury = $player['treasury'];
+
+        self::DbQuery("UPDATE player SET 
+            treasury = treasury + $money_from_partners, 
+            player_score = player_score + $money_from_partners, 
+            current_number_partners = 0 
+            WHERE player_id = $player_id");
+
+        self::notifyAllPlayers( "scoreUpdated", "", array(
+            'scores' => [ ['player_id' => $player_id, 'score_delta' => $money_from_partners] ]
+        ) );
+        
+        $counters = [];
+        self::addCounter($counters, "money_${player_id}", $treasury + $money_from_partners);
+        self::addCounter($counters, "partner_current_${player_id}", 0);
+
+        self::notifyAllPlayers("countersUpdated", "", [
+            'counters' => $counters
+        ]);
+    }
+
     function canFactoryRun($short_name, $factory_number)
     {
         $factory_material = $this->companies[$short_name]['factories'][$factory_number];
@@ -5489,7 +5519,7 @@ class CityOfTheBigShoulders extends Table
         // get first player in turn order and set as active player
         // skip players that don't own a company
         $owners = self::getCollectionFromDB("SELECT owner_id FROM company GROUP BY owner_id");
-        $players = self::getObjectListFromDB("SELECT player_id, player_name FROM player ORDER BY player_order ASC");
+        $players = self::getObjectListFromDB("SELECT player_id, player_name, current_number_partners, treasury FROM player ORDER BY player_order ASC");
         foreach($players as $player)
         {
             if(array_key_exists($player['player_id'], $owners))
@@ -5499,9 +5529,7 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
-                self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company'), array(
-                    'player_name' => $player['player_name']
-                ) );
+                self::skipBadPlayer($player);
             }
         }
 
@@ -5534,7 +5562,7 @@ class CityOfTheBigShoulders extends Table
         $new_active_player = null;
 
         // get all players
-        $sql = "SELECT player_id, player_order, current_number_partners, player_color AS color, player_name, next_sequence_order FROM player ORDER BY player_order ASC";
+        $sql = "SELECT player_id, player_order, current_number_partners, player_color AS color, player_name, next_sequence_order, treasury FROM player ORDER BY player_order ASC";
         $players = self::getCollectionFromDB($sql);
         $tmp = array_values($players);
         $last_player = array_pop($tmp);
@@ -5547,7 +5575,7 @@ class CityOfTheBigShoulders extends Table
         $active_player_order = $players[$active_player_id]['player_order'];
 
         // Check if current player is the last in the current action sequence
-        // i.e. if he is the last player or if players later in the turn order because
+        // i.e. if he is the last player or if players later in the turn order cannot play because
         // 1. they have 0 partners
         // 2. they do not own a company
         $is_last_player = true;
@@ -5555,11 +5583,18 @@ class CityOfTheBigShoulders extends Table
         {
             if($player['player_order'] > $active_player_order)
             {
-                if($player['current_number_partners'] > 0 && array_key_exists($player['player_id'], $owners))
+                if($player['current_number_partners'] > 0)
                 {
-                    $is_last_player = false;
-                    $new_active_player = $player;
-                    break;
+                    if(array_key_exists($player['player_id'], $owners))
+                    {
+                        $is_last_player = false;
+                        $new_active_player = $player;
+                        break;
+                    }
+                    else
+                    {
+                        self::skipBadPlayer($player);
+                    }
                 }
             }
         }
@@ -5590,10 +5625,17 @@ class CityOfTheBigShoulders extends Table
             // look for the next player in the new adjusted turn order
             foreach($players as $player)
             {
-                if($player['current_number_partners'] > 0 && array_key_exists($player['player_id'], $owners))
+                if($player['current_number_partners'] > 0)
                 {
-                    $new_active_player = $player;
-                    break;
+                    if(array_key_exists($player['player_id'], $owners))
+                    {
+                        $new_active_player = $player;
+                        break;
+                    }
+                    else
+                    {
+                        self::skipBadPlayer($player);
+                    }
                 }    
             }
         }
