@@ -607,7 +607,7 @@ class CityOfTheBigShoulders extends Table
                     "SELECT player_name, player_id, number_partners, current_number_partners, appeal_partner_gained FROM player WHERE player_id = $player_id");
                 
                 if($player['appeal_partner_gained'] == true)
-                    return true;
+                    return;
 
                 $counters = [];
                 self::addCounter($counters, "partner_${player_id}", $player['number_partners'] + 1);
@@ -2632,7 +2632,7 @@ class CityOfTheBigShoulders extends Table
                 self::automateWorker($company_short_name, $factory_number, $relocate_number, $worker_id);
                 break;
             case 'partner':
-                $auto_forfeited = self::gainPartner($player_id, 'appeal');
+                self::gainPartner($player_id, 'appeal');
                 break;
             case 'good':
                 $auto_forfeited = self::gainGood($company_short_name);
@@ -2710,19 +2710,37 @@ class CityOfTheBigShoulders extends Table
         if($company['owner_id'] != $player_id)
             throw new BgaVisibleSystemException("Company is not owner by player");
 
-        $new_company_treasury = $company['treasury'] + 25;
-        $counters = [];
-        $short_name = $company['short_name'];
-        self::DbQuery("UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id");
-        self::addCounter($counters, "money_${short_name}", $new_company_treasury);
-
-        // notify payment
-        self::notifyAllPlayers( "countersUpdated", clienttranslate('${company_name} forfeits appeal bonus and receives $25'), array(
-            'company_name' => self::getCompanyName($short_name),
-            'counters' => $counters
-        ) );
-
         $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
+        $bonus_name = self::BONUS_NAME[$next_appeal_bonus];
+        if($bonus_name == "partner")
+        {
+            // this bonus can only be gained once
+            // A player cannot gain 25$ by subsequently reaching this space
+            $appeal_partner_gained = self::getUniqueValueFromDB(
+                "SELECT appeal_partner_gained FROM player WHERE player_id = $player_id");
+            
+            if($appeal_partner_gained == true)
+            {
+                self::notifyAllPlayers( "", clienttranslate('${player_name} already gained the bonus partner from the appeal track and can no longer forfeit the bonus for $25'), array(
+                    'player_name' => self::getActivePlayerName()
+                ) );
+            }
+        }
+        else
+        {
+            $new_company_treasury = $company['treasury'] + 25;
+            $counters = [];
+            $short_name = $company['short_name'];
+            self::DbQuery("UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id");
+            self::addCounter($counters, "money_${short_name}", $new_company_treasury);
+
+            // notify payment
+            self::notifyAllPlayers( "countersUpdated", clienttranslate('${company_name} forfeits appeal bonus and receives $25'), array(
+                'company_name' => self::getCompanyName($short_name),
+                'counters' => $counters
+            ) );
+        }
+
         $final_appeal_bonus = self::getGameStateValue('final_appeal_bonus');
 
         if($next_appeal_bonus == $final_appeal_bonus)
