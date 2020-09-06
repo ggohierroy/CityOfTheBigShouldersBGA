@@ -843,7 +843,7 @@ $this->building = [
   ],
   "building29" => [ // 150 dividend
     "pips" => 3,
-    "min_players" => 4,
+    "min_players" => 3,
     "number_of_workers" => 0,
     "cost" => 30,
     "payment" => "banktoplayer",
@@ -859,7 +859,7 @@ $this->building = [
   ],
   "building31" => [ // 250 dividend
     "pips" => 3,
-    "min_players" => 4,
+    "min_players" => 3,
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "banktoplayer",
@@ -959,7 +959,7 @@ $this->building = [
   ],
   "building43" => [ // worker + manager
     "pips" => 3,
-    "min_players" => 3,
+    "min_players" => 4,
     "number_of_workers" => 0,
     "cost" => 40,
     "payment" => "companytoplayer",
@@ -967,7 +967,7 @@ $this->building = [
   ],
   "building44" => [ // worker + salesperson
     "pips" => 3,
-    "min_players" => 3,
+    "min_players" => 4,
     "number_of_workers" => 0,
     "cost" => 50,
     "payment" => "companytoplayer",

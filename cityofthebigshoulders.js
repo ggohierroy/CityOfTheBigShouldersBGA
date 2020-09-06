@@ -34,9 +34,9 @@ function (dojo, declare) {
             this.companyNameToImagePosition = { 'anglo':0, 'brunswick':1,'cracker': 2, 'doggett': 3, 'elgin': 4, 'fairbank': 5, 'henderson': 6, 'libby': 7, 'spalding': 8, 'swift': 9 };
             this.buildingNumberToImagePosition = {
                 'building1':0, 'building2':1, 'building3':2, 'building4':5, 'building5':6,
-                'building6':7, 'building7':10, 'building8':11, 'building9':12, 'building10':15,
+                'building6':7, 'building7':10, 'building8':11, 'building9':9, 'building10':15,
                 'building11':16, 'building12':17, 'building13':3, 'building14':4, 'building15':8,
-                'building16':9, 'building17':13, 'building18':14, 'building19':18, 'building20':19,
+                'building16':12, 'building17':13, 'building18':14, 'building19':18, 'building20':19,
                 'building21':20, 'building22':21, 'building23':25, 'building24':26, 'building25':30,
                 'building26':31, 'building27':35, 'building28':36, 'building29':22, 'building30':34,
                 'building31':37, 'building32':38, 'building33':23, 'building34':24, 'building35':27,
