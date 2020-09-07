@@ -3846,8 +3846,10 @@ class CityOfTheBigShoulders extends Table
             $payment_method == 'companytoplayer' || 
             $payment_method == 'companytoshareholders')
         {
+            // some costs are not calculated in the front-end (e.g., capital asset cost)
+            // therefore this exception needs to be communicated to user
             if($company['treasury'] < $cost)
-                throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this action");
+                throw new BgaUserException( self::_("Company doesn't have enough money to pay for this action") );
             $new_company_treasury -= $cost;
         } else if ($payment_method == "banktocompany"){
             $new_company_treasury += $cost;
