@@ -440,7 +440,7 @@
 
 .building_to_discard{
     border: 3px red solid;
-    opacity: 0.5;
+    opacity: 0.5 !important;
 }
 
 #job_market{
