@@ -508,16 +508,22 @@
 #fundraising_40{
     left: 781px;
     top: 198px;
+    background-image: url("img/buildings_small_final.png"); /* Start hidden under the pile of 1 pip buildings */
+    background-position: -100px -600px; 
 }
 
 #fundraising_60{
     left: 780px;
     top: 259px;
+    background-image: url("img/buildings_small_final.png"); /* Start hidden under the pile of 2 pip buildings */
+    background-position: -150px -600px; 
 }
 
 #fundraising_80{
     left: 780px;
     top: 321px;
+    background-image: url("img/buildings_small_final.png"); /* Start hidden under the pile of 3 pip buildings */
+    background-position: -200px -600px; 
 }
 
 #hire_manager{

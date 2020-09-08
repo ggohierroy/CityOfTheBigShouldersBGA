@@ -96,6 +96,7 @@ $machinestates = array(
         "description" => clienttranslate('Waiting on other players to choose a building to play'),
         "descriptionmyturn" => clienttranslate('${you} must choose a building to play'),
         "type" => "multipleactiveplayer",
+        "args" => "argsPlayerBuildingPhase",
         "updateGameProgression" => true,
         "possibleactions" => array( "selectBuildings" ),
         "action" => "st_MultiPlayerInit",

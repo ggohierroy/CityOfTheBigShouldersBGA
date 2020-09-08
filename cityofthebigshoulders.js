@@ -181,6 +181,7 @@ function (dojo, declare) {
 
             // add items to board
             this.placeItemsOnBoard(gamedatas);
+            this.showFundraisingActions(Number(gamedatas.round), Number(gamedatas.phase));
 
             // update counters
             this.updateCounters(gamedatas.counters);
@@ -312,6 +313,7 @@ function (dojo, declare) {
                     this.slideVertically('available_companies_wrapper', 'companies_bottom');
                     if(!this.isSpectator && this.isCurrentPlayerActive())
                         dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
+                    this.showFundraisingActions(args.args.round, 1); // Some building are distributed to players at this moment, may required an update
                     break;
                 case 'clientPlayerDiscardBuilding':
                     if(!this.isSpectator)
@@ -916,6 +918,17 @@ function (dojo, declare) {
             }
         },
 
+        showFundraisingActions: function(round, phase)
+        {
+            // Building tiles are placed over fundraising actions to hide them, changing background-image to none will reveil them.
+            if (round >= 1 || phase >= 1)
+                dojo.style('fundraising_40', 'background-image', 'none'); // From 1st decade, at building phase
+            if (round >= 3 || (round == 2 && phase >= 1))
+                dojo.style('fundraising_60', 'background-image', 'none'); // From 3th decade, at building phase
+            if (round == 4 && phase >= 1)
+                dojo.style('fundraising_80', 'background-image', 'none'); // From 5th dacade, at building phase
+        },
+
         placeRoundAndPhaseMarkers: function(gamedatas){
             var round = Number(gamedatas.round) + 1;
             var phase = Number(gamedatas.phase) + 1;
@@ -988,8 +1001,8 @@ function (dojo, declare) {
             // advertising for ad blockers
             this.addTooltip( "banana", "", _( "When you place a Partner here and pay $20, increase your company’s Appeal by 1 space on the Appeal Track. Additionnally, you may become the starting player for the Action Phase. This change in turn order takes effect immediately." ));
             this.addTooltip( "fundraising_40", "", _( "When you place a Partner here, your company gains $40 from the bank." ));
-            this.addTooltip( "fundraising_60", "", _( "When you place a Partner here, your company gains $60 from the bank." ));
-            this.addTooltip( "fundraising_80", "", _( "When you place a Partner here, your company gains $80 from the bank." ));
+            this.addTooltip( "fundraising_60", "", _( "When you place a Partner here, your company gains $60 from the bank. Available from the 3rd decade only." ));
+            this.addTooltip( "fundraising_80", "", _( "When you place a Partner here, your company gains $80 from the bank. Available in the 5th decade only." ));
             this.addTooltip( "hire_manager", "", _( "You may spend $60 and place a Partner here to hire a single Manager." ));
             this.addTooltip( "hire_salesperson", "", _( "You may spend $70 and place a Partner here to hire a single Salesperson." ));
             this.addTooltip( "capital_investment", "", _( "When you place a Partner here, your company may purchase a Capital Asset from the available Capital Asset tiles on the game board. To do so, your company will pay the bank the amount indicated above the Capital Asset tile and then you will place that tile on the Company Charter." ));
@@ -1522,7 +1535,7 @@ function (dojo, declare) {
             }
 
             // add an empty asset for when the deck is empty
-            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_large_final.png', 61 );
+            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_large_final.png', 43 );
 
             this[stockName] = newStock;
         },

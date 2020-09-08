@@ -5089,6 +5089,12 @@ class CityOfTheBigShoulders extends Table
         return ["round" => $round];
     }
 
+    function argsPlayerBuildingPhase()
+    {
+        $round = self::getGameStateValue( "round" );
+        return ["round" => $round];
+    }
+
     function argsPlayerActionPhase()
     {
         $round = self::getGameStateValue( "round" );
