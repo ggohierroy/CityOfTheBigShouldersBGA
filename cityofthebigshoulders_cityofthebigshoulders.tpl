@@ -34,6 +34,8 @@
     <div id="main_board_wrapper" class="whiteblock">
         <div id="main_board" class="center">
             <div id="capital_assets"></div>
+            <div id="capital_assets_deck"></div>
+            <div id="capital_assets_label">Deck: <span id="asset_deck_count">0</span></div>
             <div id="job_market_worker" class="worker_spot">
                 <div id="job_market_worker_holder"></div>
             </div>

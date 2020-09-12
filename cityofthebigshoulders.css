@@ -230,6 +230,23 @@
     position: absolute;
 }
 
+#capital_assets_deck{
+    left: 350px;
+    top: 423px;
+    height: 50px;
+    width: 50px;
+    position: absolute;
+    background-image: url(img/buildings_large_final.png); /* Start visible, hidden when deck is empty */
+    background-position: -50px -600px;
+    background-size: 250px 750px;
+}
+
+#capital_assets_label {
+    left: 350px;
+    top: 475px;
+    position: absolute;
+}
+
 .exhausted {
     opacity: 0.5 !important;
 }

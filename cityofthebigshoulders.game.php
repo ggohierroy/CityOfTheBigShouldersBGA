@@ -168,6 +168,8 @@ class CityOfTheBigShoulders extends Table
         $result['priority_deal_player_id'] = self::getGameStateValue('priority_deal_player_id');
         $resources_in_bag = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'resource_bag'");
         self::addCounter($result ['counters'], "resources_in_bag", $resources_in_bag);
+        $asset_deck_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'asset_deck'");
+        self::addCounter($result ['counters'], "asset_deck_count", $asset_deck_count);
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg
@@ -1143,7 +1145,7 @@ class CityOfTheBigShoulders extends Table
         $spots = ['40', '50', '60', '70', '80'];
         $empty_spot = '';
 
-        // There's only one spot empty, find it
+        // find smallest empty spot (more then one when assets deck is empty)
         foreach($spots as $index => $spot)
         {
             $found = false;
@@ -1206,17 +1208,22 @@ class CityOfTheBigShoulders extends Table
             WHERE primary_type = 'asset' AND card_location = 'asset_deck'
             ORDER BY card_location_arg ASC
             LIMIT 1");
-        
+
+        $counters = [];
         if($new_asset != null)
         {
             $id = $new_asset['card_id'];
             $new_asset['card_location'] = '80';
             self::DbQuery("UPDATE card SET card_location = '80', card_location_arg = 0 WHERE card_id = $id");
+
+            $asset_deck_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'asset_deck'");
+            self::addCounter($counters, "asset_deck_count", $asset_deck_count);
         }
 
         self::notifyAllPlayers( "assetsShifted", "", array(
             'assets' => $assets,
-            'new_asset' => $new_asset
+            'new_asset' => $new_asset,
+            'counters' => $counters,
         ));
     }
 

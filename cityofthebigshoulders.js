@@ -181,7 +181,7 @@ function (dojo, declare) {
 
             // add items to board
             this.placeItemsOnBoard(gamedatas);
-            this.showFundraisingActions(Number(gamedatas.round), Number(gamedatas.phase));
+            this.refreshBuildingsDeckVisibility(Number(gamedatas.round), Number(gamedatas.phase));
 
             // update counters
             this.updateCounters(gamedatas.counters);
@@ -199,6 +199,7 @@ function (dojo, declare) {
             this.creatAppealBonusTooltips();
 
             this.placeRoundAndPhaseMarkers(gamedatas);
+            this.refreshAssetsDeckVisibility();
 
             // set priority marker
             var priority_deal_player_id = gamedatas.priority_deal_player_id;
@@ -313,7 +314,7 @@ function (dojo, declare) {
                     this.slideVertically('available_companies_wrapper', 'companies_bottom');
                     if(!this.isSpectator && this.isCurrentPlayerActive())
                         dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
-                    this.showFundraisingActions(args.args.round, 1); // Some building are distributed to players at this moment, may required an update
+                    this.refreshBuildingsDeckVisibility(args.args.round, 1); // Some building are distributed to players at this moment, may required an update
                     break;
                 case 'clientPlayerDiscardBuilding':
                     if(!this.isSpectator)
@@ -918,15 +919,22 @@ function (dojo, declare) {
             }
         },
 
-        showFundraisingActions: function(round, phase)
-        {
+        refreshBuildingsDeckVisibility: function(round, phase){
             // Building tiles are placed over fundraising actions to hide them, changing background-image to none will reveil them.
-            if (round >= 1 || phase >= 1)
+            if (round >= 1 || (round == 0 && phase >= 1))
                 dojo.style('fundraising_40', 'background-image', 'none'); // From 1st decade, at building phase
             if (round >= 3 || (round == 2 && phase >= 1))
                 dojo.style('fundraising_60', 'background-image', 'none'); // From 3th decade, at building phase
-            if (round == 4 && phase >= 1)
+            if (round >= 5 || (round == 4 && phase >= 1))
                 dojo.style('fundraising_80', 'background-image', 'none'); // From 5th dacade, at building phase
+        },
+
+        refreshAssetsDeckVisibility: function(){
+            // Visible by default, hidden when deck become empty
+            if(this.gamedatas.counters["asset_deck_count"] && this.gamedatas.counters["asset_deck_count"].counter_value == 0){
+                dojo.style("capital_assets_deck", "display", "none");
+                dojo.style("capital_assets_label", "display", "none");
+            }
         },
 
         placeRoundAndPhaseMarkers: function(gamedatas){
@@ -4746,22 +4754,27 @@ function (dojo, declare) {
         },
 
         notif_assetsShifted: function(notif){
-            var newAsset = notif.args.new_asset;
-            var hash = this.hashString(newAsset.card_type);
-            var newWeights = {};
-            newWeights[hash] = 0;
-
-            for(var index in notif.args.assets){
-                var asset = notif.args.assets[index];
-                hash = this.hashString(asset.card_type);
-                newWeights[hash] = 80-Number(asset.card_location);
-            }
-
             // remove any white space that would be added during a player's turn when buying assets
             this.capital_assets.removeFromStock(0);
-            this.capital_assets.changeItemsWeight( newWeights );
 
-            this.placeAsset(newAsset);
+            // replace it by the new asset (if any)
+            var newAsset = notif.args.new_asset;
+            if (newAsset != null){
+                var hash = this.hashString(newAsset.card_type);
+                var newWeights = {};
+                newWeights[hash] = 0;
+
+                for(var index in notif.args.assets){
+                    var asset = notif.args.assets[index];
+                    hash = this.hashString(asset.card_type);
+                    newWeights[hash] = 80-Number(asset.card_location);
+                }
+                this.capital_assets.changeItemsWeight( newWeights );
+                this.placeAsset(newAsset);
+            }
+
+            this.updateCounters(notif.args.counters);
+            this.refreshAssetsDeckVisibility();
 
             // add empty assets when asset deck is empty
             var items = this.capital_assets.getAllItems();
