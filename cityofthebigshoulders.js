@@ -1535,7 +1535,7 @@ function (dojo, declare) {
             }
 
             // add an empty asset for when the deck is empty
-            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_large_final.png', 43 );
+            newStock.addItemType( 0, -1, g_gamethemeurl+'img/buildings_large_final.png', 44 );
 
             this[stockName] = newStock;
         },
