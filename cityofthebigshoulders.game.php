@@ -915,6 +915,9 @@ class CityOfTheBigShoulders extends Table
 
     function gainResources($company_short_name, $company_id, $resources_gained, $resource_ids)
     {
+        if ($resource_ids == null || count($resource_ids) == 0)
+            return; // nothing todo
+
         // get the resources and make sure they are in haymarket
         $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
         foreach($resources as $index => $resource)
