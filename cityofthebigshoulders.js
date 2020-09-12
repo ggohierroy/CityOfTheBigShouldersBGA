@@ -1502,7 +1502,7 @@ function (dojo, declare) {
 
             newStock.create( this, $(stockName), 14, 14);
 
-            // Specify that there are 5 buildings per row
+            // Specify that there are 4 stocks per row
             newStock.image_items_per_row = 4;
             newStock.setSelectionMode(0);
             newStock.item_margin = 1;
@@ -2625,8 +2625,8 @@ function (dojo, declare) {
             newStock.create( this, $(id), 350, 229);
             this[propertyName] = newStock;
 
-            // Specify that there are 6 companies per row
-            newStock.image_items_per_row = 6;
+            // Specify that there are 5 companies per row
+            newStock.image_items_per_row = 5;
             newStock.setSelectionMode(0);
             
             var i = 0;
