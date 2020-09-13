@@ -277,6 +277,59 @@ class CityOfTheBigShoulders extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
+    public function LoadDebug()
+	{
+        // new ids
+        // these are the ids associated with the studio login
+        $new_ids = [2319929, 2319930, 2319931, 2319932];
+
+        // get the player ids from this table
+        $players = self::getObjectListFromDB("SELECT player_id FROM player");
+
+        // get priority deal player
+        $priority_deal_player_id = self::getGameStateValue('priority_deal_player_id');
+
+        // change the player ids
+        foreach($players as $index => $player)
+        {
+            $player_id = $player['player_id'];
+
+            $new_player_id = $new_ids[$index];
+
+            if($player_id == $priority_deal_player_id)
+                self::setGameStateValue('priority_deal_player_id', $new_player_id);
+            
+            //player
+            self::DbQuery("UPDATE player SET player_id='${new_player_id}' WHERE player_id = ${player_id}" );
+
+            //global 
+            self::DbQuery("UPDATE global SET global_value='${new_player_id}' WHERE global_value = ${player_id}" );
+            
+            //stats
+            self::DbQuery("UPDATE stats SET stats_player_id='${new_player_id}' WHERE stats_player_id = ${player_id}" );
+            
+            // 'other' game specific tables. example:
+            // tables specific to your schema that use player_ids
+            self::DbQuery("UPDATE card SET card_location_arg='${new_player_id}' WHERE card_location_arg = ${player_id}" );
+            self::DbQuery("UPDATE card SET card_type_arg='${new_player_id}' WHERE card_type_arg = ${player_id}" );
+
+            self::DbQuery("UPDATE card SET card_location = 'personal_area_${new_player_id}' WHERE card_location = 'personal_area_${player_id}'" );
+            self::DbQuery("UPDATE card SET card_location = 'building_track_${new_player_id}' WHERE card_location = 'building_track_${player_id}'" );
+            self::DbQuery("UPDATE card SET card_location = 'player_${new_player_id}_play' WHERE card_location = 'player_${player_id}_play'" );
+            self::DbQuery("UPDATE card SET card_location = 'player_${new_player_id}_discard' WHERE card_location = 'player_${player_id}_discard'" );
+            self::DbQuery("UPDATE card SET card_location = 'player_${new_player_id}' WHERE card_location = 'player_${player_id}'" );
+
+            for($i = 1; $i < 6; $i++)
+            {
+                self::DbQuery("UPDATE card SET card_type = 'worker_${new_player_id}_${i}' WHERE card_type = 'worker_${player_id}_${i}'" );
+            }
+
+            self::DbQuery("UPDATE company SET owner_id='${new_player_id}' WHERE owner_id = ${player_id}" );
+
+            self::DbQuery("UPDATE sold_shares SET player_id='${new_player_id}' WHERE player_id = ${player_id}" );
+        }	
+    }
+
     function skipBadPlayer($player)
     {
         self::notifyAllPlayers( "playerSkipped", clienttranslate('${player_name} has been skipped because they don\'t own a company and receives $25 for each partner'), array(
@@ -5379,13 +5432,17 @@ class CityOfTheBigShoulders extends Table
         self::refillSupply(true);
 
         // discard and refill asset tiles
-        $asset = self::getNonEmptyObjectFromDB("SELECT card_type, card_id FROM card WHERE primary_type = 'asset' AND card_location = '40'");
-        self::DbQuery("UPDATE card SET card_location = 'discard' WHERE primary_type = 'asset' AND card_location = '40'");
-        self::notifyAllPlayers( "assetDiscarded", "", array(
-            'asset_name' => $asset['card_type'],
-            'asset_id' => $asset['card_id']
-        ) );
-        self::refillAssets();
+        // when the deck has been emptied, it's possible that the capital asset row will be empty
+        $asset = self::getObjectFromDB("SELECT card_type, card_id FROM card WHERE primary_type = 'asset' AND card_location = '40'");
+        if($asset != null)
+        {
+            self::DbQuery("UPDATE card SET card_location = 'discard' WHERE primary_type = 'asset' AND card_location = '40'");
+            self::notifyAllPlayers( "assetDiscarded", "", array(
+                'asset_name' => $asset['card_type'],
+                'asset_id' => $asset['card_id']
+            ) );
+            self::refillAssets();
+        }
 
         // discard and refill demand tiles
         self::refillDemand();
