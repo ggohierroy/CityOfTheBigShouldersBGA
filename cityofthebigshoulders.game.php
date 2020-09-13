@@ -3812,7 +3812,7 @@ class CityOfTheBigShoulders extends Table
                     $asset_cost -= 30;
                 
                 if($company['treasury'] < $asset_cost)
-                    throw new BgaVisibleSystemException("Company doesn't have enough money to pay for this asset");
+                    throw new BgaUserException( self::_("Company doesn't have enough money to pay for this asset"));
 
                 $new_company_treasury -= $asset_cost;
                 self::notifyAllPlayers( "additionalCost", clienttranslate('${company_name} pays the bank $${cost}'), array(
