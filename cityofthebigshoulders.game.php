@@ -968,7 +968,7 @@ class CityOfTheBigShoulders extends Table
 
     function gainResources($company_short_name, $company_id, $resources_gained, $resource_ids)
     {
-        if ($resource_ids == null || count($resource_ids) == 0)
+        if ($resource_ids == null)
             return; // nothing todo
 
         // get the resources and make sure they are in haymarket
