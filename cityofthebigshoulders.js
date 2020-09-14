@@ -878,12 +878,13 @@ function (dojo, declare) {
             return split[0] + "_" + split[1]; // switf_3
         },
 
-        getTooltipHtml: function(positionLookup, objectType, text, imagesPerRow, width, height){
+        getTooltipHtml: function(positionLookup, objectType, title, text, imagesPerRow, width, height){
             var imagePosition = positionLookup[objectType];
             var horizontalOffset = (imagePosition % imagesPerRow) * width;
             var verticalOffset = Math.floor(imagePosition / imagesPerRow ) * height;
             var style = "-" + horizontalOffset + "px -" + verticalOffset + "px;";
-            return "<div class='clearfix'><div class='tile-tooltip' style='background-position: " + style + "'></div><span>" + text + "</span></div>";
+            title = title == null ? "" : "<b>" + title + "</b><br><br>";
+            return "<div class='clearfix'><div class='tile-tooltip' style='background-position: " + style + "'></div><span>" + title + text + "</span></div>";
         },
 
         deactivateTooExpensiveStocks: function(money){
@@ -1678,8 +1679,9 @@ function (dojo, declare) {
 
             var assetMaterial = this.gamedatas.all_capital_assets[assetName];
 
+            var title = _( assetMaterial.name );
             var text = _( assetMaterial.tooltip );
-            var html = this.getTooltipHtml(this.assetNameToImagePosition, assetName, text, 5, 118, 118); 
+            var html = this.getTooltipHtml(this.assetNameToImagePosition, assetName, title, text, 5, 118, 118); 
             this.addTooltip( itemDivId, html, "");
 
             return hash;
@@ -2051,7 +2053,7 @@ function (dojo, declare) {
 
             var buildingMaterial = this.gamedatas.all_buildings[building.card_type];
             var text = _( buildingMaterial.tooltip );
-            var html = this.getTooltipHtml(this.buildingNumberToImagePosition, building.card_type, text, 5, 118, 118); 
+            var html = this.getTooltipHtml(this.buildingNumberToImagePosition, building.card_type, null, text, 5, 118, 118); 
             this.addTooltip( div, html, "");
         },
 
@@ -2310,7 +2312,7 @@ function (dojo, declare) {
             var goalMaterial = this.gamedatas.goals[goal.card_type];
 
             var text = _( goalMaterial.tooltip );
-            var html = this.getTooltipHtml(this.goalPositions, goal.card_type, text, 5, 118, 118); 
+            var html = this.getTooltipHtml(this.goalPositions, goal.card_type, null, text, 5, 118, 118); 
             this.addTooltip( itemDivId, html, "");
         },
 
