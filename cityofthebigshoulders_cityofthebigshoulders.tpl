@@ -152,7 +152,7 @@
         </div>
         <div class="owned_companies_area">
             <h3>{OWNED_COMPANIES_STR}</h3>
-            <div id="company_area_{PLAYER_ID}"></div>
+            <div id="company_area_{PLAYER_ID}" class="company_area"></div>
         </div>
     </div>
     <!-- END player_area -->
@@ -189,7 +189,9 @@ var jstpl_player_board = '\<div class="cp_board">\
 <div class="board_item"><div class="panel-token money"></div><span id="money_${id}">0</span></div>\
 <div class="board_item"><div class="panel-token partner partner-${color}"></div><span id="partner_current_${id}">0</span>/<span id="partner_${id}">0</span></div>\
 <div class="board_item priority-holder"><div id="priority_${id}" class="panel-token"></div></div>\
+<div></div><div class="board_item" id="board_company_holder_${id}"></div>\
 </div>';
+var jstpl_player_board_company = '<div id="board_company" class="panel-token board_company_${player_id} company_token ${short_name}_token"></div>';
 
 var jstpl_company_content = '<div id="${id}" class="company-content">\
 <div class="company_item company_money"><div class="panel-token money"></div><span id="money_${short_name}">0</span></div>\

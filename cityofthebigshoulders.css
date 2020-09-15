@@ -291,6 +291,22 @@
     background-image: url(img/company_tokens_small.png);
 }
 
+.company_token_focus {
+    filter: saturate(4);
+}
+
+.company_token_unfocus {
+    filter: brightness(0.65);
+}
+
+.company_area_focus {
+    filter: brightness(1.05);
+}
+
+.company_area_unfocus {
+    filter: brightness(0.65);
+}
+
 .anglo_token {  background-position: 0px 0px; }
 .brunswick_token {  background-position: 0px -20px; }
 .cracker_token {  background-position: 0px -60px; }

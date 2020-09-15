@@ -103,6 +103,8 @@ function (dojo, declare) {
                     'color': player.color
                 } ), player_board_div );
 
+                this.refreshPlayerBoardCompany(player_id);
+
                 if(player.player_order && gamedatas.gamestate.name != 'playerStartFirstCompany'){
                     var hash = this.hashString(player.color);
                     this.player_order.addToStockWithId(hash, player.name);
@@ -219,6 +221,13 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName );
+
+            // Stock or Action phases: Highlights compagies of current player
+            var phase = Number(this.gamedatas.phase) + 1;
+            if (phase == 1 || phase == 3 )
+            {
+                this.refreshCompanyTokenFocusByPlayer(this.getActivePlayerId());
+            }
             
             switch( stateName )
             {
@@ -228,6 +237,7 @@ function (dojo, declare) {
                         this.available_shares_company.setSelectionMode(2);
                         this.activateCompanyShares(args.args.company_short_name);
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
                     break;
                 case 'playerStartFirstCompany':
                     this.slideVertically('available_companies_wrapper', 'companies_top');
@@ -315,6 +325,7 @@ function (dojo, declare) {
                     if(!this.isSpectator && this.isCurrentPlayerActive())
                         dojo.query('#building_area_'+this.player_id+'>.stockitem').addClass('active');
                     this.refreshBuildingsDeckVisibility(args.args.round, 1); // Some building are distributed to players at this moment, may required an update
+                    this.refreshCompanyTokenFocus(null);
                     break;
                 case 'clientPlayerDiscardBuilding':
                     if(!this.isSpectator)
@@ -383,6 +394,7 @@ function (dojo, declare) {
                         dojo.query('#supply_20>.stockitem').addClass('active');
                         dojo.query('#supply_30>.stockitem').addClass('active');
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
                     break;
                 case 'playerProduceGoodsPhase':
                     if(this.isCurrentPlayerActive()){
@@ -392,6 +404,7 @@ function (dojo, declare) {
                         var companyShortName = args.args.company_short_name;
                         dojo.query('#'+companyShortName+'_factory_'+currentFactory).addClass('active');
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
                     break;
                 case 'playerDistributeGoodsPhase':
                     this.clientStateArgs.goods = [];
@@ -401,17 +414,23 @@ function (dojo, declare) {
                         this.activateDemandForCompany(args.args.company_short_name);
                         this.clientStateArgs.income = Number(args.args.income);
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
                     break;
                 case 'playerDividendsPhase':
                     if(this.isCurrentPlayerActive()){
                         this.activateCompanyAsset(args.args.company_short_name);
                         dojo.query('#haymarket_square').addClass('active');
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
                     break;
                 case 'playerUseAssetsPhase': // use assets at the end of the operation phase
                     if(this.isCurrentPlayerActive()){
                         this.activateCompanyAsset(args.args.company_short_name);
                     }
+                    this.refreshCompanyTokenFocus(args.args.company_short_name);
+                    break;
+                case 'gameOperationPhase':
+                    this.refreshCompanyTokenFocus(null);
                     break;
                 case 'client_playerTurnConfirmDistributeGoods':
                     this.activateDemandForCompany(args.args.company_short_name);
@@ -933,6 +952,86 @@ function (dojo, declare) {
             if(this.gamedatas.counters["asset_deck_count"] && this.gamedatas.counters["asset_deck_count"].counter_value == 0){
                 dojo.style("capital_assets_deck", "display", "none");
                 dojo.style("capital_assets_label", "display", "none");
+            }
+        },
+
+        updateCompanyOwner: function(shortName, ownerId){
+            // Keep owned_companies up-to-date (needed for refreshPlayerBoardCompany)
+            var found = false;
+            for(var i in this.gamedatas.owned_companies){
+                var ownedCompany = this.gamedatas.owned_companies[i];
+                if (ownedCompany.short_name == shortName) {
+                    ownedCompany.owner_id = ownerId;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                this.gamedatas.owned_companies[i == null ? 0 : Number(i)+1] = {short_name: shortName, owner_id: ownerId};
+            }
+        },
+
+        refreshPlayerBoardCompany: function(playerId){
+            // Display owned companies token in player board
+            dojo.query(".board_company_" + playerId).forEach(dojo.destroy); // Remove previous compagies first
+            for(var i in this.gamedatas.owned_companies) {
+                var ownedCompany = this.gamedatas.owned_companies[i];
+                if (ownedCompany.owner_id == playerId) {
+                    var html = this.format_block( 'jstpl_player_board_company', {
+                        'player_id': playerId,
+                        'short_name': ownedCompany.short_name
+                    } );
+                    dojo.place(html, "board_company_holder_" + playerId);
+                }
+            }
+        },
+
+        refreshCompanyTokenFocus: function(companiesShortName = null, playerCompagnies = false){
+            // Focus on the specified compagies (if any)
+            dojo.query(".company_token").removeClass("company_token_focus company_token_unfocus");
+            if (companiesShortName != null) {
+                if (!Array.isArray(companiesShortName))
+                    companiesShortName = [companiesShortName];
+
+                var nodes = dojo.query('.company_token');
+                for(var i = 0; i < nodes.length; ++i) {
+                    var node = nodes[i];
+                    dojo.addClass(node, companiesShortName.some(x => dojo.hasClass(node, x + "_token")) ? "company_token_focus" : "company_token_unfocus");
+                }
+            }
+
+            if (!playerCompagnies && companiesShortName != null && companiesShortName.length == 1)
+                this.refreshCompanyAreaFocus(companiesShortName[0]);
+            else
+                this.refreshCompanyAreaFocus(null);
+        },
+
+        refreshCompanyTokenFocusByPlayer: function(playerId){
+            // Focus on the specified player's compagies (if any)
+            if (playerId == null) {
+                this.refreshCompanyTokenFocus(null, true);
+            }
+            else
+            {
+                var compagies = [];
+                for(var i in this.gamedatas.owned_companies) {
+                    var ownedCompany = this.gamedatas.owned_companies[i];
+                    if (ownedCompany.owner_id == playerId) {
+                        compagies.push(ownedCompany.short_name);
+                    }
+                }
+                this.refreshCompanyTokenFocus(compagies, true);
+            }
+        },
+
+        refreshCompanyAreaFocus: function(companyShortName = null){
+            dojo.query(".company_area>.company").removeClass("company_area_focus company_area_unfocus");
+            if (companyShortName != null) {
+                var nodes = dojo.query('.company_area>.company');
+                for(var i = 0; i < nodes.length; ++i) {
+                    var node = nodes[i];
+                    dojo.addClass(node, dojo.hasClass(node, "company_" + companyShortName) ? "company_area_focus" : "company_area_unfocus");
+                }
             }
         },
 
@@ -2185,6 +2284,7 @@ function (dojo, declare) {
             var company = this.gamedatas.all_companies[companyShortName];
 
             dojo.addClass(company_div, 'company');
+            dojo.addClass(company_div, companyId);
             dojo.connect(company_div, 'onclick', this, 'onCompanyClicked' );
             
             var factoryWidth = companyShortName == 'henderson' ? 93 : 97;
@@ -4568,6 +4668,10 @@ function (dojo, declare) {
             var from = 'personal_area_' + previous_owner_id + '_item_' + stockType + '_' + stockId; //personal_area_2319929_item_brunswick_common_133
             this['personal_area_' + new_owner_id].addToStockWithId(hashStockType, stockType+'_'+stockId, from);
             this['personal_area_' + previous_owner_id].removeFromStockById(stockType+'_'+stockId);
+
+            this.updateCompanyOwner(shortName, new_owner_id);
+            this.refreshPlayerBoardCompany(previous_owner_id);
+            this.refreshPlayerBoardCompany(new_owner_id);
         },
 
         notif_playerOrderChanged: function(notif){
@@ -4642,6 +4746,8 @@ function (dojo, declare) {
         },
 
         notif_newPhase: function(notif){
+            this.gamedatas.phase = notif.args.phase;
+
             var phase = notif.args.phase + 1;
             var phaseMarker = $('phase_marker');
             var parent = phaseMarker.parentNode;
@@ -5099,6 +5205,9 @@ function (dojo, declare) {
             });
 
             this.updateAppealTokens(appeal, notif.args.order);
+
+            this.updateCompanyOwner(shortName, playerId);
+            this.refreshPlayerBoardCompany(playerId);
         },
 
         notif_automationTokensCreated: function(notif) {
