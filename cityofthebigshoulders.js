@@ -4667,7 +4667,9 @@ function (dojo, declare) {
                 var div = this.buildings.getItemDivId(itemId);
 
                 var buildingMaterial = this.gamedatas.all_buildings[dealtBuilding.card_type];
-                this.addTooltip( div, _( buildingMaterial.tooltip ), "");
+                var text = _( buildingMaterial.tooltip );
+                var html = this.getTooltipHtml(this.buildingNumberToImagePosition, dealtBuilding.card_type, null, text, 5, 118, 118); 
+                this.addTooltip( div, html, "");
             }
         },
 
