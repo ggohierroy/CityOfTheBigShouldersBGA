@@ -106,6 +106,13 @@
                 ) );
         }
 
+        $this->tpl['DECK_STR'] = self::_("Deck");
+        $this->tpl['BAG_STR'] = self::_("Bag");
+        $this->tpl['OWNED_COMPANIES_STR'] = self::_("Owned Companies");
+        $this->tpl['PERSONAL_SHARES_STR'] = self::_("Personal Shares");
+        $this->tpl['SHARES_CHARTERS_STR'] = self::_("Shares on Company Charters");
+        $this->tpl['BANK_POOL_STR'] = self::_("Bank Pool");
+
         /*
         
         // Examples: set the value of some element defined in your tpl file like this: {MY_VARIABLE_ELEMENT}

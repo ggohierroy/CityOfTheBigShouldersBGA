@@ -35,7 +35,7 @@
         <div id="main_board" class="center">
             <div id="capital_assets"></div>
             <div id="capital_assets_deck"></div>
-            <div id="capital_assets_label">Deck: <span id="asset_deck_count">0</span></div>
+            <div id="capital_assets_label">{DECK_STR}: <span id="asset_deck_count">0</span></div>
             <div id="job_market_worker" class="worker_spot">
                 <div id="job_market_worker_holder"></div>
             </div>
@@ -43,7 +43,7 @@
                 <div id="haymarket"></div>
             </div>
             <div id="player_order"></div>
-            <div id="bag">Bag: <span id="resources_in_bag">0</span></div>
+            <div id="bag">{BAG_STR}: <span id="resources_in_bag">0</span></div>
             <div id="round_1" class="round-spot"></div>
             <div id="round_2" class="round-spot"></div>
             <div id="round_3" class="round-spot"></div>
@@ -146,11 +146,11 @@
         <h3 style="color: #{PLAYER_COLOR};">{PLAYER_NAME}</h3>
         <div id="building_area_{PLAYER_ID}"></div>
         <div class="personal_share_area">
-            <h3>Personal Shares (<span id="current_shares_{PLAYER_ID}">0</span>/<span id="total_shares_{PLAYER_ID}">0</span>)</h3>
+            <h3>{PERSONAL_SHARES_STR} (<span id="current_shares_{PLAYER_ID}">0</span>/<span id="total_shares_{PLAYER_ID}">0</span>)</h3>
             <div id="personal_area_{PLAYER_ID}"></div>
         </div>
         <div class="owned_companies_area">
-            <h3>Owned Companies</h3>
+            <h3>{OWNED_COMPANIES_STR}</h3>
             <div id="company_area_{PLAYER_ID}"></div>
         </div>
     </div>
@@ -159,9 +159,9 @@
 
 <div id="shares_bottom">
     <div id="available_shares_wrapper" class="whiteblock" >
-        <h3>Shares on Company Charters</h3>
+        <h3>{SHARES_CHARTERS_STR}</h3>
         <div id="available_shares_company"></div>
-        <h3>Bank Pool</h3>
+        <h3>{BANK_POOL_STR}</h3>
         <div id="available_shares_bank"></div>
     </div>
 </div>
