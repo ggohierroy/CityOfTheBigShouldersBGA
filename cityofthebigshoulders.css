@@ -124,15 +124,15 @@
     left: 70px;
 }
 
- .panel-token {
-    background-image: url( 'img/tokens.png' );
+.panel-token {
+    background-image: url(img/tokens.png);
     display: inline-block;
     vertical-align: middle;
     margin: 1px;
 }
 
 .moveable-token {
-    background-image: url( 'img/tokens.png' );
+    background-image: url(img/tokens.png);
     position: absolute;
 }
 
@@ -149,7 +149,7 @@
 }
 
 .priority-marker {
-    background-image: url( 'img/tokens.png' );
+    background-image: url(img/tokens.png);
     position: relative;
     background-position: -117px -29px; 
     width: 39px;
@@ -177,7 +177,7 @@
 .meeple-black { background-position-x: -243px }
 
 .extra-goods-token {
-    background-image: url( 'img/tokens.png' );
+    background-image: url(img/tokens.png);
     position: absolute;
     background-position: -169px -23px;
     width: 26px;
@@ -262,7 +262,7 @@
 .stock {
     width: 109px;
     height: 73px;
-    background-image: url('img/stocks_small.png');
+    background-image: url(img/stocks_small.png);
 }
 
 .anglo {  background-position-y: 0px; }
@@ -282,7 +282,7 @@
 .company_token {
     width: 20px;
     height: 20px;
-    background-image: url('img/company_tokens_small.png');
+    background-image: url(img/company_tokens_small.png);
 }
 
 .anglo_token {  background-position: 0px 0px; }
@@ -304,7 +304,7 @@
 }
 
 .automation_token {
-    background-image: url('img/tokens.png');
+    background-image: url(img/tokens.png);
     background-position: -57px -29px;
     width: 13px;
     height: 22px;
@@ -312,7 +312,7 @@
 }
 
 .good_token {
-    background-image: url('img/tokens.png');
+    background-image: url(img/tokens.png);
     background-position: -2px -29px;
     width: 13px;
     height: 22px;
@@ -334,7 +334,7 @@
 }
 
 .demand-card{
-    background-image: url('img/demand.png');
+    background-image: url(img/demand.png);
     width: 61px;
     height: 94.5px;
     position: absolute;
@@ -423,7 +423,7 @@
 }
 
 .worker {
-    background-image: url('img/tokens.png');
+    background-image: url(img/tokens.png);
     background-position: -99px -24px;
     width: 15px;
     height: 29px;
@@ -478,7 +478,7 @@
 .resource {
     width: 14px;
     height: 14px;
-    background-image: url("img/tokens.png");
+    background-image: url(img/tokens.png);
     display: inline-block
 }
 
@@ -524,26 +524,26 @@
 
 #fundraising_40{
     left: 781px;
-    top: 198px;
-    background-image: url("img/buildings_large_final.png"); /* Start hidden under the pile of 1 pip buildings */
+    top: 197px;
+    background-image: url(img/buildings_large_final.png); /* Start hidden under the pile of 1 pip buildings */
     background-position: -100px -600px; 
-    background-size: 250px 749px;
+    background-size: 250px 750px;
 }
 
 #fundraising_60{
-    left: 780px;
+    left: 781px;
     top: 259px;
-    background-image: url("img/buildings_large_final.png"); /* Start hidden under the pile of 2 pip buildings */
+    background-image: url(img/buildings_large_final.png); /* Start hidden under the pile of 2 pip buildings */
     background-position: -150px -600px; 
-    background-size: 250px 749px;
+    background-size: 250px 750px;
 }
 
 #fundraising_80{
-    left: 780px;
+    left: 781px;
     top: 321px;
-    background-image: url("img/buildings_large_final.png"); /* Start hidden under the pile of 3 pip buildings */
-    background-position: -200px -600px; 
-    background-size: 250px 749px;
+    background-image: url(img/buildings_large_final.png); /* Start hidden under the pile of 3 pip buildings */
+    background-position: -200px -600px;
+    background-size: 250px 750px;
 }
 
 #hire_manager{
@@ -624,11 +624,11 @@
 }
 
 .stockitem.tile {
-    background-size: 250px 749px;
+    background-size: 250px 750px;
 }
 
 .tile-tooltip {
-    background-image: url("img/buildings_large_final.png");
+    background-image: url(img/buildings_large_final.png);
     height: 118px;
     width: 118px;
     margin-left: 20px;
