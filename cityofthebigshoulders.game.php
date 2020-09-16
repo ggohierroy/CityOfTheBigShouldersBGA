@@ -3878,7 +3878,7 @@ class CityOfTheBigShoulders extends Table
                 $dividend_cost = 300;
             
             if($company['treasury'] < $dividend_cost)
-                throw new BgaVisibleSystemException("Company doesn't have enough money to pay shareholders");
+                throw new BgaUserException(self::_("Company doesn't have enough money to pay shareholders"));
             
             $new_company_treasury -= $dividend_cost;
             self::notifyAllPlayers( "additionalCost", clienttranslate('${company_name} pays the bank $${cost}'), array(
