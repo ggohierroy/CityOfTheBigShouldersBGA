@@ -3315,8 +3315,9 @@ function (dojo, declare) {
 
             // calculate operating income and switch to client state that displays it
             this.setClientState("client_playerTurnConfirmDistributeGoods", {
-                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods to receive $${income}'),{
+                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods out of ${goods} total goods to receive $${income}'),{
                     count: count,
+                    goods: count + goods.length - 1,
                     income: income
                 })
             });
@@ -3384,8 +3385,9 @@ function (dojo, declare) {
 
             // calculate operating income and switch to client state that displays it
             this.setClientState("client_playerTurnConfirmDistributeGoods", {
-                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods to receive $${income}'),{
+                descriptionmyturn : dojo.string.substitute(_('Distribute ${count} goods out of ${goods} total goods to receive $${income}'),{
                     count: count,
+                    goods: count + goods.length - 1,
                     income: income
                 })
             });
