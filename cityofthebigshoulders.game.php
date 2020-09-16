@@ -2801,7 +2801,7 @@ class CityOfTheBigShoulders extends Table
             
             if($appeal_partner_gained == true)
             {
-                self::notifyAllPlayers( "", clienttranslate('${player_name} already gained the bonus partner from the appeal track and can no longer forfeit the bonus for $25'), array(
+                self::notifyAllPlayers( "partnerAlreadyGained", clienttranslate('${player_name} already gained the bonus partner from the appeal track and can no longer forfeit the bonus for $25'), array(
                     'player_name' => self::getActivePlayerName()
                 ) );
             }
