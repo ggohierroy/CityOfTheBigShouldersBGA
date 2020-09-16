@@ -1007,3 +1007,18 @@ $this->goal = [
     "tooltip" => clienttranslate("The player who owns the most 20% Stock Certificates will receive \$200.")
   ],
 ];
+
+$this->stock_types = [
+  "director" => [
+    "name" => clienttranslate("director's"),
+    "multiplier" => 3
+  ],
+  "preferred" => [
+    "name" => clienttranslate("preferred"),
+    "multiplier" => 2
+  ],
+  "common" => [
+    "name" => clienttranslate("common"),
+    "multiplier" => 1
+  ],
+];

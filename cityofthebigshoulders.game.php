@@ -404,20 +404,7 @@ class CityOfTheBigShoulders extends Table
             $split = explode('_', $player_share['card_type']);
             $owned_short_name = $split[0];
             $owned_stock_type = $split[1];
-            $owned_share = 0;
-
-            if($owned_stock_type == 'preferred')
-            {
-                $owned_share += 2;
-            }
-            else if ($owned_stock_type == 'director')
-            {
-                $owned_share += 3;
-            }
-            else if ($owned_stock_type == 'common')
-            {
-                $owned_share += 1;
-            }
+            $owned_share = self::getStockTypeMultiplier($owned_stock_type); // 1,2 or 3;
 
             if(!array_key_exists($owned_short_name, $ownership_by_company))
                 $ownership_by_company[$owned_short_name] = 0;
@@ -450,15 +437,13 @@ class CityOfTheBigShoulders extends Table
             $short_name = $split[0];
             $stock_type = $split[1];
             
-            $multiplier = 1;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
             if($stock_type == 'director')
             {
-                $multiplier = 3;
                 $stock_by_player[$player_id]['director_stock'] = $stock;
             }  
             else if($stock_type == 'preferred')
             {
-                $multiplier = 2;
                 $stock_by_player[$player_id]['preferred_stock'] = $stock;
             }
             else
@@ -511,11 +496,7 @@ class CityOfTheBigShoulders extends Table
 
             $stock_type = explode('_', $stock['card_type'])[1];
 
-            $multiplier = 1;
-            if($stock_type == 'director')
-                $multiplier = 3;
-            else if($stock_type == 'preferred')
-                $multiplier = 2;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
             
             $certificate_value = $share_value * $multiplier;
             $stock_id = $stock['card_id'];
@@ -804,11 +785,7 @@ class CityOfTheBigShoulders extends Table
         {
             $stock_type = explode('_', $stock['card_type'])[1];
 
-            $multiplier = 1;
-            if($stock_type == 'director')
-                $multiplier = 3;
-            else if($stock_type == 'preferred')
-                $multiplier = 2;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
             
             $player_id = $stock['card_location_arg'];
             if(array_key_exists($player_id, $scores))
@@ -1786,12 +1763,7 @@ class CityOfTheBigShoulders extends Table
             // get stock type (brunswick_director)
             $split = explode('_', $stock['card_type']);
             $stock_type = $split[1];
-            $multiplier = 1;
-            if($stock_type == 'director'){
-                $multiplier = 3;
-            } else if($stock_type == 'preferred'){
-                $multiplier = 2;
-            }
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
 
             if($stock['owner_type'] == 'company'){
                 $payment_to_company += $multiplier * $per_share_earning;
@@ -2597,6 +2569,20 @@ class CityOfTheBigShoulders extends Table
         return $value;
     }
 
+    function getStockTypeName($stock_type)
+    {
+        if ($this->stock_types[$stock_type] == null)
+            throw new BgaVisibleSystemException("Invalid stock type {$stock_type}");
+        return $this->stock_types[$stock_type]['name'];
+    }
+
+    function getStockTypeMultiplier($stock_type)
+    {
+        if ($this->stock_types[$stock_type] == null)
+            throw new BgaVisibleSystemException("Invalid stock type {$stock_type}");
+        return $this->stock_types[$stock_type]['multiplier'];
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -2648,11 +2634,9 @@ class CityOfTheBigShoulders extends Table
             $split = explode('_', $card_type);
             $stock_type = $split[1];
 
-            $multiplier = 1;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
             if($stock_type == 'director')
                 throw new BgaVisibleSystemException("Company should never have the director's certificate");
-            else if($stock_type == 'preferred')
-                $multiplier = 2;
 
             $money_gained += $share_value*$multiplier;
             $value_lost += $multiplier;
@@ -4319,11 +4303,7 @@ class CityOfTheBigShoulders extends Table
         $share_values = self::getShareValues();
         $share_value = $share_values[$short_name]['value'];
 
-        $multiplier = 1;
-        if($stock_type == 'director')
-            $multiplier = 3;
-        else if($stock_type == 'preferred')
-            $multiplier = 2;
+        $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
         
         // check if player can buy share
         if($player['treasury'] < $share_value * $multiplier)
@@ -4362,22 +4342,7 @@ class CityOfTheBigShoulders extends Table
                     throw new BgaUserException( self::_("You cannot own both the director's certificate and the preferred certificate") );
             }
 
-            if($owned_stock_type == 'preferred')
-            {
-                $owned_share += 2;
-            }
-            else if ($owned_stock_type == 'director')
-            {
-                $owned_share += 3;
-            }
-            else if ($owned_stock_type == 'common')
-            {
-                $owned_share += 1;
-            }
-            else
-            {
-                throw new BgaVisibleSystemException("Found impossible stock type when checking player's shares");
-            }
+            $owned_share += self::getStockTypeMultiplier($owned_stock_type); // 1,2 or 3;
         }
 
         if($owned_share > 6)
@@ -4438,9 +4403,7 @@ class CityOfTheBigShoulders extends Table
         // notify all players
         // company and player treasury changed
         // share certificate added to player area
-        $string_stock_type = $stock_type;
-        if($stock_type == 'director')
-            $string_stock_type = "director's";
+        $string_stock_type = self::getStockTypeName($stock_type);
         $company_material = $this->companies[$short_name];
 
         self::notifyAllPlayers( "certificateBought", clienttranslate( '${player_name} bought a ${string_stock_type} stock from ${company_name}' ), array(
@@ -4597,11 +4560,7 @@ class CityOfTheBigShoulders extends Table
             if($stock['card_location_arg'] != $player_id)
                 throw new BgaVisibleSystemException("${card_type} does not belong to active player");
             
-            $multiplier = 1;
-            if($stock_type == 'director')
-                $multiplier = 3;
-            else if($stock_type == 'preferred')
-                $multiplier = 2;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
             
             $stocks_by_player = null;
             if(array_key_exists($short_name, $companies_selling))
@@ -4671,11 +4630,7 @@ class CityOfTheBigShoulders extends Table
             $short_name = $split[0];
             $stock_type = $split[1];
 
-            $multiplier = 1;
-            if($stock_type == 'director')
-                $multiplier = 3;
-            else if($stock_type == 'preferred')
-                $multiplier = 2;
+            $multiplier = self::getStockTypeMultiplier($stock_type); // 1,2 or 3
 
             $share_value = $share_values[$short_name]['value'];
 
