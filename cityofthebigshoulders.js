@@ -4734,6 +4734,10 @@ function (dojo, declare) {
             this.placeDemand(demand);
             this.placeOnObject(demand.card_type, 'main_board');
             this.slideToObject(demand.card_type, demand.card_location).play();
+
+            // Update counter localy
+            this.gamedatas.counters['demand_deck_count'] = { 'counter_name': 'demand_deck_count', 'counter_value': this.gamedatas.counters['demand_deck_count'].counter_value - 1 };
+            this.updateCounters(this.gamedatas.counters); //force refresh counter on screen
         },
 
         notif_demandShifted: function(notif){

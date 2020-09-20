@@ -36,6 +36,7 @@
             <div id="capital_assets"></div>
             <div id="capital_assets_deck"></div>
             <div id="capital_assets_label">{DECK_STR}: <span id="asset_deck_count">0</span></div>
+            <div id="deck_demand_label">{DEMAND_STR}: <span id="demand_deck_count">0</span></div>
             <div id="job_market_worker" class="worker_spot">
                 <div id="job_market_worker_holder"></div>
             </div>

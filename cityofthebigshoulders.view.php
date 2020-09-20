@@ -107,6 +107,7 @@
         }
 
         $this->tpl['DECK_STR'] = self::_("Deck");
+        $this->tpl['DEMAND_STR'] = self::_("Demand");
         $this->tpl['BAG_STR'] = self::_("Bag");
         $this->tpl['OWNED_COMPANIES_STR'] = self::_("Owned Companies");
         $this->tpl['PERSONAL_SHARES_STR'] = self::_("Personal Shares");

@@ -170,6 +170,8 @@ class CityOfTheBigShoulders extends Table
         self::addCounter($result ['counters'], "resources_in_bag", $resources_in_bag);
         $asset_deck_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'asset_deck'");
         self::addCounter($result ['counters'], "asset_deck_count", $asset_deck_count);
+        $demand_deck_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'demand_deck'");
+        self::addCounter($result ['counters'], "demand_deck_count", $demand_deck_count);
 
         // gather all items in card table that are visible to the player
         $sql = "SELECT card_id AS card_id, owner_type AS owner_type, primary_type AS primary_type, card_type AS card_type, card_type_arg AS card_type_arg, card_location AS card_location, card_location_arg AS card_location_arg

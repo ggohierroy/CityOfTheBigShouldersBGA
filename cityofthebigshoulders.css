@@ -247,6 +247,12 @@
     position: absolute;
 }
 
+#deck_demand_label {
+    left: 86px;
+    top: 40px;
+    position: absolute;
+}
+
 .exhausted {
     opacity: 0.5 !important;
 }
