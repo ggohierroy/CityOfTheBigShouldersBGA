@@ -1297,13 +1297,16 @@ class CityOfTheBigShoulders extends Table
                 }
             }
 
-            $in_condition = implode(',', $resource_ids);
-            self::DbQuery("UPDATE card SET card_location = 'haymarket' WHERE card_id IN ($in_condition)");
+            if(count($resource_ids) > 0)
+            {
+                $in_condition = implode(',', $resource_ids);
+                self::DbQuery("UPDATE card SET card_location = 'haymarket' WHERE card_id IN ($in_condition)");
 
-            // notify resources discarded
-            self::notifyAllPlayers( "resourcesDiscarded", clienttranslate("Discard rightmost supply chain space to Haymarket Square"), array(
-                'resource_ids_types' => $resource_ids_types
-            ));
+                // notify resources discarded
+                self::notifyAllPlayers( "resourcesDiscarded", clienttranslate("Discard rightmost supply chain space to Haymarket Square"), array(
+                    'resource_ids_types' => $resource_ids_types
+                ));
+            }
         }
 
         self::notifyAllPlayers( "supplyChainRefill", clienttranslate( 'Supply chain refill'), array());
