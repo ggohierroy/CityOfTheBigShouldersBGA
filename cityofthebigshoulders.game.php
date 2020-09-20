@@ -4682,8 +4682,7 @@ class CityOfTheBigShoulders extends Table
                         $next_player_id = self::getPlayerAfter( $current_player_id );
                         
                         // get stocks for this player
-                        $stocks = $company['stocks_by_player'][$next_player_id];
-                        if($stocks['ownership'] >= 3)
+                        if($company['stocks_by_player'][$next_player_id]['ownership'] >= 3)
                         {
                             $new_owner_id = $next_player_id;
                             break;
@@ -4709,14 +4708,59 @@ class CityOfTheBigShoulders extends Table
                         $number_of_common_stocks_to_sell = 1;
                         $preferred_stock = $player_stocks['preferred_stock'];
                         $preferred_stock_id = $preferred_stock['card_id'];
-                        self::DbQuery("UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$preferred_stock_id");
+                        if ($company['stocks_by_player'][$player_id]['ownership'] - $companies_selling[$short_name]["lost_value"] >= 2)
+                        {
+                            // SPECIAL CASE: send the 20% to previous owner (not to bank), then he will give 2x10% to bank instead
+                            self::DbQuery("UPDATE card SET card_location = 'personal_area_${player_id}', card_location_arg = $player_id WHERE card_id=$preferred_stock_id");
 
-                        self::notifyAllPlayers( "shareSold", "", array(
-                            'type' => $preferred_stock['card_type'],
-                            'id' => $preferred_stock_id,
-                            'player_id' => $new_owner_id
-                        ) );
+                            self::notifyAllPlayers( "shareTransferred", "", array(
+                                'type' => $preferred_stock['card_type'],
+                                'id' => $preferred_stock_id,
+                                'player_id' => $player_id,
+                                'from_id' => $new_owner_id
+                            ) );
 
+                            $number_to_give_back = 2;
+                            foreach($company['stocks_by_player'][$player_id]['stocks'] as $old_stock)
+                            {
+                                $can_give_back = true;
+                                foreach($stocks as $stock)
+                                {
+                                    if ($stock && $old_stock['card_id'] == $stock['card_id'])
+                                    {
+                                        $can_give_back = false; // already solded
+                                        break;
+                                    }
+                                }
+
+                                if ($can_give_back)
+                                {
+                                    $old_stock_id = $old_stock['card_id'];
+
+                                    self::DbQuery("UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$old_stock_id");
+
+                                    self::notifyAllPlayers( "shareSold", "", array(
+                                        'type' => $old_stock['card_type'],
+                                        'id' => $old_stock_id,
+                                        'player_id' => $player_id
+                                    ) );
+
+                                    $number_to_give_back--;
+                                    if ($number_to_give_back == 0)
+                                        break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            self::DbQuery("UPDATE card SET card_location='bank', owner_type='bank', card_location_arg=0 WHERE card_id=$preferred_stock_id");
+
+                            self::notifyAllPlayers( "shareSold", "", array(
+                                'type' => $preferred_stock['card_type'],
+                                'id' => $preferred_stock_id,
+                                'player_id' => $new_owner_id
+                            ) );
+                        }
                         $stock_count--;
                     }
                     for($i = 0; $i < $number_of_common_stocks_to_sell; $i++)
