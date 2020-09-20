@@ -522,12 +522,9 @@
     top: 136px;
 }
 
-#fundraising_40{
+#fundraising_40{ /* Start visible since all era 1 building are distributed in setup */
     left: 781px;
     top: 197px;
-    background-image: url(img/buildings_large_final.png); /* Start hidden under the pile of 1 pip buildings */
-    background-position: -100px -600px; 
-    background-size: 250px 750px;
 }
 
 #fundraising_60{

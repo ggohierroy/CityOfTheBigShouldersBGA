@@ -922,8 +922,6 @@ function (dojo, declare) {
 
         refreshBuildingsDeckVisibility: function(round, phase){
             // Building tiles are placed over fundraising actions to hide them, changing background-image to none will reveil them.
-            if (round >= 1 || (round == 0 && phase >= 1))
-                dojo.style('fundraising_40', 'background-image', 'none'); // From 1st decade, at building phase
             if (round >= 3 || (round == 2 && phase >= 1))
                 dojo.style('fundraising_60', 'background-image', 'none'); // From 3th decade, at building phase
             if (round >= 5 || (round == 4 && phase >= 1))
