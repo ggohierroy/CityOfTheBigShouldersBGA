@@ -137,21 +137,21 @@
 }
 
 .money {  
-    background-position: 0px 0px; 
-    width: 28px;
-    height: 28px;
+    background-position: -96px -22px;
+    width: 26px;
+    height: 27px;
 }
 
 .appeal {
-    background-position: -203px -23px; 
-    width: 28px;
-    height: 28px;
+    background-position: -26px -22px; 
+    width: 26px;
+    height: 26px;
 }
 
 .priority-marker {
     background-image: url(img/tokens.png);
     position: relative;
-    background-position: -117px -29px; 
+    background-position: -156px -0px; 
     width: 39px;
     height: 19px;
 }
@@ -159,27 +159,27 @@
 .meeple { 
     width: 21px;
     height: 21px;
-    background-position-y: -25px; 
+    background-position-y: 0px; 
 }
 
 .partner {
     width: 22px;
     height: 22px;
-    background-position-y: -88px; 
+    /*background-position-y: 0px;*/
 }
 
-.partner-ff0000 { background-position-x: -198px } /* red */
-.partner-0000ff { background-position-x: -242px; } /* blue */
-.partner-008000 { background-position-x: -220px; } /* green */
-.partner-ffa500 { background-position-x: -176px } /* yellow */
+.partner-ff0000 { background-position-x: -22px } /* red */
+.partner-0000ff { background-position-x: -66px; } /* blue */
+.partner-008000 { background-position-x: -44px; } /* green */
+.partner-ffa500 { background-position-x: -0px } /* yellow */
 
-.meeple-tan { background-position-x: -269px }
-.meeple-black { background-position-x: -243px }
+.meeple-tan { background-position-x: -135px }
+.meeple-black { background-position-x: -114px }
 
 .extra-goods-token {
     background-image: url(img/tokens.png);
     position: absolute;
-    background-position: -169px -23px;
+    background-position: 0px -22px;
     width: 26px;
     height: 26px;
 }
@@ -311,7 +311,7 @@
 
 .automation_token {
     background-image: url(img/tokens.png);
-    background-position: -57px -29px;
+    background-position: -101px 0px;
     width: 13px;
     height: 22px;
     position: absolute;
@@ -319,7 +319,7 @@
 
 .good_token {
     background-image: url(img/tokens.png);
-    background-position: -2px -29px;
+    background-position: -88px 0px;
     width: 13px;
     height: 22px;
     position: absolute;
@@ -430,7 +430,7 @@
 
 .worker {
     background-image: url(img/tokens.png);
-    background-position: -99px -24px;
+    background-position: -53px -22px;
     width: 15px;
     height: 29px;
     position: absolute;
@@ -476,10 +476,10 @@
     position: absolute;
 }
 
-.livestock-item { background-position: -1100% 0%; }
-.coal-item { background-position: -800% 0%; }
-.steel-item { background-position: -300% 0%; }
-.wood-item { background-position: -900% 0%; }
+.livestock-item { background-position: -1200% -200%; } /* Pink  */
+.coal-item { background-position: -1000% -200%; }      /* Black */
+.steel-item { background-position: -900% -200%; }      /* Blue  */
+.wood-item { background-position: -1100% -200%; }      /* Brown */
  
 .resource {
     width: 14px;
@@ -680,7 +680,7 @@
 
 .black-marker {
     background-image: url(img/tokens.png);
-    background-position: -150px -54px;
+    background-position: -68px -22px;
     height: 29px;
     width: 29px;
     position: absolute;

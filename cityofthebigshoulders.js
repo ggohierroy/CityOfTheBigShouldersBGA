@@ -1552,17 +1552,17 @@ function (dojo, declare) {
 
             newStock.create( this, $('player_order'), 22, 22);
 
-            newStock.image_items_per_row = 12;
+            newStock.image_items_per_row = 4;
             newStock.setSelectionMode(0);
             newStock.item_margin=-9;
 
             // red green blue yellow
             // "ff0000", "008000", "0000ff", "ffa500"
             var colorPosition = [ 
-                {'color': 'ff0000', 'position': 57},
-                {'color': '008000', 'position': 58},
-                {'color': '0000ff', 'position': 59},
-                {'color': 'ffa500', 'position': 56} ];
+                {'color': 'ff0000', 'position': 1},
+                {'color': '008000', 'position': 3},
+                {'color': '0000ff', 'position': 2},
+                {'color': 'ffa500', 'position': 0} ];
 
             var i = 0;
             for(var i = 0; i < colorPosition.length; i++){
