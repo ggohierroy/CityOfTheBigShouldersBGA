@@ -4654,7 +4654,7 @@ function (dojo, declare) {
             var assetId = notif.args.asset.card_id;
             var fromItemDiv = this.capital_assets.getItemDivId(assetName + '_' + assetId);
             this.placeAsset(notif.args.asset, 'capital_assets', fromItemDiv);
-            this.capital_assets.addToStock(0);
+            this.capital_assets.addToStock(0); // Removed later by assetsShifted
         },
 
         notif_buildingsDealt: function(notif){
@@ -4796,6 +4796,7 @@ function (dojo, declare) {
             var assetName = notif.args.asset_name;
             var assetId = notif.args.asset_id;
             this.capital_assets.removeFromStockById(assetName + '_' + assetId);
+            this.capital_assets.addToStock(0); // Removed later by assetsShifted
         },
 
         notif_resourcesDiscarded: function(notif){
