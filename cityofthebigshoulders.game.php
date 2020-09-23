@@ -4062,6 +4062,8 @@ class CityOfTheBigShoulders extends Table
                 break;
             case 'building6':
             case "building24":
+                if ($action_args == null)
+                    break; // "Skip Rest of Action" was selected
                 $automation_args = explode(',', $action_args);
                 $worker_id = intval($automation_args[0]);
                 $relocate_factory_number = intval($automation_args[1]);
@@ -4069,6 +4071,8 @@ class CityOfTheBigShoulders extends Table
                 break;
             case "building21": // double automation
             case "building42":
+                if ($action_args == null)
+                    break; // "Skip Rest of Action" was selected
                 $automation_factories = explode(',', $action_args);
                 if(count($automation_factories) == 3)
                 {
@@ -4141,6 +4145,8 @@ class CityOfTheBigShoulders extends Table
                 self::gainSameResources($company_short_name, $company_id, $action_args);
                 break;
             case "building26":
+                if ($action_args == null)
+                    break; // "Skip Rest of Action" was selected
                 $worker_factories = explode(',', $action_args);
                 if(count($worker_factories) > 2)
                     throw new BgaVisibleSystemException("Can't hire more than 2 workers");
@@ -4163,8 +4169,8 @@ class CityOfTheBigShoulders extends Table
                     $number = intval($factories[1]);
                     self::hire_manager($company_short_name, $company_id, $number);
                 }
-                break; // worker + salesperson
-            case "building44":
+                break;
+            case "building44": // worker + salesperson
                 $number = intval($action_args);
                 if($number != 0)
                     self::hireWorkerFromSupply($company_short_name, $company_id, $number);
