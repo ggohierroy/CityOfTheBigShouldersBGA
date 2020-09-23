@@ -2795,6 +2795,7 @@ class CityOfTheBigShoulders extends Table
         if($company['owner_id'] != $player_id)
             throw new BgaVisibleSystemException("Company is not owner by player");
 
+        $short_name = $company['short_name'];
         $next_appeal_bonus = self::getGameStateValue('next_appeal_bonus');
         $bonus_name = self::BONUS_NAME[$next_appeal_bonus];
         if($bonus_name == "partner")
@@ -2815,7 +2816,6 @@ class CityOfTheBigShoulders extends Table
         {
             $new_company_treasury = $company['treasury'] + 25;
             $counters = [];
-            $short_name = $company['short_name'];
             self::DbQuery("UPDATE company SET treasury = $new_company_treasury WHERE id = $company_id");
             self::addCounter($counters, "money_${short_name}", $new_company_treasury);
 
