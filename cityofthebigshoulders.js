@@ -3063,7 +3063,7 @@ function (dojo, declare) {
                 case "building42":
                     if(this.clientStateArgs.actionArgs.firstFactoryNumber){
 
-                        // this means that the first factory to automate has been selected
+                        // this is the second factory being selected for automation
                         this.clientStateArgs.actionArgs.secondFactoryNumber = factoryNumber;
 
                         var result = this.automateWorker(companyShortName, factoryNumber);
@@ -4318,9 +4318,17 @@ function (dojo, declare) {
 
         onSkipToRelocate: function(){
             this.clientStateArgs.secondAutomationSkipped = true;
-            this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
-                descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
-            });
+            if (this.clientStateArgs.shouldRelocateFirstWorker)
+            {
+                this.setClientState("client_chooseFactoryRelocateDoubleAutomation", {
+                    descriptionmyturn : _('Choose a factory in which to relocate the automated worker')
+                });
+            }
+            else
+            {
+                this.clientStateArgs.actionArgs.relocateFactoryNumber = null; // Not used but need to exist
+                this.onConfirmAction(); // Done since second automation skipped and no worker to relocalize
+            }
         },
 
         onSkipReceiveWorker: function(){
