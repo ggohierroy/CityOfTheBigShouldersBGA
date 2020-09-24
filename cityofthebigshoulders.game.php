@@ -5809,6 +5809,9 @@ class CityOfTheBigShoulders extends Table
                 'player_id' => $next_player_id
             ));
 
+            // reset all companies income (needed when using Catalog asset after income was distributed)
+            self::DbQuery("UPDATE company SET income = 0");
+
             // deal buildings
             $round = self::getGameStateValue('round');
             if($round > 0)
