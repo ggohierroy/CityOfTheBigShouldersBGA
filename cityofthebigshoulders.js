@@ -920,6 +920,15 @@ function (dojo, declare) {
             }
         },
 
+        refreshCompaniesStringOrder: function(){
+            var allCompanies = this.gamedatas.all_companies;
+            for(var i in allCompanies){
+                var company = allCompanies[i];
+                var element = dojo.query('#order_str_' + company.short_name)[0];
+                element.innerText = this.ordinalIndicator[this.gamedatas.counters['order_' + company.short_name].counter_value];
+            }
+        },
+
         refreshBuildingsDeckVisibility: function(round, phase){
             // Building tiles are placed over fundraising actions to hide them, changing background-image to none will reveil them.
             if (round >= 3 || (round == 2 && phase >= 1))
@@ -1548,6 +1557,20 @@ function (dojo, declare) {
         },
 
         createPlayerOrderStock: function(){
+            this.ordinalIndicator = [ // Note: Translation failed in constructor
+                "",
+                _( "(1st)" ),
+                _( "(2nd)" ),
+                _( "(3rd)" ),
+                _( "(4th)" ),
+                _( "(5th)" ),
+                _( "(6th)" ),
+                _( "(7th)" ),
+                _( "(8th)" ),
+                _( "(9th)" ),
+                _( "(10th)" ),
+            ];
+
             var newStock = new ebg.stock();
 
             newStock.create( this, $('player_order'), 22, 22);
@@ -2180,7 +2203,11 @@ function (dojo, declare) {
             var companyOrderElement = dojo.query('#' + item_id + ' #order_'+companyShortName)[0];
             companyTreasuryElement.innerText = this.gamedatas.counters['money_' + companyShortName].counter_value;
             companyAppealElement.innerText = this.gamedatas.counters['appeal_' + companyShortName].counter_value;
-            companyOrderElement.innerText = this.gamedatas.counters['order_' + companyShortName].counter_value;
+            companyOrderElement.innerText = this.gamedatas.counters['order_' + companyShortName].counter_value; // As simple number: 1  (no more visible)
+
+            // new order
+            var element = dojo.query('#' + item_id + ' #order_str_' + companyShortName)[0];
+            element.innerText = this.ordinalIndicator[this.gamedatas.counters['order_' + companyShortName].counter_value]; // As localized string: 1st
 
             var company = this.gamedatas.all_companies[companyShortName];
 
@@ -5020,6 +5047,8 @@ function (dojo, declare) {
             this.updateAppealTokens(notif.args.appeal, notif.args.order);
 
             this.updateCounters(notif.args.counters);
+
+            this.refreshCompaniesStringOrder();
         },
 
         notif_workerReceived: function(notif){
@@ -5099,6 +5128,7 @@ function (dojo, declare) {
             });
 
             this.updateAppealTokens(appeal, notif.args.order);
+            this.refreshCompaniesStringOrder();
         },
 
         notif_automationTokensCreated: function(notif) {
