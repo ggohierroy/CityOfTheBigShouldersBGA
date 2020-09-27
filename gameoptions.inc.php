@@ -55,7 +55,7 @@ $game_options = array(
         'values' => array(
 
                     // A simple value for this option:
-                    1 => array( 'name' => totranslate('Yes') ),
+                    1 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Public Goals') ),
                     2 => array( 'name' => totranslate('No'), 'beta' => true, 'nobeginner' => true )
                 )
     ),
@@ -65,7 +65,7 @@ $game_options = array(
 
                     // A simple value for this option:
                     1 => array( 'name' => totranslate('No') ),
-                    2 => array( 'name' => totranslate('Yes'), 'beta' => true, 'nobeginner' => true )
+                    2 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Advanced Rules'), 'beta' => true, 'nobeginner' => true )
                 )
     ),
 
