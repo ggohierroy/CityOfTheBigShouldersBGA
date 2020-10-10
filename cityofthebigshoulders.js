@@ -2531,7 +2531,7 @@ function (dojo, declare) {
                     // this is an automated worker
                     var workerSpotId = this.getNextAvailableWorkerSpot(companyShortName + '_' + factoryNumber);
                     dojo.place( this.format_block( 'jstpl_token', {
-                        'token_id': 'automation_' + automation.card_id,
+                        'token_id': tokenId,
                         'token_class': 'automation_token'
                     } ), workerSpotId );
                 }
@@ -2540,10 +2540,11 @@ function (dojo, declare) {
                 // fill from right to left and disregard location
                 var automationSpotId = this.getNextAvailableAutomationSpot(companyShortName, factoryNumber);
                 dojo.place( this.format_block( 'jstpl_token', {
-                    'token_id': 'automation_' + automation.card_id,
+                    'token_id': tokenId,
                     'token_class': 'automation_token'
                 } ), automationSpotId );
             }
+            this.addTooltip(tokenId, "", _( "Automates may replace workers. Fully automated factories produce 1 additional good, regardless number of automates." )); // NOTE: This will become false in expansion
         },
 
         placeWorkerInFactory: function(worker, from, fromId){
