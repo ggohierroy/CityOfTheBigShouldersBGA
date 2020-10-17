@@ -56,7 +56,7 @@ $game_options = array(
 
                     // A simple value for this option:
                     1 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Public Goals') ),
-                    2 => array( 'name' => totranslate('No'), 'beta' => true, 'nobeginner' => true )
+                    2 => array( 'name' => totranslate('No'), 'nobeginner' => true )
                 )
     ),
     101 => array(
@@ -65,7 +65,16 @@ $game_options = array(
 
                     // A simple value for this option:
                     1 => array( 'name' => totranslate('No') ),
-                    2 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Advanced Rules'), 'beta' => true, 'nobeginner' => true )
+                    2 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Advanced Rules'), 'nobeginner' => true )
+                )
+    ),
+    102 => array(
+        'name' => totranslate('Friendly Stock Sales'),    
+        'values' => array(
+
+                    // A simple value for this option:
+                    1 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Friendly Stock Sales'), 'description' => totranslate('Stock price only drops one step regardless of number of shares sold by non president') ),
+                    2 => array( 'name' => totranslate('No'), 'beta' => true, 'nobeginner' => true )
                 )
     ),
 

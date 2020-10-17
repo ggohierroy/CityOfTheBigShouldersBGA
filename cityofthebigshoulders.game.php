@@ -53,6 +53,7 @@ class CityOfTheBigShoulders extends Table
             "final_appeal_bonus" => 22,
             "public_goals" => 100,
             "advanced_rules" => 101,
+            "friendly_stock_sales" => 102,
         ) ); 
         
         $this->cards = self::getNew( "module.common.deck" );
@@ -4556,6 +4557,7 @@ class CityOfTheBigShoulders extends Table
         $companies_selling = [];
 
         $advanced_rules = self::getGameStateValue("advanced_rules");
+        $friendly_stock_sales = self::getGameStateValue("friendly_stock_sales");
 
         // check that shares can be sold
         foreach($stocks as $stock)
@@ -4929,7 +4931,14 @@ class CityOfTheBigShoulders extends Table
             }
             else
             {
-                self::increaseShareValue($short_name, -$lost_value);
+                if($friendly_stock_sales == 1 && $company['is_owner'] == false)
+                {
+                    self::increaseShareValue($short_name, -1);
+                }
+                else
+                {
+                    self::increaseShareValue($short_name, -$lost_value);
+                }
             }
         }
 
