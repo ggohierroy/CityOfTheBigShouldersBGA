@@ -68,6 +68,18 @@
     position: relative;
 }
 
+#supply_variant_board {
+    background-size: 330px 101px;
+    left: 511px;
+    top: 28px;
+    width: 330px;
+    height: 101px;
+    position: absolute;
+}
+.supply_chain_variant #supply_variant_board {
+    background-image: url(img/supply_chain_variant.png);
+}
+
 .center {
     margin-right: auto;
     margin-left: auto;
@@ -196,6 +208,9 @@
     top: 25px;
     left: 500px;
     position: absolute;
+}
+.supply_chain_variant #bag { /* Move bag label in this variant to avoid overlap */
+    top: 16px;
 }
 
 #player_order {
@@ -668,6 +683,26 @@
     height: 50px;
     top: 64px;
     position: absolute;
+}
+
+.supply_chain_variant .supply{
+    width: 300px;
+    height: 14px;
+    left: 551px;
+    position: absolute;
+}
+
+#supply_variant_livestock{
+    top: 50px;
+}
+#supply_variant_steel{
+    top: 68px;
+}
+#supply_variant_coal{
+    top: 86px;
+}
+#supply_variant_wood{
+    top: 104px;
 }
 
 .goods-holder {

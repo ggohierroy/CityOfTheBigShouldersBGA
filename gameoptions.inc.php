@@ -77,7 +77,13 @@ $game_options = array(
                     2 => array( 'name' => totranslate('No'), 'beta' => true, 'nobeginner' => true )
                 )
     ),
-
+    103 => array(
+        'name' => totranslate('Supply Chain Variant'),
+        'values' => array(
+                    1 => array( 'name' => totranslate('No') ),
+                    2 => array( 'name' => totranslate('Yes'), 'beta' => true, 'tmdisplay' => totranslate('Supply Chain Variant'), 'description' => totranslate('Supply Chain variant of the game, however it is a much more stable resources market') )
+                )
+    ),
 );
 
 

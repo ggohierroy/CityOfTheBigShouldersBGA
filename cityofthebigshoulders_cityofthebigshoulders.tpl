@@ -33,6 +33,7 @@
 <div id="board_top">
     <div id="main_board_wrapper" class="whiteblock">
         <div id="main_board" class="center">
+            <div id="supply_variant_board"></div>
             <div id="capital_assets"></div>
             <div id="capital_assets_deck"></div>
             <div id="capital_assets_label">{DECK_STR}: <span id="asset_deck_count">0</span></div>
@@ -67,6 +68,10 @@
             <div id="supply_30" class="supply"></div>
             <div id="supply_20" class="supply"></div>
             <div id="supply_10" class="supply"></div>
+            <div id="supply_variant_livestock" class="supply"></div>
+            <div id="supply_variant_steel" class="supply"></div>
+            <div id="supply_variant_coal" class="supply"></div>
+            <div id="supply_variant_wood" class="supply"></div>
             <div id="job_market" class="supply"></div>
             <div id="dry_goods_50" class="demand dry_goods"></div>
             <div id="dry_goods_20" class="demand dry_goods" identifier="27">

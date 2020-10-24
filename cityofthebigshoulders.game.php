@@ -27,6 +27,10 @@ class CityOfTheBigShoulders extends Table
     const BONUS_LOOKUP = [0 => 0, 1 => 0, 2 => 0, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 4, 10 => 4, 11 => 5, 12 => 5, 13 => 6, 14 => 6, 15 => 7, 16 => 8];
     const BONUS_NAME = [1 => 'worker', 2 => 'salesperson', 3 => 'automation', 4 => 'partner', 5 => 'good', 6 => 'bump', 7 => 'good', 8 => 'bump'];
 
+    const SUPPLY_MAX_COUNT = 11;
+    const SUPPLY_DRAW_COUNT = [6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 2, 0];
+    const SUPPLY_COST = [60, 50, 50, 40, 30, 30, 20, 20, 20, 10, 10];
+
 	function __construct( )
 	{
         // Your global variables labels:
@@ -54,6 +58,7 @@ class CityOfTheBigShoulders extends Table
             "public_goals" => 100,
             "advanced_rules" => 101,
             "friendly_stock_sales" => 102,
+            "supply_chain_variant" => 103,
         ) ); 
         
         $this->cards = self::getNew( "module.common.deck" );
@@ -167,6 +172,7 @@ class CityOfTheBigShoulders extends Table
         $result['round'] = self::getGameStateValue('round');
         $result['phase'] = self::getGameStateValue('phase');
         $result['priority_deal_player_id'] = self::getGameStateValue('priority_deal_player_id');
+        $result['supply_chain_variant'] = self::getGameStateValue("supply_chain_variant");
         $resources_in_bag = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'resource_bag'");
         self::addCounter($result ['counters'], "resources_in_bag", $resources_in_bag);
         $asset_deck_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'asset_deck'");
@@ -832,6 +838,8 @@ class CityOfTheBigShoulders extends Table
         // TODO: notify if income is shown
     }
 
+    
+    //TODO: supply_chain_variant => TO CONFIRM: Capital asset cannot take ressource from supply chain ?
     function gainResourcesAsset($company_short_name, $company_id, $resources_gained)
     {
         $resource_names = implode("','", $resources_gained);
@@ -882,18 +890,31 @@ class CityOfTheBigShoulders extends Table
         if(count($resources) > 2)
             throw new BgaVisibleSystemException("Can only gain two resources from this building");
 
+        $from_supply_chain = 0;
+        $supply_chain_variant = self::getGameStateValue("supply_chain_variant");
         foreach($resources as $index => $resource)
         {
-            // check that resource is in haymarket
-            if($resource['card_location'] != 'haymarket')
+            // check that resource is in haymarket (or supply_chain variant)
+            if($resource['card_location'] == 'supply_chain' && $supply_chain_variant == 2)
+                $from_supply_chain++;
+            else if($resource['card_location'] != 'haymarket')
                 throw new BgaVisibleSystemException("Resource is not in haymarket");
             
             $resources[$index]['from'] = $resources[$index]['card_location'];
             $resources[$index]['card_location'] = $company_short_name;
         }
 
-        if($resources[0]['card_type'] != $resources[1]['card_type'])
+        if(count($resources) == 2 && $resources[0]['card_type'] != $resources[1]['card_type'])
             throw new BgaVisibleSystemException("Resources have to be the same");
+
+        // variant: building can take ressource from supply chain when haymarket don't have that ressource
+        if ($from_supply_chain > 0)
+        {
+            $card_type = $resources[0]['card_type'];
+            $haymarket_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'resource' AND card_type = '$card_type' AND card_location = 'haymarket'");
+            if ($haymarket_count > count($resources) - $from_supply_chain)
+                throw new BgaVisibleSystemException("Resource from haymarket must be used before supply chain");
+        }
 
         // update resources location
         self::DbQuery("UPDATE card SET 
@@ -918,17 +939,28 @@ class CityOfTheBigShoulders extends Table
         if(count($resources) > 2)
             throw new BgaVisibleSystemException("Can only gain two resources from this building");
 
+        $supply_chain_variant = self::getGameStateValue("supply_chain_variant");
         foreach($resources as $index => $resource)
         {
             // check that resource is in haymarket
-            if($resource['card_location'] != 'haymarket')
+            if($resource['card_location'] == 'supply_chain' && $supply_chain_variant == 2)
+            {
+                // variant: building can take ressource from supply chain when haymarket don't have that ressource
+                $card_type = $resource['card_type'];
+                $haymarket_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'resource' AND card_type = '$card_type' AND card_location = 'haymarket'");
+                if ($haymarket_count > 0)
+                    throw new BgaVisibleSystemException("Resource from haymarket must be used before supply chain");
+            }
+            else if($resource['card_location'] != 'haymarket')
+            {
                 throw new BgaVisibleSystemException("Resource is not in haymarket");
+            }
             
             $resources[$index]['from'] = $resources[$index]['card_location'];
             $resources[$index]['card_location'] = $company_short_name;
         }
 
-        if($resources[0]['card_type'] == $resources[1]['card_type'])
+        if(count($resources) == 2 && $resources[0]['card_type'] == $resources[1]['card_type'])
             throw new BgaVisibleSystemException("Resources can't be the same");
 
         // update resources location
@@ -951,12 +983,19 @@ class CityOfTheBigShoulders extends Table
         if ($resource_ids == null)
             return; // nothing todo
 
+        $resources_count = ['livestock' => 0, 'steel' => 0, 'coal' => 0, 'wood' => 0];
+        $resources_count_from_supply = ['livestock' => 0, 'steel' => 0, 'coal' => 0, 'wood' => 0];
+        $supply_chain_variant = self::getGameStateValue("supply_chain_variant");
+
         // get the resources and make sure they are in haymarket
         $resources = self::getObjectListFromDB("SELECT card_location, card_type, card_id FROM card WHERE card_id IN ($resource_ids)");
         foreach($resources as $index => $resource)
         {
             // check that resource is in haymarket
-            if($resource['card_location'] != 'haymarket')
+            $resources_count[$resource['card_type']]++;
+            if($resource['card_location'] == 'supply_chain' && $supply_chain_variant == 2)
+                $resources_count_from_supply[$resource['card_type']]++;
+            else if($resource['card_location'] != 'haymarket')
                 throw new BgaVisibleSystemException("Resource is not in haymarket");
             
             $found = false;
@@ -977,6 +1016,18 @@ class CityOfTheBigShoulders extends Table
             $resources[$index]['from'] = $resource_location;
             $resources[$index]['card_location'] = $company_short_name;
         }
+
+        // variant: building can take ressource from supply chain when haymarket don't have that ressource
+        foreach ($resources_count_from_supply as $resource => $count)
+        {
+            if ($count > 0)
+            {
+                $haymarket_count = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE primary_type = 'resource' AND card_type = '$resource' AND card_location = 'haymarket'");
+                if ($haymarket_count > $resources_count[$resource] - $count)
+                    throw new BgaVisibleSystemException("Resource from haymarket must be used before supply chain");
+            }
+        }
+
 
         // update resources location
         self::DbQuery("UPDATE card SET 
@@ -1264,6 +1315,119 @@ class CityOfTheBigShoulders extends Table
     }
 
     function refillSupply($discard_rightmost = false)
+    {
+        if (self::getGameStateValue("supply_chain_variant") == 2)
+        {
+            if ($discard_rightmost == false) // Do nothing at cleanup phase
+                self::refillSupplyVariant();
+        }
+        else
+        {
+            self::refillSupplyNormal($discard_rightmost);
+        }
+    }
+
+    function refillSupplyVariant()
+    {
+        // get all resources from supply chain
+        $resources = self::getObjectListFromDB("SELECT card_id, card_location, card_type FROM card WHERE card_location = 'supply_chain'");
+
+        // count them
+        $resources_count = ['livestock' => 0, 'steel' => 0, 'coal' => 0, 'wood' => 0];
+        foreach($resources as $resource)
+        {
+            $resources_count[$resource['card_type']]++;
+        }
+
+        $higher_resource_count = 0;
+        foreach($resources_count as $count)
+        {
+            if ($higher_resource_count < $count)
+                $higher_resource_count = $count;
+        }
+
+        // draw some resources (variant rule: draw count is base on first empty colunm)
+        $resources_to_draw = self::SUPPLY_DRAW_COUNT[$higher_resource_count];
+        if($resources_to_draw > 0)
+        {
+            $changed = false;
+            $drawn_resources = self::getObjectListFromDB(
+                "SELECT card_id, card_location, card_location_arg, card_type FROM card
+                WHERE card_location = 'resource_bag'
+                ORDER BY card_location_arg ASC
+                LIMIT $resources_to_draw");
+
+            // if not enough, need to reshuffle everything from haymarket
+            $drawn_resources_count = count($drawn_resources);
+            $missing_resources_count = $resources_to_draw - $drawn_resources_count;
+            if($missing_resources_count != 0)
+            {
+                // get missing resources first
+                $this->cards->shuffle('haymarket');
+                $missing_resources = self::getObjectListFromDB(
+                    "SELECT card_id, card_location, card_type FROM card
+                    WHERE card_location = 'haymarket'
+                    ORDER BY card_location_arg ASC
+                    LIMIT $missing_resources_count");
+                $drawn_resources = array_merge($drawn_resources, $missing_resources);
+
+                // move haymarket to resource bag
+                $this->cards->moveAllCardsInLocation( 'haymarket', 'resource_bag' );
+                $this->cards->shuffle('resource_bag');
+                self::notifyAllPlayers( "marketSquareReset", clienttranslate("Resources in Haymarket Square return to the bag"), array(
+                    'resources' => [] // haymarket is empty
+                ));
+                $changed = true;
+            }
+
+            // apply draw
+            $resource_ids = [];
+            $resource_ids_types = [];
+            $back_to_bag = 0;
+            foreach($drawn_resources as $resource)
+            {
+                if ($resources_count[$resource['card_type']]++ >= self::SUPPLY_MAX_COUNT)
+                {
+                    $back_to_bag++; // supply chain is full: that resource stay in bag
+                }
+                else
+                {
+                    $resource_ids[] = $resource['card_id'];
+                    $resource_ids_types[] = ['id' => $resource['card_id'], 'type' => $resource['card_type']];
+                }
+            }
+            if ($back_to_bag > 0)
+                self::notifyAllPlayers( "supplyChainRefill", clienttranslate( 'Supply chain refill: Draw ${count} ressources, ${returned_count} returned in bag (full supply)'), array('count' => $resources_to_draw, 'returned_count' => $back_to_bag));
+            else
+                self::notifyAllPlayers( "supplyChainRefill", clienttranslate( 'Supply chain refill: Draw ${count} ressources'), array('count' => $resources_to_draw));
+                
+
+            if(count($resource_ids) != 0)
+            {
+                $location = 'supply_chain';
+                $in_condition = implode(',', $resource_ids);
+                self::DbQuery("UPDATE card SET card_location = '$location' WHERE card_id IN ($in_condition)");
+
+                self::notifyAllPlayers( "resourcesDrawn", "", array(
+                    'resource_ids_types' => $resource_ids_types,
+                    'location' => $location
+                ));
+                $changed = true;
+            }
+
+            if($changed)
+            {
+                $counters = [];
+                $resources_in_bag = self::getUniqueValueFromDB("SELECT COUNT(card_id) FROM card WHERE card_location = 'resource_bag'");
+                self::addCounter($counters, "resources_in_bag", $resources_in_bag);
+                self::notifyAllPlayers( "countersUpdated", "", array(
+                    'counters' => $counters,
+                ) );
+            }
+        }
+    }
+
+    function refillSupplyNormal($discard_rightmost = false)
     {
         // get all resources from supply chain
         $resources = self::getObjectListFromDB(
@@ -2394,10 +2558,20 @@ class CityOfTheBigShoulders extends Table
 
         // create resource bag (include 2 less since they will be put in haymarket square)
         $resource_bag = [];
-        for ($i = 1; $i <= 18; $i++) { array_push($resource_bag, 'livestock'); };
-        for ($i = 1; $i <= 16; $i++) { array_push($resource_bag, 'steel'); };
-        for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'coal'); };
-        for ($i = 1; $i <= 14; $i++) { array_push($resource_bag, 'wood'); };
+        $supply_chain_variant = self::getGameStateValue("supply_chain_variant");
+        $initial_resources = ['livestock' => 18, 'steel' => 16, 'coal' => 14, 'wood' => 14];
+        if ($supply_chain_variant == 2)
+        {
+            $supply_initial_resources = ['livestock' => 7, 'steel' => 7, 'coal' => 7, 'wood' => 7]; // ressources placed on supply chain (no draw)
+            foreach ($initial_resources as $resource => $resource_count)
+            {
+                $initial_resources[$resource] -= $supply_initial_resources[$resource];
+            }
+        }
+        foreach ($initial_resources as $resource => $resource_count)
+        {
+            for ($i = 1; $i <= $resource_count; $i++) { array_push($resource_bag, $resource); };
+        }
 
         // shuffle the resource bag
         shuffle($resource_bag);
@@ -2499,17 +2673,48 @@ class CityOfTheBigShoulders extends Table
             $cards[] = "(NULL,'resource','$resource','haymarket','0')";
         }
 
-        // insert 3 resources in each spot of the supply chain
-        $supply_chain_locations = ['x','30','20','10'];
-        for($i = 0; $i < 4; $i++)
+        if ($supply_chain_variant == 2)
         {
-            $location = $supply_chain_locations[$i];
-            $resource = array_shift($resource_bag);
-            $cards[] = "(NULL,'resource','$resource','$location','0')";
-            $resource = array_shift($resource_bag);
-            $cards[] = "(NULL,'resource','$resource','$location','0')";
-            $resource = array_shift($resource_bag);
-            $cards[] = "(NULL,'resource','$resource','$location','0')";
+            // init supply chain variant (fixed amount, no draw)
+            $location = "supply_chain";
+            foreach ($supply_initial_resources as $resource => $resource_count)
+            {
+                for ($i = 0; $i < $resource_count; $i++) { $cards[] = "(NULL,'resource','$resource','$location','0')"; };
+            }
+
+            // drawn extra resources to put in supply chain
+            $extra_supply_drawn = 6;
+            for($i = 0; $i < $extra_supply_drawn; $i++)
+            {
+                $resource = array_pop($resource_bag);
+
+                if ($supply_initial_resources[$resource] < self::SUPPLY_MAX_COUNT)
+                {
+                    $supply_initial_resources[$resource]++;
+                    $cards[] = "(NULL,'resource','$resource','$location','0')";
+                }
+                else
+                {
+                    // supply is full, put back resource and shuffle again
+                    array_push($resource_bag, $resource);
+                    shuffle($resource_bag);
+                }
+            }
+        }
+        else
+        {
+            // insert 3 resources in each spot of the supply chain
+            $supply_chain_locations = ['x','30','20','10'];
+            for($i = 0; $i < 4; $i++)
+            {
+                $location = $supply_chain_locations[$i];
+                $resource = array_shift($resource_bag);
+                $cards[] = "(NULL,'resource','$resource','$location','0')";
+                $resource = array_shift($resource_bag);
+                $cards[] = "(NULL,'resource','$resource','$location','0')";
+                $resource = array_shift($resource_bag);
+                $cards[] = "(NULL,'resource','$resource','$location','0')";
+            }
         }
 
         $public_goals = self::getGameStateValue("public_goals");
@@ -3485,10 +3690,6 @@ class CityOfTheBigShoulders extends Table
 
         if($resource_ids == "")
             throw new BgaUserException( self::_("You must buy at least one resource") );
-        
-        $in_clause = "(${resource_ids})";
-        $sql = "SELECT card_id, owner_type, card_location, card_type FROM card WHERE primary_type = 'resource' AND card_id IN $in_clause";
-        $resources = self::getObjectListFromDB($sql);
 
         $cost = 0;
         $count = 0;
@@ -3496,30 +3697,73 @@ class CityOfTheBigShoulders extends Table
         $company_id = self::getGameStateValue( 'current_company_id');
         $company = self::getNonEmptyObjectFromDB("SELECT treasury, short_name, extra_goods FROM company WHERE id = $company_id");
         $company_short_name = $company['short_name'];
-        foreach($resources as $resource)
-        {
-            if($resource['owner_type'] != null)
-                throw new BgaVisibleSystemException("Resource is already owned");
-            
-            if($resource['card_location'] == 'haymarket')
-                throw new BgaVisibleSystemException("Cannot buy resources from Haymarket Square");
-            
-            if($resource['card_location'] == 'x')
-                throw new BgaVisibleSystemException("Cannot buy resources from X space");
+        $in_clause = "(${resource_ids})";
 
-            if($resource['card_location'] == '30')
-                $cost += 30;
-            if($resource['card_location'] == '20')
-                $cost += 20;
-            if($resource['card_location'] == '10')
-                $cost += 10;
-            
-            $resource_array[$resource['card_id']] = [
-                'from' => $resource['card_location'], 
-                'card_location' => $company_short_name, 
-                'card_id' => $resource['card_id'],
-                'card_type' => $resource['card_type']];
-            $count++;
+        if (self::getGameStateValue("supply_chain_variant") == 2)
+        {
+            $resource_ids = explode(',', $resource_ids);
+            $supply_resources = self::getObjectListFromDB("SELECT card_id, card_location, card_type FROM card WHERE card_location = 'supply_chain'");
+            $supply_resources_count = ['livestock' => 0, 'steel' => 0, 'coal' => 0, 'wood' => 0];
+            foreach($supply_resources as $resource)
+            {
+                $supply_resources_count[$resource['card_type']]++;
+
+                self::dump('resource_ids', $resource_ids);
+                foreach($resource_ids as $id)
+                {
+                    if ($resource['card_id'] == $id)
+                    {
+                        $resource_array[$resource['card_id']] = [
+                            'from' => $resource['card_location'], 
+                            'card_location' => $company_short_name, 
+                            'card_id' => $resource['card_id'],
+                            'card_type' => $resource['card_type']];
+                        $count++;
+                        break;
+                    }
+                }
+            }
+            if (count($resource_ids) != count($resource_array))
+            {
+                throw new BgaVisibleSystemException("Can only buy resources from supply chain");
+            }
+
+            foreach($resource_array as $resource)
+            {
+                $cost += self::SUPPLY_COST[--$supply_resources_count[$resource['card_type']]];
+            }
+        }
+        else
+        {
+            $sql = "SELECT card_id, owner_type, card_location, card_type FROM card WHERE primary_type = 'resource' AND card_id IN $in_clause";
+            $resources = self::getObjectListFromDB($sql);
+    
+    
+            foreach($resources as $resource)
+            {
+                if($resource['owner_type'] != null)
+                    throw new BgaVisibleSystemException("Resource is already owned");
+                
+                if($resource['card_location'] == 'haymarket')
+                    throw new BgaVisibleSystemException("Cannot buy resources from Haymarket Square");
+                
+                if($resource['card_location'] == 'x')
+                    throw new BgaVisibleSystemException("Cannot buy resources from X space");
+    
+                if($resource['card_location'] == '30')
+                    $cost += 30;
+                if($resource['card_location'] == '20')
+                    $cost += 20;
+                if($resource['card_location'] == '10')
+                    $cost += 10;
+                
+                $resource_array[$resource['card_id']] = [
+                    'from' => $resource['card_location'], 
+                    'card_location' => $company_short_name, 
+                    'card_id' => $resource['card_id'],
+                    'card_type' => $resource['card_type']];
+                $count++;
+            }
         }
         
         $company_treasury = $company['treasury'];
