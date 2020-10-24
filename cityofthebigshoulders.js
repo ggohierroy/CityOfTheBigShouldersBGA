@@ -3858,9 +3858,10 @@ function (dojo, declare) {
             total += items.length * 30;
 
             this.setClientState("client_playerTurnConfirmBuyResources", {
-                descriptionmyturn : dojo.string.substitute(_('Buy ${count} resources for $${cost}'),{
+                descriptionmyturn : dojo.string.substitute(_('Buy ${count} resources for $${cost} ($${cash} is available)'),{
                     count: count,
-                    cost: total
+                    cost: total,
+                    cash: this.gamedatas.counters['money_' + this.gamedatas.gamestate.args.company_short_name].counter_value,
                 })
             });
         },
