@@ -52,6 +52,12 @@
     overflow: auto;
 }
 
+.board-text {
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 0 1px #fff, 0 -1px 1px #fff;
+}
+
 .player-area {
     overflow: auto;
 }
@@ -193,7 +199,7 @@
 }
 
 #bag {
-    top: 25px;
+    top: 28px;
     left: 500px;
     position: absolute;
 }
@@ -248,8 +254,8 @@
 }
 
 #deck_demand_label {
-    left: 86px;
-    top: 40px;
+    left: 87px;
+    top: 42px;
     position: absolute;
 }
 

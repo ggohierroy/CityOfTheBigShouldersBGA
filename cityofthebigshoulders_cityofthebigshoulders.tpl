@@ -35,8 +35,8 @@
         <div id="main_board" class="center">
             <div id="capital_assets"></div>
             <div id="capital_assets_deck"></div>
-            <div id="capital_assets_label">{DECK_STR}: <span id="asset_deck_count">0</span></div>
-            <div id="deck_demand_label">{DEMAND_STR}: <span id="demand_deck_count">0</span></div>
+            <div id="capital_assets_label" class="board-text">{DECK_STR}: <span id="asset_deck_count">0</span></div>
+            <div id="deck_demand_label" class="board-text">{DEMAND_STR}: <span id="demand_deck_count">0</span></div>
             <div id="job_market_worker" class="worker_spot">
                 <div id="job_market_worker_holder"></div>
             </div>
@@ -44,7 +44,7 @@
                 <div id="haymarket"></div>
             </div>
             <div id="player_order"></div>
-            <div id="bag">{BAG_STR}: <span id="resources_in_bag">0</span></div>
+            <div id="bag" class="board-text">{BAG_STR}: <span id="resources_in_bag">0</span></div>
             <div id="round_1" class="round-spot"></div>
             <div id="round_2" class="round-spot"></div>
             <div id="round_3" class="round-spot"></div>
