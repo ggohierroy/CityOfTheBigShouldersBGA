@@ -1006,12 +1006,12 @@ function (dojo, declare) {
 
             this.addTooltip( "job_market_worker", "", _( "When you place a Partner here, your company may hire any number of Workers by paying the bank for each Worker it hires." ));
             // advertising for ad blockers
-            this.addTooltip( "banana", "", _( "When you place a Partner here and pay $20, increase your company’s Appeal by 1 space on the Appeal Track. Additionnally, you may become the starting player for the Action Phase. This change in turn order takes effect immediately." ));
+            this.addTooltip( "banana", "", _( "When you place a Partner here, your company pays the bank $20 and increase his Appeal by 1 space on the Appeal Track. Additionnally, you may become the starting player for the Action Phase. This change in turn order takes effect immediately." ));
             this.addTooltip( "fundraising_40", "", _( "When you place a Partner here, your company gains $40 from the bank." ));
             this.addTooltip( "fundraising_60", "", _( "When you place a Partner here, your company gains $60 from the bank. Available from the 3rd decade only." ));
             this.addTooltip( "fundraising_80", "", _( "When you place a Partner here, your company gains $80 from the bank. Available in the 5th decade only." ));
-            this.addTooltip( "hire_manager", "", _( "You may spend $60 and place a Partner here to hire a single Manager." ));
-            this.addTooltip( "hire_salesperson", "", _( "You may spend $70 and place a Partner here to hire a single Salesperson." ));
+            this.addTooltip( "hire_manager", "", _( "When you place a Partner here, your company pays the bank $60 and hires a single Manager." ));
+            this.addTooltip( "hire_salesperson", "", _( "When you place a Partner here, your company pays the bank $70 and hires a single Salesperson." ));
             this.addTooltip( "capital_investment", "", _( "When you place a Partner here, your company may purchase a Capital Asset from the available Capital Asset tiles on the game board. To do so, your company will pay the bank the amount indicated above the Capital Asset tile and then you will place that tile on the Company Charter." ));
             this.addTooltip( "extra_dividends", "", _( "You must have at least $100 in your company treasury for you to be able to take this action. When you place a Partner here your company may pay an immediate dividend of $10 per share to its shareholders. This can increase your company's share value." ));
             this.addTooltip( "haymarket_square", "", _( "You may trade for any resources in Haymarket Square by exchanging two identical resources for 1 of any other resource currently available there." ));
